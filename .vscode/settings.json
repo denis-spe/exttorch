@@ -1,6 +1,18 @@
 {
     "cSpell.words": [
+        "arange",
+        "argmax",
+        "Corrcoef",
+        "DARKCYAN",
+        "evalate",
         "exttorch",
-        "setuptools"
+        "hyparam",
+        "intp",
+        "jaccard",
+        "ndarray",
+        "proba",
+        "progbar",
+        "setuptools",
+        "softmax"
     ]
 }
