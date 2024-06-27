@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="denis-spe", email="denisbrian07@gmail.com" },
 ]
-description = "A torch sequential extension with hyperparameter tuner for Python"
+description = "A torch sequential extension with hyperparameter tuner for Sequential model"
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -15,8 +15,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/denis-spe/exttorch"
+Issues = "https://github.com/denis-spe/exttorch/issues"
 
 [build-system]
 requires = ["setuptools>=61.0"]
