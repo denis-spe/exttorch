@@ -5,7 +5,6 @@ authors = [
   { name="denis-spe", email="denisbrian07@gmail.com" },
 ]
 description = "A torch sequential extension with hyperparameter tuner for Sequential model"
-license = "MIT"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
