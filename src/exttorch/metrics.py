@@ -6,7 +6,7 @@ import torch
 from abc import ABCMeta, abstractmethod
 from typing import Any, Optional, List, Callable
 from dataclasses import dataclass
-from exttorch.data_handle import SinglePredictionsFormat
+from exttorch.__data_handle import SinglePredictionsFormat
 
 class Logs:
     def __init__(self) -> None:
@@ -267,7 +267,6 @@ class R2(Metric):
                         **self.__kwargs)
 
 
-
 def str_val_to_metric(metric_list: List[Metric | str]):
     new_metric_list = []
     for new_metric_name in metric_list:
@@ -347,6 +346,7 @@ class MetricStorage:
                 predict,
                 label,
                 ) -> None:
+
         # Initializer the SinglePredictionsFormat object.
         single_format_pred = SinglePredictionsFormat(predict)
 

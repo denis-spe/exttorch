@@ -8,10 +8,10 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset
 from typing import Any, Dict, List, Tuple, Optional
 from torch import nn
 from tensorflow.keras.utils import Progbar # type: ignore
-
-from exttorch.data_handle import DataHandler, SinglePredictionsFormat
-from exttorch.history import History
-from exttorch.metrics import LossStorage, Metric, MetricStorage, str_val_to_metric
+from exttorch.metrics import LossStorage, MetricStorage
+from exttorch.__data_handle import SinglePredictionsFormat, DataHandler
+from exttorch.metrics import str_val_to_metric
+from exttorch.metrics import Metric
 
 
 class Sequential(nn.Module):
@@ -19,6 +19,7 @@ class Sequential(nn.Module):
                 layers: List) -> None:
         super(Sequential, self).__init__()
         self.layers = layers
+        self.metrics = None
 
         # Import and use the Sequential object
         from torch import nn as _nn
@@ -39,6 +40,9 @@ class Sequential(nn.Module):
                                     Dataset | TensorDataset] = None,
             verbose: bool = True,
             **kwargs):
+        
+        from exttorch.history import History
+        from exttorch.__data_handle import DataHandler
 
         # Initializer the History object
         history = History(self.metrics)
@@ -180,15 +184,15 @@ class Sequential(nn.Module):
 
                 # Train the full dataset
                 train_metric = self.__train(
-                             data,
-                             y = None,
-                             batch_size = batch_size,
-                             shuffle = shuffle,
-                             generator = generator,
-                             **kwargs
-                           )
+                                data,
+                                y = None,
+                                batch_size = batch_size,
+                                shuffle = shuffle,
+                                generator = generator,
+                                **kwargs
+                            )
 
-               # Show the progress bar on each epoch
+                # Show the progress bar on each epoch
                 self.__progbar.add(1, train_metric.items())
 
                 # Add the train metric to the history
@@ -208,6 +212,8 @@ class Sequential(nn.Module):
         return proba.cpu().detach().numpy()
 
     def predict(self, X):
+        from exttorch.__data_handle import SinglePredictionsFormat
+        
         # Get the probabilities of x
         proba = self.predict_proba(X)
 
@@ -258,10 +264,10 @@ class Sequential(nn.Module):
 
         # Initializer the data
         data = DataHandler(X, y,
-                           batch_size=batch_size,
-                           shuffle=shuffle,
-                           generator=generator,
-                           **kwargs)()
+                            batch_size=batch_size,
+                            shuffle=shuffle,
+                            generator=generator,
+                            **kwargs)()
 
         # Get the data size
         self.__data_size = len(data)
@@ -291,9 +297,9 @@ class Sequential(nn.Module):
 
             # Change size of torch.size([1]) to torch.size([1, 1])
             target = (target.view(1, 1)
-                   if (target.dim() == 1
-                       and target.dtype in [torch.float32, torch.float64])
-                   else target)
+                    if (target.dim() == 1
+                        and target.dtype in [torch.float32, torch.float64])
+                    else target)
 
             # Compute the loss
             loss = self.loss(predict, target)
@@ -350,10 +356,10 @@ class Sequential(nn.Module):
 
         # Initializer the data
         data = DataHandler(X, y,
-                           batch_size=batch_size,
-                           shuffle=shuffle,
-                           generator=generator,
-                           **kwargs)
+                            batch_size=batch_size,
+                            shuffle=shuffle,
+                            generator=generator,
+                            **kwargs)
 
         with torch.no_grad():
             # Loop over the data
@@ -361,7 +367,7 @@ class Sequential(nn.Module):
 
                 # Set the device for X and y
                 feature, label = (feature.to(self.__device),
-                                  label.to(self.__device))
+                                label.to(self.__device))
 
                 # Make prediction
                 predict = self.__model(feature.double())
@@ -374,9 +380,9 @@ class Sequential(nn.Module):
 
                 # Change size of torch.size([1]) to torch.size([1, 1])
                 target = (target.view(1, 1)
-                   if (target.dim() == 1 and
-                      target.dtype in [torch.float32, torch.float64])
-                   else target)
+                    if (target.dim() == 1 and
+                        target.dtype in [torch.float32, torch.float64])
+                    else target)
 
                 if self.loss is not None:
                     # Compute the loss
@@ -395,7 +401,7 @@ class Sequential(nn.Module):
 
             # Add val to each key
             measurements = ({'val_' + key: value
-                                 for key, value in measurements.items()})
+                                for key, value in measurements.items()})
 
             return measurements
         return {'val_loss': loss_storage.loss}
@@ -407,21 +413,11 @@ class Sequential(nn.Module):
         keys.pop(loss_idx)
         keys.insert(0, 'loss')
         measurements = {
-             key: measurements[key]
-             for key in keys
-         }
+            key: measurements[key]
+            for key in keys
+        }
         return measurements
 
-    def __progress_bar(self,
-                   data_size: int,
-                   current_epoch: int,
-                   epochs: int,
-                   metrics: Dict) -> None:
-        print(f"Epoch {current_epoch + 1}/{epochs}")
-        progbar = Progbar(data_size)
-
-        for idx in range(data_size):
-            progbar.update(idx + 1, list(metrics.items()))
 
     def compile(self,
                 optimizer: Any,

@@ -90,7 +90,7 @@ class Float(ParamType):
             return np.linspace(self.min_value, self.max_value).round(5)
         
 
-class HyperParams:
+class HyperParameters:
     def Choice(self, name, values):
         if name not in self.__dict__:
             setattr(self, name, Choice.use(name, values))

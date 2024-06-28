@@ -10,7 +10,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 
 from exttorch.history import History
-from exttorch.hyperparameter import HyperParams
+from exttorch.hyperparameter import HyperParameters
 from exttorch.model import Sequential
 from IPython.display import clear_output
 
@@ -51,7 +51,7 @@ class BaseSearch:
     def best_scores(self):
         if self.__best_scores is None:
             raise TypeError(
-               "First search the parameters with `search` method")
+                "First search the parameters with `search` method")
 
         print(f"{Color.BOLD}Overall Score{Color.END}")
         for key, value in self.__best_scores.items():
@@ -94,7 +94,7 @@ class BaseSearch:
     def best_score(self):
         if self.__best_score is None:
             raise TypeError(
-               "First search the parameters with `search` method")
+                "First search the parameters with `search` method")
 
         print(f"{Color.BOLD}Best Score{Color.END}")
         print(f"{self.__obj}: {self.__best_score}")
@@ -104,7 +104,7 @@ class BaseSearch:
     def best_params(self):
         if self.__best_param is None:
             raise TypeError(
-               "First search the parameters with `search` method")
+                "First search the parameters with `search` method")
         print(f"{Color.BOLD}Best Parameters{Color.END}")
         for key, value in self.__best_param.items():
             print(f"{key}: {value}")
@@ -129,9 +129,9 @@ class BaseSearch:
             data.append(row)
 
         headers = [
-           " Param Names ",
-           " Previous param ",
-           " Best param "
+            " Param Names ",
+            " Previous param ",
+            " Best param "
         ]
         from columnar import columnar
 
@@ -141,11 +141,11 @@ class BaseSearch:
 
 
     def __call__(self,
-                 params,
-                 iteration,
-                 n_iterations,
-                 X, y,
-                 **kwds: Any) -> Any:
+                params,
+                iteration,
+                n_iterations,
+                X, y,
+                **kwds: Any) -> Any:
         # Initializer the tuned function containing the model.
         model = self.__tuned_func(params)
 
@@ -210,9 +210,9 @@ class BaseSearch:
         result = np.mean(model_hist[self.__obj]).round(5)
 
         self.__summary[f"Iteration {iteration + 1}"] = {
-                      self.__obj: result,
-                      "parameters": params
-                  }
+                    self.__obj: result,
+                    "parameters": params
+                }
 
         if model.metrics is not None:
 
@@ -228,9 +228,9 @@ class BaseSearch:
                     self.__best_param = params
                     # Store all metrics.
                     self.__best_scores = {
-                             key: np.mean(value).round(5)
-                             for key, value in model_hist.items()
-                         }
+                            key: np.mean(value).round(5)
+                            for key, value in model_hist.items()
+                        }
             else:
                 if self.__best_score == 0 and iteration == 0:
                     # Assign best_score to best result
@@ -244,9 +244,9 @@ class BaseSearch:
 
                     # Store all metrics.
                     self.__best_scores = {
-                             key: np.mean(value).round(5)
-                             for key, value in model_hist.items()
-                         }
+                            key: np.mean(value).round(5)
+                            for key, value in model_hist.items()
+                        }
                 else:
                     if result < self.__best_score:
                         # Assign best_score to best result
@@ -260,9 +260,9 @@ class BaseSearch:
 
                         # Store all metrics.
                         self.__best_scores = {
-                             key: np.mean(value).round(5)
-                             for key, value in model_hist.items()
-                         }
+                            key: np.mean(value).round(5)
+                            for key, value in model_hist.items()
+                        }
         else:
             if self.__best_score == 0 and iteration == 0:
                     # Assign best_score to best result
@@ -276,9 +276,9 @@ class BaseSearch:
 
                     # Store all metrics.
                     self.__best_scores = {
-                             key: np.mean(value).round(5)
-                             for key, value in model_hist.items()
-                         }
+                            key: np.mean(value).round(5)
+                            for key, value in model_hist.items()
+                        }
 
             if result < self.__best_score:
                 # Assign best_score to best result
@@ -292,20 +292,20 @@ class BaseSearch:
 
                 # Store all metrics.
                 self.__best_scores = {
-                             key: np.mean(value).round(5)
-                             for key, value in model_hist.items()
-                         }
+                            key: np.mean(value).round(5)
+                            for key, value in model_hist.items()
+                        }
         self.__prev_result = result
 
 
 
     def change_param_type_to_dict(self, param_type):
-         return {key: value.default
-                 for key, value in param_type.__dict__.items()}
+        return {key: value.default
+                for key, value in param_type.__dict__.items()}
 
 class RandomSearchSampler:
     def __init__(self, random_state: Optional[int]):
-        self._params = HyperParams()
+        self._params = HyperParameters()
         self._current_param = {}
         self.__random_state = random_state
 
@@ -328,7 +328,7 @@ class RandomSearchSampler:
 
 class GridSearchSampler:
     def __init__(self):
-        self._params = HyperParams()
+        self._params = HyperParameters()
         self._current_param = {}
         self.product = None
         self.product_len = None
@@ -336,7 +336,7 @@ class GridSearchSampler:
 
     @property
     def _update_params(self) -> None:
-        # Turn HyperParams into a dict
+        # Turn HyperParameters into a dict
         hyparam = self._params.__dict__
 
         # Get the keys
@@ -357,7 +357,7 @@ class GridSearchSampler:
             next_product = next(self.product)
 
             params = { key: value
-                   for key, value in zip(keys, next_product)}
+                    for key, value in zip(keys, next_product)}
 
             # Update default to new value.
             for key, value in params.items():
@@ -376,16 +376,16 @@ class GridSearchTune(
     BaseSearch,
     GridSearchSampler):
     def __init__(self,
-                 tuned_func: Callable,
-                 random_state: Optional[int] = None,
-                 objective: str | Callable = "loss"
-                 ):
+                tuned_func: Callable,
+                random_state: Optional[int] = None,
+                objective: str | Callable = "loss"
+                ):
         BaseSearch.__init__(self,
                         tuned_func=tuned_func,
                         objective=objective
                         )
         GridSearchSampler.__init__(self)
-        self._params = HyperParams()
+        self._params = HyperParameters()
         self.__index = 0
 
     def search(
@@ -464,9 +464,9 @@ class GridSearchTune(
             if index == 0:
                 # Fit and evaluate the model
                 self(self._params,
-                     iteration=iteration,
-                     n_iterations=self.__index,
-                     X=X, y=y, **kwargs)
+                    iteration=iteration,
+                    n_iterations=self.__index,
+                    X=X, y=y, **kwargs)
 
                 # Update the parameters
                 self._update_params
@@ -479,9 +479,9 @@ class GridSearchTune(
             elif index != 0:
                 # Fit and evalate the model
                 self(self._params,
-                     iteration=iteration,
-                     n_iterations=self.__index,
-                     X=X, y=y, **kwargs)
+                    iteration=iteration,
+                    n_iterations=self.__index,
+                    X=X, y=y, **kwargs)
 
                 # Update the parameters
                 self._update_params
@@ -496,11 +496,11 @@ class RandomSearchTune(
     RandomSearchSampler
     ):
     def __init__(self,
-                 tuned_func: Callable,
-                 random_state: Optional[int] = None,
-                 objective: str | Callable = "loss",
-                 iterations: int = 5
-               ):
+                tuned_func: Callable,
+                random_state: Optional[int] = None,
+                objective: str | Callable = "loss",
+                iterations: int = 5
+            ):
         BaseSearch.__init__(self,
                         tuned_func=tuned_func,
                         objective=objective
