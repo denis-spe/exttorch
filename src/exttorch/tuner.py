@@ -6,12 +6,11 @@ from typing import Any, Callable, Dict, Optional
 import itertools as it
 import numpy as np
 import pandas as pd
-import torch
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 
-from exttorch.history import History
-from exttorch.hyperparameter import HyperParameters
-from exttorch.model import Sequential
+from src.exttorch.history import History
+from src.exttorch.hyperparameter import HyperParameters
+from src.exttorch.model import Sequential
 from IPython.display import clear_output
 
 
@@ -63,7 +62,7 @@ class BaseSearch:
             raise TypeError(
             "First search the parameters with `search` method")
 
-        reversed = (True
+        reversed_summery = (True
                 if (self.__obj not in self.__reducing_metric)
                 else False)
 
@@ -71,7 +70,7 @@ class BaseSearch:
         sorted_summary = dict(sorted(
             self.__summary.items(),
             key=lambda item: item[1][self.__obj],
-            reverse=reversed))
+            reverse=reversed_summery))
 
         # Print the summary
         print(f"{Color.BOLD}Summary{Color.END}")
@@ -325,6 +324,8 @@ class RandomSearchSampler:
             # Update default to new value.
             self._params._change_default(key, new_default)
 
+        return None
+
 
 class GridSearchSampler:
     def __init__(self):
@@ -337,13 +338,13 @@ class GridSearchSampler:
     @property
     def _update_params(self) -> None:
         # Turn HyperParameters into a dict
-        hyparam = self._params.__dict__
+        hyperparam = self._params.__dict__
 
         # Get the keys
-        keys = list(hyparam.keys())
+        keys = list(hyperparam.keys())
 
         # Get the values
-        values = list(map(lambda x: x.values, hyparam.values()))
+        values = list(map(lambda x: x.values, hyperparam.values()))
 
         # Get the length of iter product
         self.product_len = len(list(it.product(*values)))
@@ -370,6 +371,8 @@ class GridSearchSampler:
         else:
             # Get the product
             self.product = it.product(*values)
+
+        return None
 
 
 class GridSearchTune(
@@ -412,8 +415,12 @@ class GridSearchTune(
 
         Examples
         --------
+        >>>
         >>> from sklearn.datasets import load_iris
-        >>> X, y = load_iris(return_X_y=True)
+        >>> from torch import nn
+        >>> from torch.optim import SGD
+        >>>
+        >>> x, y = load_iris(return_X_y=True)
         >>>
         >>> def tuned_model(hp):
         >>>     features = hp.Choice('features', [128, 256, 512, 1062])
@@ -446,9 +453,9 @@ class GridSearchTune(
         >>>
         >>> # Search the parameters
         >>> random_search.search(
-        >>>                 X, y,
+        >>>                 x, y,
         >>>                 epochs=5,
-        >>>                 validation_data = (b_x, b_y)
+        >>>                 validation_data = (x, y)
         >>>              )
         """
 
@@ -477,7 +484,7 @@ class GridSearchTune(
                 self.__index = index
 
             elif index != 0:
-                # Fit and evalate the model
+                # Fit and evaluate the model
                 self(self._params,
                     iteration=iteration,
                     n_iterations=self.__index,

@@ -4,9 +4,9 @@
 import numpy as np
 import torch
 from abc import ABCMeta, abstractmethod
-from typing import Any, Optional, List, Callable
+from typing import Any, Optional, List, Callable, Dict
 from dataclasses import dataclass
-from exttorch.__data_handle import SinglePredictionsFormat
+from src.exttorch.__data_handle import SinglePredictionsFormat
 
 class Logs:
     def __init__(self) -> None:
@@ -57,7 +57,7 @@ class Metric(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         ...
 
 
@@ -80,17 +80,17 @@ class Accuracy(Metric):
         """
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         """
         Parameters
         ----------
-        pred : torch.Tensor
+        prediction : torch.Tensor
             Predicted values
         y : torch.Tensor
             True values
         """
         from sklearn.metrics import accuracy_score
-        return accuracy_score(y, pred)
+        return accuracy_score(y, prediction)
 
 
 class ZeroOneLoss(Metric):
@@ -112,17 +112,17 @@ class ZeroOneLoss(Metric):
         """
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         """
         Parameters
         ----------
-        pred : torch.Tensor
+        prediction : torch.Tensor
             Predicted values
         y : torch.Tensor
             True values
         """
         from sklearn.metrics import zero_one_loss
-        return zero_one_loss(y, pred)
+        return zero_one_loss(y, prediction)
 
 class F1Score(Metric):
     def __init__(self, name: Optional[str] = None, **kwargs) -> None:
@@ -132,9 +132,9 @@ class F1Score(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import f1_score
-        return f1_score(y, pred, **self.__kwargs)
+        return f1_score(y, prediction, **self.__kwargs)
 
 class MatthewsCorrcoef(Metric):
     def __init__(self, name: Optional[str] = None, **kwargs):
@@ -144,9 +144,9 @@ class MatthewsCorrcoef(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import matthews_corrcoef
-        return matthews_corrcoef(y, pred, **self.__kwargs)
+        return matthews_corrcoef(y, prediction, **self.__kwargs)
 
 class Recall(Metric):
     def __init__(self, name: Optional[str] = None,  **kwargs):
@@ -156,9 +156,9 @@ class Recall(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import recall_score
-        return recall_score(pred, y, **self.__kwargs)
+        return recall_score(prediction, y, **self.__kwargs)
 
 class Jaccard(Metric):
     def __init__(self, name: Optional[str] = None, **kwargs):
@@ -168,9 +168,9 @@ class Jaccard(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import jaccard_score
-        return jaccard_score(pred, y, **self.__kwargs)
+        return jaccard_score(prediction, y, **self.__kwargs)
 
 class Precision(Metric):
     def __init__(self, name: Optional[str] = None, **kwargs):
@@ -180,19 +180,19 @@ class Precision(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import precision_score
-        return precision_score(pred, y, **self.__kwargs)
+        return precision_score(prediction, y, **self.__kwargs)
 
 def handle_probability(proba):
-    from torch.nn import functional as F
+    from torch.nn import functional as f
 
     if proba.shape[1] > 2:
         _proba = (proba.clone().detach()
                     if type(proba) != np.ndarray
                     else torch.tensor(proba)
                     )
-        return F.softmax(_proba, dim=-1)
+        return f.softmax(_proba, dim=-1)
     return proba[:, 0]
 
 
@@ -233,9 +233,9 @@ class MeanSquaredError(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import mean_squared_error
-        return mean_squared_error(pred, y.reshape(y.shape[0], 1))
+        return mean_squared_error(prediction, y.reshape(y.shape[0], 1))
 
 
 class MeanAbsoluteError(Metric):
@@ -246,9 +246,9 @@ class MeanAbsoluteError(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import mean_absolute_error
-        return mean_absolute_error(pred, y.reshape(y.shape[0], 1),
+        return mean_absolute_error(prediction, y.reshape(y.shape[0], 1),
                                    **self.__kwargs)
 
 class R2(Metric):
@@ -259,10 +259,10 @@ class R2(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, pred: torch.Tensor, y: torch.Tensor) -> Any:
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor) -> Any:
         from sklearn.metrics import r2_score
         return r2_score(
-            pred.view(pred.shape[0], 1),
+            prediction.view(prediction.shape[0], 1),
             y.reshape(y.shape[0], 1),
                         **self.__kwargs)
 
@@ -315,7 +315,7 @@ class MetricComputation:
                 self.prediction,
                 self.y)
 
-        # Change to cpu if its a Tensor
+        # Change to cpu if it's a Tensor
         predictions = (self.prediction.cpu().numpy()
             if isinstance(self.prediction, torch.Tensor)
             else self.prediction)
@@ -332,11 +332,11 @@ class MetricStorage:
         self.__batch_size = batch_size
         self.__metric_name_proba = ['Auc', 'TopKAccuracy', 'auc', 'tka', 'TKA']
 
-    def __y_pred_or_proba(self, metric: Metric, predict, formatted_pred):
+    def __y_prediction_or_proba(self, metric: Metric, predict, formatted_prediction):
 
         # Return formatted prediction or probability
         return (
-            formatted_pred
+            formatted_prediction
             if str(metric) not in self.__metric_name_proba
             else predict.detach().cpu().numpy()
         )
@@ -348,12 +348,12 @@ class MetricStorage:
                 ) -> None:
 
         # Initializer the SinglePredictionsFormat object.
-        single_format_pred = SinglePredictionsFormat(predict)
+        single_format_prediction = SinglePredictionsFormat(predict)
 
         # Format the predictions.
-        formatted_pred = single_format_pred.format_prediction()
+        formatted_prediction = single_format_prediction.format_prediction()
 
-        if self.__batch_size  != None and self.__batch_size > 1:
+        if self.__batch_size is not None and self.__batch_size > 1:
             # Change batched prediction to one single metric e.g 0.983.
             # Loop over the metrics
             for metric in self.__metrics:
@@ -361,20 +361,20 @@ class MetricStorage:
                     MetricComputation(
                         metric,
                         label,
-                        self.__y_pred_or_proba(metric, predict, formatted_pred))
+                        self.__y_prediction_or_proba(metric, predict, formatted_prediction))
                     .compute_metric())
         else:
             # Add single prediction
             # Loop over the metrics and metric names
             for metric in self.__metrics:
                 self.__metric_dict[str(metric)].append(
-                    self.__y_pred_or_proba(metric, predict[0], formatted_pred)
+                    self.__y_prediction_or_proba(metric, predict[0], formatted_prediction)
                     )
             # Save labels in the list
             self.__labels.append(label)
 
     def metrics(self, y: Any = None):
-        if self.__batch_size  != None and self.__batch_size > 1:
+        if self.__batch_size is not None and self.__batch_size > 1:
             # Return a new dictionary with list mean
             return {
                 key: round(torch.tensor(value).mean().item(), 4)
@@ -400,11 +400,22 @@ class MetricStorage:
                 else metric_comp), 4)
 
         return metrics_dict
-
-    def __handle_values_from_metric_dict(self, value):
+    @staticmethod
+    def __handle_values_from_metric_dict(value):
         # try:
         return np.array([
                 val.clone().detach().cpu().numpy()
                 if type(val) == torch.Tensor
                 else val
                 for val in value], dtype=np.float64)
+
+def change_metric_first_position(measurements) -> Dict:
+    keys = list(measurements.keys())
+    loss_idx = keys.index('loss')
+    keys.pop(loss_idx)
+    keys.insert(0, 'loss')
+    measurements = {
+        key: measurements[key]
+        for key in keys
+    }
+    return measurements

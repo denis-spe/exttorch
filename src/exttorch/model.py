@@ -1,23 +1,26 @@
 # Praise Ye The Lord
 
-# Import libraries
-import torch
+from typing import Any, Dict, List, Tuple, Optional
+
 import numpy as np
 import pandas as pd
-from torch.utils.data import DataLoader, Dataset, TensorDataset
-from typing import Any, Dict, List, Tuple, Optional
+# Import libraries
+import torch
+from tensorflow.keras.utils import Progbar  # type: ignore
 from torch import nn
-from tensorflow.keras.utils import Progbar # type: ignore
-from exttorch.metrics import LossStorage, MetricStorage
-from exttorch.__data_handle import SinglePredictionsFormat, DataHandler
-from exttorch.metrics import str_val_to_metric
-from exttorch.metrics import Metric
-
+from torch.utils.data import DataLoader, Dataset, TensorDataset
+from src.exttorch.__data_handle import DataHandler
+from src.exttorch.metrics import LossStorage, MetricStorage
+from src.exttorch.metrics import Metric, change_metric_first_position
+from src.exttorch.metrics import str_val_to_metric
 
 class Sequential(nn.Module):
     def __init__(self,
                 layers: List) -> None:
         super(Sequential, self).__init__()
+        self.__device = None
+        self.loss = None
+        self.optimizer = None
         self.layers = layers
         self.metrics = None
 
@@ -27,6 +30,9 @@ class Sequential(nn.Module):
 
     def forward(self, X) -> torch.Tensor:
         return self.__model(X)
+
+    def add(self, layer: Any):
+        self.layers.append(layer)
 
     def fit(self,
             X: np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame,
@@ -38,19 +44,20 @@ class Sequential(nn.Module):
             validation_split: Optional[float] = None,
             validation_data: Optional[List | Tuple | DataLoader |
                                     Dataset | TensorDataset] = None,
-            verbose: bool = True,
+            verbose: int = 1,
             **kwargs):
         
-        from exttorch.history import History
-        from exttorch.__data_handle import DataHandler
+        from src.exttorch.history import History
+        from src.exttorch.__data_handle import DataHandler
 
         # Initializer the History object
         history = History(self.metrics)
 
         if validation_split is not None and validation_data is None:
             for epoch in range(epochs):
-                # Print the epochs
-                print(f"Epoch {epoch + 1}/{epochs}")
+                if verbose != 0:
+                    # Print the epochs
+                    print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
                 data = DataHandler(X, y,
@@ -69,6 +76,7 @@ class Sequential(nn.Module):
                             batch_size = batch_size if batch_size else None,
                             shuffle = shuffle,
                             generator = generator,
+                            verbose=verbose,
                             **kwargs
                         )
 
@@ -85,6 +93,7 @@ class Sequential(nn.Module):
                             batch_size = batch_size if batch_size else None,
                             shuffle = shuffle,
                             generator = generator,
+                            verbose=verbose,
                             **kwargs
                         )
 
@@ -103,8 +112,9 @@ class Sequential(nn.Module):
 
         elif validation_data is not None:
             for epoch in range(epochs):
-                # Print the epochs
-                print(f"Epoch {epoch + 1}/{epochs}")
+                if verbose != 0:
+                    # Print the epochs
+                    print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
                 train_data = DataHandler(X, y,
@@ -120,6 +130,7 @@ class Sequential(nn.Module):
                             batch_size = batch_size if batch_size else None,
                             shuffle = shuffle,
                             generator = generator,
+                            verbose=verbose,
                             **kwargs
                         )
 
@@ -154,6 +165,7 @@ class Sequential(nn.Module):
                             batch_size = batch_size if batch_size else None,
                             shuffle = shuffle,
                             generator = generator,
+                            verbose=verbose,
                             **kwargs
                         )
 
@@ -172,8 +184,9 @@ class Sequential(nn.Module):
 
         else:
             for epoch in range(epochs):
-                # Print the epochs
-                print(f"Epoch {epoch + 1}/{epochs}")
+                if verbose != 0:
+                    # Print the epochs
+                    print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
                 data = DataHandler(X, y,
@@ -189,6 +202,7 @@ class Sequential(nn.Module):
                                 batch_size = batch_size,
                                 shuffle = shuffle,
                                 generator = generator,
+                                verbose=verbose,
                                 **kwargs
                             )
 
@@ -212,25 +226,25 @@ class Sequential(nn.Module):
         return proba.cpu().detach().numpy()
 
     def predict(self, X):
-        from exttorch.__data_handle import SinglePredictionsFormat
+        from src.exttorch.__data_handle import SinglePredictionsFormat
         
         # Get the probabilities of x
         proba = self.predict_proba(X)
 
         # Initializer the SinglePredictionsFormat object.
-        single_format_pred = SinglePredictionsFormat(proba)
+        single_format_prediction = SinglePredictionsFormat(proba)
 
         # Format the predictions.
-        formatted_pred = single_format_pred.format_prediction()
+        formatted_prediction = single_format_prediction.format_prediction()
 
-        formatted_pred = formatted_pred.numpy().T
-        return formatted_pred[0] if len(formatted_pred) == 1 else formatted_pred
+        formatted_prediction = formatted_prediction.numpy().T
+        return formatted_prediction[0] if len(formatted_prediction) == 1 else formatted_prediction
 
     def __handle_one_hot(self, target):
-        from torch.nn import functional as F
+        from torch.nn import functional as f
         loss_class_names = ["BCELoss", "BCEWithLogitsLoss"]
 
-        return (F.one_hot(target, num_classes=2).double()
+        return (f.one_hot(target, num_classes=2).double()
                 if type(self.loss).__name__ in loss_class_names
                 else target)
 
@@ -241,9 +255,10 @@ class Sequential(nn.Module):
             batch_size: Optional[int] = 1,
             shuffle: bool = False,
             generator: Optional[torch.Generator] = None,
+            verbose: int = 1,
             **kwargs
             ) -> Dict:
-        if self.optimizer == None or self.loss == None:
+        if self.optimizer is None or self.loss is None:
             raise TypeError("Compile the model with `model.compile` before " +
                             "fitting the model")
 
@@ -273,7 +288,7 @@ class Sequential(nn.Module):
         self.__data_size = len(data)
 
         # Instantiate the progress bar
-        progbar = Progbar(len(data))
+        progbar = Progbar(len(data), verbose=verbose)
 
         # Assign progbar
         self.__progbar = progbar
@@ -326,7 +341,7 @@ class Sequential(nn.Module):
             measurements['loss'] = loss_storage.loss
 
             # Place the val_loss to first position
-            measurements = self.__change_metric_first_position(measurements)
+            measurements = change_metric_first_position(measurements)
 
             return measurements
 
@@ -338,6 +353,7 @@ class Sequential(nn.Module):
             batch_size: Optional[int] = 1,
             shuffle: bool = False,
             generator: Optional[torch.Generator] = None,
+            verbose: int = 1,
             **kwargs):
         metric_storage = None
 
@@ -359,11 +375,14 @@ class Sequential(nn.Module):
                             batch_size=batch_size,
                             shuffle=shuffle,
                             generator=generator,
-                            **kwargs)
+                            **kwargs)()
+
+        # Instantiate the progress bar
+        progbar = Progbar(len(data), verbose=verbose)
 
         with torch.no_grad():
             # Loop over the data
-            for feature, label in data():
+            for idx, (feature, label) in enumerate(data):
 
                 # Set the device for X and y
                 feature, label = (feature.to(self.__device),
@@ -391,13 +410,18 @@ class Sequential(nn.Module):
                     # Add loss to the storage
                     loss_storage.loss = loss.item()
 
+                    if idx != len(data) - 1:
+                        # Update the progress bar
+                        progbar.update(idx + 1, [("loss", loss_storage.loss)])
+
+
 
         if self.metrics and metric_storage:
             measurements = metric_storage.metrics(y)
             measurements['loss'] = loss_storage.loss
 
             # Place the val_loss to first position
-            measurements = self.__change_metric_first_position(measurements)
+            measurements = change_metric_first_position(measurements)
 
             # Add val to each key
             measurements = ({'val_' + key: value
@@ -405,19 +429,6 @@ class Sequential(nn.Module):
 
             return measurements
         return {'val_loss': loss_storage.loss}
-
-
-    def __change_metric_first_position(self, measurements) -> Dict:
-        keys = list(measurements.keys())
-        loss_idx = keys.index('loss')
-        keys.pop(loss_idx)
-        keys.insert(0, 'loss')
-        measurements = {
-            key: measurements[key]
-            for key in keys
-        }
-        return measurements
-
 
     def compile(self,
                 optimizer: Any,
