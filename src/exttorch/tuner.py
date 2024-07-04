@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 
-from src.exttorch.history import History
-from src.exttorch.hyperparameter import HyperParameters
-from src.exttorch.model import Sequential
+from exttorch.history import History
+from exttorch.hyperparameter import HyperParameters
+from exttorch.model import Sequential
 from IPython.display import clear_output
 
 

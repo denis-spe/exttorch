@@ -6,7 +6,7 @@ import torch
 from abc import ABCMeta, abstractmethod
 from typing import Any, Optional, List, Callable, Dict
 from dataclasses import dataclass
-from src.exttorch.__data_handle import SinglePredictionsFormat
+from exttorch.__data_handle import SinglePredictionsFormat
 
 class Logs:
     def __init__(self) -> None:
