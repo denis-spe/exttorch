@@ -112,7 +112,7 @@ class HyperParameters:
         return self._get_attr(name).default
 
 
-    def _change_default(self, name, value):
+    def change_default(self, name, value):
         self.__dict__[name] = self._get_attr(name).set_default(value)
 
     def _get_attr(self, name):

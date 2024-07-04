@@ -1,18 +1,18 @@
 # Praise Ye The Lord
 
+# Import libraries
 from typing import Any, Dict, List, Tuple, Optional
-
 import numpy as np
 import pandas as pd
-# Import libraries
 import torch
 from tensorflow.keras.utils import Progbar  # type: ignore
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
-from exttorch.__data_handle import DataHandler
-from exttorch.metrics import LossStorage, MetricStorage
-from exttorch.metrics import Metric, change_metric_first_position
-from exttorch.metrics import str_val_to_metric
+from .metrics import LossStorage, MetricStorage
+from .metrics import Metric, change_metric_first_position
+from .metrics import str_val_to_metric
+from .history import History
+from .__data_handle import DataHandler
 
 class Sequential(nn.Module):
     def __init__(self,
@@ -46,9 +46,6 @@ class Sequential(nn.Module):
                                     Dataset | TensorDataset] = None,
             verbose: int = 1,
             **kwargs):
-        
-        from exttorch.history import History
-        from exttorch.__data_handle import DataHandler
 
         # Initializer the History object
         history = History(self.metrics)
@@ -434,10 +431,12 @@ class Sequential(nn.Module):
                 optimizer: Any,
                 loss: Any,
                 metrics: Optional[List[Metric|str]] = None,
-                device: str = 'cpu'):
+                device: str = 'cpu'
+                ):
         self.__model = self.__model.to(device)
         self.optimizer = optimizer
         self.loss = loss
         self.metrics: Optional[List] = (
-            str_val_to_metric(metrics) if metrics is not None else [])
+            str_val_to_metric(metrics)
+            if metrics is not None else [])
         self.__device = device

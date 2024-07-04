@@ -26,7 +26,7 @@ class RandomSearchSampler:
             self._current_param[key] = new_default
 
             # Update default to new value.
-            self._params._change_default(key, new_default)
+            self._params.change_default(key, new_default)
 
 
 class GridSearchSampler:
@@ -72,7 +72,7 @@ class GridSearchSampler:
                 self._current_param[key] = value
 
                 # Update default to new value.
-                self._params._change_default(key, value)
+                self._params.change_default(key, value)
 
         else:
             # Get the product

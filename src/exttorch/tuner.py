@@ -8,16 +8,15 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 
-from exttorch.history import History
-from exttorch.hyperparameter import HyperParameters
-from exttorch.model import Sequential
+from .history import History
+from .hyperparameter import HyperParameters
+from .model import Sequential
 from IPython.display import clear_output
 
 
 class Color:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
     BLUE = '\033[94m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -25,6 +24,12 @@ class Color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
+
+
+def change_param_type_to_dict(param_type):
+    return {key: value.default
+            for key, value in param_type.__dict__.items()}
+
 
 class BaseSearch:
     def __init__(self, tuned_func,
@@ -82,8 +87,8 @@ class BaseSearch:
             for k, v in values.items():
                 if isinstance(v, dict):
                     print(f"{Color.BOLD}{k.title()}{Color.END}")
-                    for key, value in v.items():
-                        print(f"{key}: {value}")
+                    for Key, value in v.items():
+                        print(f"{Key}: {value}")
                 else:
                     print(f"{Color.BOLD}{k.title()}{Color.END}")
                     print(v)
@@ -140,17 +145,17 @@ class BaseSearch:
 
 
     def __call__(self,
-                params,
-                iteration,
-                n_iterations,
-                X, y,
-                **kwds: Any) -> Any:
+                 params,
+                 iteration,
+                 n_iterations,
+                 X, y,
+                 **kwargs: Any) -> Any:
         # Initializer the tuned function containing the model.
         model = self.__tuned_func(params)
 
         # Change parameter from class to dictionary like
         # Choice("lr", [0.23, 0.23]) to {'lr': 0.23}
-        changed_params = self.change_param_type_to_dict(params)
+        changed_params = change_param_type_to_dict(params)
 
         # Add the parameters to the each_step_param dict.
         self.each_step_param[f'step_{iteration + 1}'] = changed_params
@@ -170,7 +175,7 @@ class BaseSearch:
         print(f"{Color.UNDERLINE} {'-' * 40} {Color.END}")
 
         # Fit the model
-        history = model.fit(X, y=y, **kwds)
+        history = model.fit(X, y=y, **kwargs)
 
         time.sleep(1)
         clear_output(wait=True)
@@ -223,7 +228,7 @@ class BaseSearch:
                     # Assign the best model to best_model variable.
                     self.best_model = model
                     # Assign the best model parameters to
-                    # to best_params.
+                    #  best_params.
                     self.__best_param = params
                     # Store all metrics.
                     self.__best_scores = {
@@ -238,7 +243,7 @@ class BaseSearch:
                     # Assign the best model to best_model variable.
                     self.best_model = model
                     # Assign the best model parameters to
-                    # to best_params.
+                    #  best_params.
                     self.__best_param = params
 
                     # Store all metrics.
@@ -254,7 +259,7 @@ class BaseSearch:
                         # Assign the best model to best_model variable.
                         self.best_model = model
                         # Assign the best model parameters to
-                        # to best_params.
+                        #  best_params.
                         self.__best_param = params
 
                         # Store all metrics.
@@ -270,7 +275,7 @@ class BaseSearch:
                     # Assign the best model to best_model variable.
                     self.best_model = model
                     # Assign the best model parameters to
-                    # to best_params.
+                    # best_params.
                     self.__best_param = params
 
                     # Store all metrics.
@@ -286,7 +291,7 @@ class BaseSearch:
                 # Assign the best model to best_model variable.
                 self.best_model = model
                 # Assign the best model parameters to
-                # to best_params.
+                #  best_params.
                 self.__best_param = params
 
                 # Store all metrics.
@@ -297,11 +302,6 @@ class BaseSearch:
         self.__prev_result = result
 
 
-
-    def change_param_type_to_dict(self, param_type):
-        return {key: value.default
-                for key, value in param_type.__dict__.items()}
-
 class RandomSearchSampler:
     def __init__(self, random_state: Optional[int]):
         self._params = HyperParameters()
@@ -309,7 +309,6 @@ class RandomSearchSampler:
         self.__random_state = random_state
 
 
-    @property
     def _update_params(self) -> None:
         random_state = np.random.RandomState(self.__random_state)
 
@@ -322,7 +321,7 @@ class RandomSearchSampler:
             self._current_param[key] = new_default
 
             # Update default to new value.
-            self._params._change_default(key, new_default)
+            self._params.change_default(key, new_default)
 
         return None
 
@@ -335,7 +334,6 @@ class GridSearchSampler:
         self.product_len = None
 
 
-    @property
     def _update_params(self) -> None:
         # Turn HyperParameters into a dict
         hyperparam = self._params.__dict__
@@ -366,7 +364,7 @@ class GridSearchSampler:
                 self._current_param[key] = value
 
                 # Update default to new value.
-                self._params._change_default(key, value)
+                self._params.change_default(key, value)
 
         else:
             # Get the product
@@ -380,7 +378,6 @@ class GridSearchTune(
     GridSearchSampler):
     def __init__(self,
                 tuned_func: Callable,
-                random_state: Optional[int] = None,
                 objective: str | Callable = "loss"
                 ):
         BaseSearch.__init__(self,
@@ -420,7 +417,7 @@ class GridSearchTune(
         >>> from torch import nn
         >>> from torch.optim import SGD
         >>>
-        >>> x, y = load_iris(return_X_y=True)
+        >>> i_x, i_y = load_iris(return_X_y=True)
         >>>
         >>> def tuned_model(hp):
         >>>     features = hp.Choice('features', [128, 256, 512, 1062])
@@ -453,9 +450,9 @@ class GridSearchTune(
         >>>
         >>> # Search the parameters
         >>> random_search.search(
-        >>>                 x, y,
+        >>>                 i_x, i_y,
         >>>                 epochs=5,
-        >>>                 validation_data = (x, y)
+        >>>                 validation_data = (i_x, i_y)
         >>>              )
         """
 
@@ -476,7 +473,7 @@ class GridSearchTune(
                     X=X, y=y, **kwargs)
 
                 # Update the parameters
-                self._update_params
+                self._update_params()
 
                 index = self.product_len
 
@@ -491,7 +488,7 @@ class GridSearchTune(
                     X=X, y=y, **kwargs)
 
                 # Update the parameters
-                self._update_params
+                self._update_params()
                 iteration += 1
 
                 if index == iteration:
@@ -534,11 +531,11 @@ class RandomSearchTune(
 
         # Loop through the number of iterations
         for iteration in range(self.__iterations):
-            # Fit and evalate the model
+            # Fit and evaluate the model
             self(self._params,
                 iteration=iteration,
                 n_iterations=self.__iterations,
                  X=X, y=y, **kwargs)
 
             # Update the parameters
-            self._update_params
+            self._update_params()

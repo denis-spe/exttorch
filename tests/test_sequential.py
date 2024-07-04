@@ -1,6 +1,6 @@
-# import sys
-# sys.path.append(sys.path[0].replace("tests", "src"))
+# Praise Ye The Lord
 
+# Import libraries
 import unittest as ut
 from torch import nn
 from torch.optim import Adam

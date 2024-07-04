@@ -101,7 +101,7 @@ class DataHandler:
                             **self.__kwargs)
 
         elif isinstance(self.__x, Subset):
-            return self.__x.__Dataset
+            return self.__x.dataset
 
         elif (isinstance(self.__x, Dataset) or
             isinstance(self.__x, TensorDataset)):
