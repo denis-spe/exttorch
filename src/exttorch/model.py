@@ -9,10 +9,10 @@ import torch
 from tensorflow.keras.utils import Progbar  # type: ignore
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, TensorDataset
-from src.exttorch.__data_handle import DataHandler
-from src.exttorch.metrics import LossStorage, MetricStorage
-from src.exttorch.metrics import Metric, change_metric_first_position
-from src.exttorch.metrics import str_val_to_metric
+from exttorch.__data_handle import DataHandler
+from metrics import LossStorage, MetricStorage
+from metrics import Metric, change_metric_first_position
+from metrics import str_val_to_metric
 
 class Sequential(nn.Module):
     def __init__(self,
