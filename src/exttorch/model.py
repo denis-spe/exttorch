@@ -47,8 +47,8 @@ class Sequential(nn.Module):
             verbose: int = 1,
             **kwargs):
         
-        from src.exttorch.history import History
-        from src.exttorch.__data_handle import DataHandler
+        from exttorch.history import History
+        from exttorch.__data_handle import DataHandler
 
         # Initializer the History object
         history = History(self.metrics)
