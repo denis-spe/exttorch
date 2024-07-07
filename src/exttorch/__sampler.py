@@ -5,14 +5,13 @@ from typing import Optional as Optional
 
 class RandomSearchSampler:
     def __init__(self, random_state: Optional[int]):
-        from exttorch.hyperparameter import HyperParameters
+        from .hyperparameter import HyperParameters
         
         self._params = HyperParameters()
         self._current_param = {}
         self.__random_state = random_state
 
 
-    @property
     def _update_params(self) -> None:
         import numpy as np
         random_state = np.random.RandomState(self.__random_state)
@@ -31,7 +30,7 @@ class RandomSearchSampler:
 
 class GridSearchSampler:
     def __init__(self):
-        from exttorch.hyperparameter import HyperParameters
+        from .hyperparameter import HyperParameters
         
         self._params = HyperParameters()
         self._current_param = {}
@@ -39,7 +38,6 @@ class GridSearchSampler:
         self.product_len = None
 
 
-    @property
     def _update_params(self) -> None:
         import itertools
         

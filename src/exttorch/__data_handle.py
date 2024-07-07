@@ -134,5 +134,5 @@ class DataHandler:
             return self.__x
         else:
             raise ValueError("Invalid data, expected type of " +
-                            "`__np.ndarray | __DataLoader | __Dataset|__TensorDataset` for x " +
-                            "and __np.ndarray for y")
+                            "`np.ndarray | DataLoader | Dataset | TensorDataset` for x " +
+                            "and np.ndarray for y")

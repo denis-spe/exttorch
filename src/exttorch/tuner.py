@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset, Dataset
 from .history import History
 from .hyperparameter import HyperParameters
 from .model import Sequential
+from .__sampler import GridSearchSampler, RandomSearchSampler
 from IPython.display import clear_output
 
 
@@ -24,6 +25,7 @@ class Color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
+
 
 
 def change_param_type_to_dict(param_type):
@@ -145,11 +147,11 @@ class BaseSearch:
 
 
     def __call__(self,
-                 params,
-                 iteration,
-                 n_iterations,
-                 X, y,
-                 **kwargs: Any) -> Any:
+                params,
+                iteration,
+                n_iterations,
+                X, y,
+                **kwargs: Any) -> Any:
         # Initializer the tuned function containing the model.
         model = self.__tuned_func(params)
 
@@ -302,77 +304,6 @@ class BaseSearch:
         self.__prev_result = result
 
 
-class RandomSearchSampler:
-    def __init__(self, random_state: Optional[int]):
-        self._params = HyperParameters()
-        self._current_param = {}
-        self.__random_state = random_state
-
-
-    def _update_params(self) -> None:
-        random_state = np.random.RandomState(self.__random_state)
-
-        # Loop over the Parameters
-        for key, value in self._params.__dict__.items():
-            # Get the new shuffled value.
-            new_default = random_state.choice(value.values)
-
-            # Save current parameters.
-            self._current_param[key] = new_default
-
-            # Update default to new value.
-            self._params.change_default(key, new_default)
-
-        return None
-
-
-class GridSearchSampler:
-    def __init__(self):
-        self._params = HyperParameters()
-        self._current_param = {}
-        self.product = None
-        self.product_len = None
-
-
-    def _update_params(self) -> None:
-        # Turn HyperParameters into a dict
-        hyperparam = self._params.__dict__
-
-        # Get the keys
-        keys = list(hyperparam.keys())
-
-        # Get the values
-        values = list(map(lambda x: x.values, hyperparam.values()))
-
-        # Get the length of iter product
-        self.product_len = len(list(it.product(*values)))
-
-
-        if self.product is not None:
-            # Get the length of the product
-            # print(list(self.product))
-
-            # Get the next product
-            next_product = next(self.product)
-
-            params = { key: value
-                    for key, value in zip(keys, next_product)}
-
-            # Update default to new value.
-            for key, value in params.items():
-                # Save current parameters.
-                self._current_param[key] = value
-
-                # Update default to new value.
-                self._params.change_default(key, value)
-
-        else:
-            # Get the product
-            self.product = it.product(*values)
-
-        return None
-
-
 class GridSearchTune(
     BaseSearch,
     GridSearchSampler):
@@ -416,9 +347,11 @@ class GridSearchTune(
         >>> from sklearn.datasets import load_iris
         >>> from torch import nn
         >>> from torch.optim import SGD
+        >>> from exttorch.model import Sequential
+        >>> from exttorch.hyperparameter import HyperParameters
+        >>> from exttorch.tuner import RandomSearchTune
         >>>
         >>> i_x, i_y = load_iris(return_X_y=True)
-        >>>
         >>> def tuned_model(hp):
         >>>     features = hp.Choice('features', [128, 256, 512, 1062])
         >>>     h_features = hp.Int('h_features', 8, 1062, step=16)

@@ -1,6 +1,9 @@
 # Praise Ye The Lord
 
 # Import libraries
+import sys
+sys.path.append(sys.path[0].strip("tests"))
+
 import unittest as ut
 from torch import nn
 from torch.optim import Adam
@@ -13,6 +16,9 @@ class TestSequential(ut.TestCase):
         self.d_x, self.d_y = load_digits(return_X_y=True)
 
     def test_sequential_using_iris_dataset(self):
+        """
+        Test the sequential model using iris dataset
+        """
         self.iris_model = Sequential([
             nn.Linear(4, 32),
             nn.ReLU(),
@@ -25,6 +31,7 @@ class TestSequential(ut.TestCase):
             optimizer=Adam(self.iris_model.parameters()),
             loss=nn.CrossEntropyLoss()
         )
+        
         history = self.iris_model.fit(self.ir_x, self.ir_y)
         
         self.assertIsInstance(history.history, dict)

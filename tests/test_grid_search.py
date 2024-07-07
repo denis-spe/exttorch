@@ -1,6 +1,9 @@
 # Praise Ye The Lord
 
 # Import libraries
+import sys
+sys.path.append(sys.path[0].strip("tests"))
+
 import unittest
 from torch import nn
 from torch.optim import Adam

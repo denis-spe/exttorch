@@ -5,7 +5,20 @@ from typing import Any, Dict
 
 
 class History:
+    """
+    Represents model history.
+    """
     def __init__(self, metrics: Any) -> None:
+        """
+        Represents model history.
+
+        Parameters
+        ----------
+        metrics : Any
+            List of metrics
+        """
+        
+        # Get the metric names
         names = [
         metric
         if type(metric) == str
@@ -13,11 +26,13 @@ class History:
         for metric in metrics
         ]
 
+        # Create the history
         self.__history = {
             name: []
             for name in names
         }
 
+        # Create the validation history
         self.__history.update({
             'val_' + name: []
             for name in names
@@ -31,6 +46,9 @@ class History:
 
     @property
     def history(self) -> Dict:
+        """
+        Returns the model history
+        """
         return {
             key: value
             for key, value in self.__history.items()
