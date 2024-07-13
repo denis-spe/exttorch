@@ -1,17 +1,17 @@
 # Praise Ye The Lord
 
 # Import libraries
-import numpy as np
+# import numpy as np
 from dataclasses import dataclass
-from typing import Any
 
 class ParamType:
     name: str
-    default: Any
+    default: any
 
     def set_default(self, default):
         """
         Sets the new default value
+        
         Parameters
         ----------
         default : Any
@@ -23,8 +23,8 @@ class ParamType:
 @dataclass
 class Choice(ParamType):
     name: str
-    values: np.ndarray
-    default: Any
+    values: list
+    default: any
 
     @classmethod
     def use(cls, name: str, values: list):
@@ -38,6 +38,9 @@ class Choice(ParamType):
         values : np.ndarray
             Parameter choices to try to run in the model
         """
+        # Import numpy
+        import numpy as np
+
         return cls(name, np.array(values), values[0])
 
 
@@ -47,7 +50,7 @@ class Boolean(ParamType):
     Boolean parameter type.
     """
     name: str
-    default: Any
+    default: any
 
     @classmethod
     def use(cls, name: str):
@@ -66,6 +69,9 @@ class Boolean(ParamType):
         """
         Returns the values of the parameter.
         """
+        # Import numpy
+        import numpy as np
+        
         return np.array([False, True])
 
 
@@ -78,7 +84,7 @@ class Int(ParamType):
     min_value: int
     max_value: int
     step: int
-    default: Any
+    default: any
 
     @classmethod
     def use(cls, name, min_value, max_value, step):
@@ -107,6 +113,9 @@ class Int(ParamType):
         """
         Returns the values of the parameter.
         """
+        # Import numpy
+        import numpy as np
+        
         return np.arange(
                 self.min_value,
                 self.max_value,
@@ -122,7 +131,7 @@ class Float(ParamType):
     min_value: float
     max_value: float
     step: float
-    default: Any
+    default: any
 
     @classmethod
     def use(cls, name, min_value, max_value, step):
@@ -153,6 +162,9 @@ class Float(ParamType):
         """
         Returns the values of the parameter.
         """
+        # Import numpy
+        import numpy as np
+        
         if self.step not in [1.0, 0.0]:
             # Returns an array of different step
             return np.arange(self.min_value,
@@ -164,7 +176,7 @@ class Float(ParamType):
 
 class HyperParameters:
     """
-    The class represents hyperparameters for tuning the model.
+    The class represents hyperparameters for tuning the Sequential model.
     """
     def Choice(self, name, values):
         """

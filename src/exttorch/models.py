@@ -1,22 +1,19 @@
 # Praise Ye The Lord
 
 # Import libraries
-from typing import Any, Dict, List, Tuple, Optional
-import numpy as np
-import pandas as pd
-import torch
-from tensorflow.keras.utils import Progbar  # type: ignore
-from torch import nn
-from torch.utils.data import DataLoader, Dataset, TensorDataset
-from .metrics import LossStorage, MetricStorage
-from .metrics import Metric, change_metric_first_position
-from .metrics import str_val_to_metric
-from .history import History
-from .__data_handle import DataHandler
+from torch import nn as __nn__
 
-class Sequential(nn.Module):
+class Sequential(__nn__.Module):
     def __init__(self,
-                layers: List) -> None:
+                layers: list) -> None:
+        """
+        This represents model algorithm for training and predicting data
+        
+        Parameters
+        -----------
+            layers : (list)
+                List of torch layers for training the model.
+        """
         super(Sequential, self).__init__()
         self.__device = None
         self.loss = None
@@ -28,24 +25,54 @@ class Sequential(nn.Module):
         from torch import nn as _nn
         self.__model = _nn.Sequential(*self.layers).double()
 
-    def forward(self, X) -> torch.Tensor:
+    def forward(self, X):
         return self.__model(X)
 
-    def add(self, layer: Any):
+    def add(self, layer: list):
         self.layers.append(layer)
 
     def fit(self,
-            X: np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame,
-            y: Optional[np.ndarray | pd.Series |pd.DataFrame] = None,
-            *, epochs: int=1,
-            generator: Optional[torch.Generator] = None,
-            shuffle: bool = False,
-            batch_size: Optional[int]=0,
-            validation_split: Optional[float] = None,
-            validation_data: Optional[List | Tuple | DataLoader |
-                                    Dataset | TensorDataset] = None,
-            verbose: int = 1,
+            X,
+            y = None,
+            *, epochs = 1,
+            generator = None,
+            shuffle = False,
+            batch_size = None,
+            validation_split = None,
+            validation_data = None,
+            verbose: str | int = 1,
             **kwargs):
+        
+        """
+        Fit the model to the data.
+        
+        Parameters
+        ----------
+            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+                Training feature for training the model.
+            y : (Optional[np.ndarray | pd.Series |pd.DataFrame]) None by default,
+                Training label for training the model.
+            epochs : (int) 1 by default,
+                Number of epochs to train the model.
+            generator : (Optional[torch.Generator]) None by default,
+                For generator reproducibility of data.
+            shuffle : (bool) False by default,
+                Shuffle the data.
+            batch_size : (Optional[int]) None by default,
+                Batch size for training the model.
+            validation_split : (Optional[float]) None by default,
+                Split the dataset into train and validation data using
+                validation_split as a test size and leaving the rest for
+                train size.
+            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset]) None by default,
+                Data for validating model performance
+            verbose : (str | int) 1 by default,
+                Handles the model progress bar.
+        """
+        # Import libraries
+        from .history import History
+        from ._data_handle import DataHandler
+
 
         # Initializer the History object
         history = History(self.metrics)
@@ -214,6 +241,8 @@ class Sequential(nn.Module):
         return history
 
     def predict_proba(self, X):
+        import torch
+        
         x = (X.double()
                 if type(X) == torch.Tensor
                 else torch.tensor(X).double()
@@ -223,7 +252,7 @@ class Sequential(nn.Module):
         return proba.cpu().detach().numpy()
 
     def predict(self, X):
-        from src.exttorch.__data_handle import SinglePredictionsFormat
+        from ._data_handle import SinglePredictionsFormat
         
         # Get the probabilities of x
         proba = self.predict_proba(X)
@@ -247,14 +276,46 @@ class Sequential(nn.Module):
 
     def __train(
             self,
-            X: np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame,
-            y: Optional[np.ndarray | pd.Series |pd.DataFrame] = None,
-            batch_size: Optional[int] = 1,
+            X,
+            y = None,
+            batch_size = None,
             shuffle: bool = False,
-            generator: Optional[torch.Generator] = None,
-            verbose: int = 1,
+            generator = None,
+            verbose: str | int = 1,
             **kwargs
-            ) -> Dict:
+            ) -> dict:
+        """
+        Trains the model.
+        
+        Parameters
+        ----------
+            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+                Training feature for training the model.
+            y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
+                Training label for training the model.
+            epochs : (int)
+                Number of epochs to train the model.
+            generator : (Optional[torch.Generator])
+                For generator reproducibility of data.
+            shuffle : (bool)
+                Shuffle the data.
+            batch_size : (Optional[int])
+                Batch size for training the model.
+            validation_split : (Optional[float])
+                Split the dataset into train and validation data using
+                validation_split as a test size and leaving the rest for
+                train size.
+            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset])
+                Data for validating model performance
+        """
+        # Import libraries
+        import torch
+        from tensorflow.keras.utils import Progbar  # type: ignore
+        from ._metrics_handles import LossStorage, MetricStorage
+        from ._metrics_handles import change_metric_first_position
+        from ._data_handle import DataHandler
+
+
         if self.optimizer is None or self.loss is None:
             raise TypeError("Compile the model with `model.compile` before " +
                             "fitting the model")
@@ -345,13 +406,38 @@ class Sequential(nn.Module):
         return {'loss': loss_storage.loss}
 
     def evaluate(self,
-            X: np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame,
-            y: Optional[np.ndarray | pd.Series |pd.DataFrame] = None,
-            batch_size: Optional[int] = 1,
+            X,
+            y = None,
+            batch_size = 1,
             shuffle: bool = False,
-            generator: Optional[torch.Generator] = None,
+            generator = None,
             verbose: int = 1,
             **kwargs):
+        """
+        Evaluate the model.
+        
+        Parameters
+        ----------
+            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+                Training feature for training the model.
+            y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
+                Training label for training the model.
+            epochs : (int)
+                Number of epochs to train the model.
+            generator : (Optional[torch.Generator])
+                For generator reproducibility of data.
+            shuffle : (bool)
+                Shuffle the data.
+            batch_size : (Optional[int])
+                Batch size for training the model.
+        """
+        # Import libraries
+        import torch
+        from ._metrics_handles import LossStorage, MetricStorage
+        from tensorflow.keras.utils import Progbar  # type: ignore
+        from ._metrics_handles import change_metric_first_position
+        from ._data_handle import DataHandler
+        
         metric_storage = None
 
         # Initializer the loss storage
@@ -428,15 +514,32 @@ class Sequential(nn.Module):
         return {'val_loss': loss_storage.loss}
 
     def compile(self,
-                optimizer: Any,
-                loss: Any,
-                metrics: Optional[List[Metric|str]] = None,
+                optimizer,
+                loss,
+                metrics = None,
                 device: str = 'cpu'
                 ):
+        """
+        Compile the model.
+        
+        Parameters
+        ----------
+            optimizer : (torch.optim)
+                For updating the model parameters.
+            loss : (torch.nn)
+                Measures model's performance.
+            metrics : (Optional[List[Metric|str]])
+                Measures model's performance.
+            device : (str)
+                For model acceleration.
+        """
+        # Import libraries
+        from ._metrics_handles import str_val_to_metric
+
         self.__model = self.__model.to(device)
         self.optimizer = optimizer
         self.loss = loss
-        self.metrics: Optional[List] = (
+        self.metrics = (
             str_val_to_metric(metrics)
             if metrics is not None else [])
         self.__device = device

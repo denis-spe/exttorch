@@ -7,7 +7,7 @@ sys.path.append(sys.path[0].strip("tests"))
 import unittest as ut
 from torch import nn
 from torch.optim import Adam
-from src.exttorch.model import Sequential
+from exttorch.models import Sequential
 from sklearn.datasets import load_iris, load_digits
 
 class TestSequential(ut.TestCase):

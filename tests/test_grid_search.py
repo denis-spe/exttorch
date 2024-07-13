@@ -10,7 +10,7 @@ from torch.optim import Adam
 from sklearn.datasets import load_wine
 from src.exttorch.tuner import GridSearchTune
 from src.exttorch.hyperparameter import HyperParameters
-from src.exttorch.model import Sequential
+from exttorch.models import Sequential
 
 
 def tuned_func(hp: HyperParameters):
