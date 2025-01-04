@@ -1,7 +1,7 @@
 # Praise Ye The Lord
 
 # Import libraries
-# import numpy as np
+import numpy as __np__
 from dataclasses import dataclass
 
 class ParamType:
@@ -23,7 +23,7 @@ class ParamType:
 @dataclass
 class Choice(ParamType):
     name: str
-    values: list
+    values: __np__.ndarray
     default: any
 
     @classmethod
@@ -134,7 +134,7 @@ class Float(ParamType):
     default: any
 
     @classmethod
-    def use(cls, name, min_value, max_value, step):
+    def use(cls, name: str, min_value: float, max_value: float, step: float):
         """
         Use the Float parameter
         
@@ -193,7 +193,7 @@ class HyperParameters:
             setattr(self, name, Choice.use(name, values))
         return self._get_attr(name).default
 
-    def Int(self, name: int, min_value: int, max_value: int, step=1):
+    def Int(self, name: str, min_value: int, max_value: int, step=1):
         """
         Represent int value for hyper tuning the models.
         
@@ -214,7 +214,7 @@ class HyperParameters:
             
         return self._get_attr(name).default
 
-    def Float(self, name, min_value, max_value, step=0.0):
+    def Float(self, name: str, min_value: float, max_value: float, step=0.0):
         """
         Represents the float value for hyper tuning the models.
         

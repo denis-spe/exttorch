@@ -10,7 +10,7 @@ from torch.optim import Adam
 from sklearn.datasets import load_wine
 from src.exttorch.tuner import RandomSearchTune
 from src.exttorch.hyperparameter import HyperParameters
-from exttorch.models import Sequential
+from src.exttorch.models import Sequential
 
 def tuned_func(hp: HyperParameters):
     features = hp.Int("features", 1, 512)

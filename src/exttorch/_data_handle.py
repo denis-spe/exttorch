@@ -1,18 +1,19 @@
 # Praise Ye The Lord
 
-# Import the libraries
-import torch
+from typing import Any, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Any, Optional
+# Import the libraries
+import torch
 
 
 class SinglePredictionsFormat:
     def __init__(self, prediction):
         self.__prediction = prediction
         self.__size = (prediction.size()
-                        if isinstance(prediction, torch.Tensor)
-                        else prediction.shape)
+                       if isinstance(prediction, torch.Tensor)
+                       else prediction.shape)
 
     def __single_format(self, prediction):
         if self.__size[1] > 1:
@@ -39,11 +40,12 @@ class SinglePredictionsFormat:
 
 class DataHandler:
     def __init__(self,
-                x: Any,
-                y: Any = None,
-                batch_size: Optional[int] = 1,
-                shuffle: bool = False,
-                generator: Optional[int] = None,
+                 x: Any,
+                 y: Any = None,
+                 batch_size: int = 1,
+                 val_batch_size: int = 1,
+                 shuffle: bool = False,
+                 generator: int | None = None,
                  **kwargs) -> None:
         if isinstance(x, pd.DataFrame):
             self.__x = x.to_numpy()
@@ -54,13 +56,14 @@ class DataHandler:
         else:
             self.__y = y.reshape(-1) if y is not None else None
         self.__batch_size = batch_size
+        self.__val_batch_size = val_batch_size
         self.__shuffle = shuffle
         self.__kwargs = kwargs
         self.__generator = generator
 
     def __split_data(self,
-                    data: Any,
-                    val_size: float):
+                     data: Any,
+                     val_size: float):
         """
         Split the data into train and validation data.
         """
@@ -89,50 +92,58 @@ class DataHandler:
             if val_size is not None:
                 train_data, val_data = self.__split_data(__Dataset_obj, val_size)
                 return (DataLoader(train_data,
-                                    shuffle=self.__shuffle,
-                                    generator=self.__generator,
+                                   batch_size=self.__batch_size,
+                                   shuffle=self.__shuffle,
+                                   generator=self.__generator,
                                    **self.__kwargs),
                         DataLoader(val_data,
-                                    generator=self.__generator,
-                                    **self.__kwargs))
+                                   batch_size=self.__val_batch_size,
+                                   generator=self.__generator,
+                                   **self.__kwargs))
 
             return DataLoader(__Dataset_obj,
-                            generator=self.__generator,
-                            **self.__kwargs)
+                              batch_size=self.__batch_size,
+                              generator=self.__generator,
+                              **self.__kwargs)
 
         elif isinstance(self.__x, Subset):
             return self.__x.dataset
 
         elif (isinstance(self.__x, Dataset) or
-            isinstance(self.__x, TensorDataset)):
+              isinstance(self.__x, TensorDataset)):
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
                 return (DataLoader(train_data,
-                                    shuffle=self.__shuffle,
-                                    generator=self.__generator,
+                                   batch_size=self.__batch_size,
+                                   shuffle=self.__shuffle,
+                                   generator=self.__generator,
                                    **self.__kwargs),
                         DataLoader(val_data,
-                                    generator=self.__generator,
-                                    **self.__kwargs))
+                                   batch_size=self.__val_batch_size,
+                                   generator=self.__generator,
+                                   **self.__kwargs))
 
             return DataLoader(self.__x,
-                            generator=self.__generator,
-                                **self.__kwargs)
+                              batch_size=self.__batch_size,
+                              generator=self.__generator,
+                              **self.__kwargs)
 
         elif isinstance(self.__x, DataLoader):
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
 
                 return (DataLoader(train_data,
-                                    shuffle=self.__shuffle,
-                                    generator=self.__generator,
+                                   batch_size=self.__batch_size,
+                                   shuffle=self.__shuffle,
+                                   generator=self.__generator,
                                    **self.__kwargs),
                         DataLoader(val_data,
-                                    generator=self.__generator,
+                                   batch_size=self.__val_batch_size,
+                                   generator=self.__generator,
                                    **self.__kwargs))
 
             return self.__x
         else:
-            raise ValueError("Invalid data, expected type of " +
-                            "`np.ndarray | DataLoader | Dataset | TensorDataset` for x " +
-                            "and np.ndarray for y")
+            raise ValueError(f"Invalid data of type {type(self.__x)} for x, expected type of " +
+                             "`np.ndarray | DataLoader | Dataset | TensorDataset` for x " +
+                             "and np.ndarray for y")

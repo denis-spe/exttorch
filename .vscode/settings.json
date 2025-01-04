@@ -9,6 +9,7 @@
         "hyparam",
         "intp",
         "jaccard",
+        "kagglehub",
         "ndarray",
         "optim",
         "proba",

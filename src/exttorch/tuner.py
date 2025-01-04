@@ -1,19 +1,19 @@
 # Praise Ye The Lord
 
 # Import libraries
-from ._sampler import GridSearchSampler as __grid__, RandomSearchSampler as __random__
-
+from src.exttorch._sampler import GridSearchSampler as __Grid__
+from src.exttorch._sampler import RandomSearchSampler as __Random__
 
 
 class BaseSearch:
     def __init__(self, tuned_func,
-                objective):
+                 objective):
         self.__tuned_func = tuned_func
         self.__obj = objective
         self.each_step_param = {}
         self.__reducing_metric = [
             "mse", "val_mse"
-            "MSE", "val_MSE",
+                   "MSE", "val_MSE",
             "mae", "val_MSE",
             "MAE", "val_MAE",
             "loss", "val_loss"]
@@ -24,7 +24,7 @@ class BaseSearch:
         self.__best_param = None
         self.__summary = {}
         self.__best_scores = None
-        
+
     class __Color:
         PURPLE = '\033[95m'
         CYAN = '\033[96m'
@@ -50,11 +50,11 @@ class BaseSearch:
     def summary(self):
         if len(self.__summary) == 0:
             raise TypeError(
-            "First search the parameters with `search` method")
+                "First search the parameters with `search` method")
 
         reversed_summery = (True
-                if (self.__obj not in self.__reducing_metric)
-                else False)
+                            if (self.__obj not in self.__reducing_metric)
+                            else False)
 
         # Sort the summary by objective.
         sorted_summary = dict(sorted(
@@ -87,7 +87,6 @@ class BaseSearch:
 
         print(f"{self.__Color.BOLD}Best Score{self.__Color.END}")
         print(f"{self.__obj}: {self.__best_score}")
-
 
     @property
     def best_params(self):
@@ -127,19 +126,17 @@ class BaseSearch:
         table = columnar(data, headers, no_borders=False, row_sep=" ")
         print(table)
 
-
-
     def __call__(self,
-                params,
-                iteration,
-                n_iterations,
-                X, y,
-                **kwargs: any) -> any:
-        
+                 params,
+                 iteration,
+                 n_iterations,
+                 X, y,
+                 **kwargs: any) -> any:
+
         # Import libraries
         import time
         from IPython.display import clear_output
-        
+
         # Initializer the tuned function containing the model.
         model = self.__tuned_func(params)
 
@@ -161,7 +158,6 @@ class BaseSearch:
         self.tune_summary_table(changed_params, self.__best_param)
         print()
 
-
         print(f"{self.__Color.UNDERLINE} {'-' * 40} {self.__Color.END}")
 
         # Fit the model
@@ -174,20 +170,20 @@ class BaseSearch:
         self.__handle_objective(model,
                                 history=history,
                                 iteration=iteration,
-                                params = changed_params,
+                                params=changed_params,
                                 )
-    
+
     @staticmethod
     def __change_param_type_to_dict(param_type):
         return {key: value.default
                 for key, value in param_type.__dict__.items()}
 
     def __handle_objective(self,
-                        model,
-                        history,
-                        iteration: int,
-                        params: dict
-                        ):
+                           model,
+                           history,
+                           iteration: int,
+                           params: dict
+                           ):
         """
         Handle objectives
 
@@ -204,12 +200,12 @@ class BaseSearch:
         model_hist = history.history
 
         # Get the mean from the metric result
-        result = np.mean(model_hist[self.__obj]).round(5)
+        result = round(np.mean(model_hist[self.__obj]), 5)
 
         self.__summary[f"Iteration {iteration + 1}"] = {
-                    self.__obj: result,
-                    "parameters": params
-                }
+            self.__obj: result,
+            "parameters": params
+        }
 
         if model.metrics is not None:
 
@@ -225,9 +221,9 @@ class BaseSearch:
                     self.__best_param = params
                     # Store all metrics.
                     self.__best_scores = {
-                            key: np.mean(value).round(5)
-                            for key, value in model_hist.items()
-                        }
+                        key: round(np.mean(value), 5)
+                        for key, value in model_hist.items()
+                    }
             else:
                 if self.__best_score == 0 and iteration == 0:
                     # Assign best_score to best result
@@ -241,9 +237,9 @@ class BaseSearch:
 
                     # Store all metrics.
                     self.__best_scores = {
-                            key: np.mean(value).round(5)
-                            for key, value in model_hist.items()
-                        }
+                        key: round(np.mean(value), 5)
+                        for key, value in model_hist.items()
+                    }
                 else:
                     if result < self.__best_score:
                         # Assign best_score to best result
@@ -257,25 +253,25 @@ class BaseSearch:
 
                         # Store all metrics.
                         self.__best_scores = {
-                            key: np.mean(value).round(5)
+                            key: round(np.mean(value), 5)
                             for key, value in model_hist.items()
                         }
         else:
             if self.__best_score == 0 and iteration == 0:
-                    # Assign best_score to best result
-                    # from the model.
-                    self.__best_score = result
-                    # Assign the best model to best_model variable.
-                    self.best_model = model
-                    # Assign the best model parameters to
-                    # best_params.
-                    self.__best_param = params
+                # Assign best_score to best result
+                # from the model.
+                self.__best_score = result
+                # Assign the best model to best_model variable.
+                self.best_model = model
+                # Assign the best model parameters to
+                # best_params.
+                self.__best_param = params
 
-                    # Store all metrics.
-                    self.__best_scores = {
-                            key: np.mean(value).round(5)
-                            for key, value in model_hist.items()
-                        }
+                # Store all metrics.
+                self.__best_scores = {
+                    key: round(np.mean(value), 5)
+                    for key, value in model_hist.items()
+                }
 
             if result < self.__best_score:
                 # Assign best_score to best result
@@ -289,19 +285,19 @@ class BaseSearch:
 
                 # Store all metrics.
                 self.__best_scores = {
-                            key: np.mean(value).round(5)
-                            for key, value in model_hist.items()
-                        }
+                    key: round(np.mean(value), 5)
+                    for key, value in model_hist.items()
+                }
         self.__prev_result = result
 
 
 class GridSearchTune(
     BaseSearch,
-    __grid__):
+    __Grid__):
     def __init__(self,
-                tuned_func,
-                objective = "loss"
-                ):
+                 tuned_func,
+                 objective="loss"
+                 ):
         """
         The class represents grid search tune algorithm
         used for hyperparameter tuning the Sequential model
@@ -311,26 +307,24 @@ class GridSearchTune(
         ----------
             tuned_func : (Callable)
                 A function containing a tuned sequential model.
-            random_state : (Optional[int])
-                For setting seed for reproducibility.
             objective : (str | Callable)
                 Metric name or metric object for getting the best parameters.
         """
         # Import the HyperParameters
         from .hyperparameter import HyperParameters
-        
+
         BaseSearch.__init__(self,
-                        tuned_func=tuned_func,
-                        objective=objective
-                        )
-        __grid__.__init__(self)
+                            tuned_func=tuned_func,
+                            objective=objective
+                            )
+        __Grid__.__init__(self)
         self._params = HyperParameters()
         self.__index = 0
 
-    def search(self, 
-            X,
-            y = None,
-            **kwargs):
+    def search(self,
+               X,
+               y=None,
+               **kwargs):
         """
         Searches all possible combination of parameters
         from the tuned function for best parameters.
@@ -341,35 +335,21 @@ class GridSearchTune(
                 Training feature for training the model.
             y : (Optional[np.ndarray | pd.Series |pd.DataFrame]) None by default,
                 Training label for training the model.
-            epochs : (int) 1 by default,
-                Number of epochs to train the model.
-            generator : (Optional[torch.Generator]) None by default,
-                For generator reproducibility of data.
-            shuffle : (bool) False by default,
-                Shuffle the data.
-            batch_size : (Optional[int]) None by default,
-                Batch size for training the model.
-            validation_split : (Optional[float]) None by default,
-                Split the dataset into train and validation data using
-                validation_split as a test size and leaving the rest for
-                train size.
-            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset]) None by default,
-                Data for validating model performance
-            verbose : (str | int) 1 by default,
-                Handles the model progress bar.
+            kwargs:
+                Sequential model fit method parameters.
 
         Examples
         --------
-        >>>
         >>> from sklearn.datasets import load_iris
         >>> from torch import nn
         >>> from torch.optim import SGD
-        >>> from exttorch.model import Sequential
+        >>> from exttorch.models import Sequential
         >>> from exttorch.hyperparameter import HyperParameters
         >>> from exttorch.tuner import RandomSearchTune
         >>>
         >>> i_x, i_y = load_iris(return_X_y=True)
         >>> def tuned_model(hp):
+        >>>     # Define hyperparameters
         >>>     features = hp.Choice('features', [128, 256, 512, 1062])
         >>>     h_features = hp.Int('h_features', 8, 1062, step=16)
         >>>     lr = hp.Float('lr', 0.0001, 0.001)
@@ -393,17 +373,10 @@ class GridSearchTune(
         >>>     return model
         >>>
         >>> # Initialize the random search
-        >>> random_search = RandomSearchTune(
-        >>>                     tuned_model,
-        >>>                     objective = 'val_loss'
-        >>>                 )
+        >>> random_search = RandomSearchTune(tuned_model, objective = 'val_loss')
         >>>
         >>> # Search the parameters
-        >>> random_search.search(
-        >>>                 i_x, i_y,
-        >>>                 epochs=5,
-        >>>                 validation_data = (i_x, i_y)
-        >>>              )
+        >>> random_search.search(i_x, i_y, epochs=5, validation_data = (i_x, i_y))
         """
 
         # Initialize the iterations
@@ -418,9 +391,9 @@ class GridSearchTune(
             if index == 0:
                 # Fit and evaluate the model
                 self(self._params,
-                    iteration=iteration,
-                    n_iterations=self.__index,
-                    X=X, y=y, **kwargs)
+                     iteration=iteration,
+                     n_iterations=self.__index,
+                     X=X, y=y, **kwargs)
 
                 # Update the parameters
                 self._update_params()
@@ -433,9 +406,9 @@ class GridSearchTune(
             elif index != 0:
                 # Fit and evaluate the model
                 self(self._params,
-                    iteration=iteration,
-                    n_iterations=self.__index,
-                    X=X, y=y, **kwargs)
+                     iteration=iteration,
+                     n_iterations=self.__index,
+                     X=X, y=y, **kwargs)
 
                 # Update the parameters
                 self._update_params()
@@ -447,14 +420,14 @@ class GridSearchTune(
 
 class RandomSearchTune(
     BaseSearch,
-    __random__
-    ):
+    __Random__
+):
     def __init__(self,
-                tuned_func,
-                random_state = None,
-                objective = "loss",
-                iterations = 5
-            ):
+                 tuned_func,
+                 random_state=None,
+                 objective="loss",
+                 iterations=5
+                 ):
         """
         The class represents random search tune algorithm
         used for hyperparameter tuning the Sequential model
@@ -472,18 +445,17 @@ class RandomSearchTune(
                 Number of iterations for tuning the parameters.
         """
         BaseSearch.__init__(self,
-                        tuned_func=tuned_func,
-                        objective=objective
-                        )
-        __random__.__init__(self, random_state=random_state)
+                            tuned_func=tuned_func,
+                            objective=objective
+                            )
+        __Random__.__init__(self, random_state=random_state)
 
         self.__iterations = iterations
 
-
     def search(self,
-                X,
-                y = None,
-                **fit_kwargs):
+               X,
+               y=None,
+               **fit_kwargs):
         """
         Searches random combination of parameters
         from the tuned function for the best parameters.
@@ -494,30 +466,16 @@ class RandomSearchTune(
                 Training feature for training the model.
             y : (Optional[np.ndarray | pd.Series |pd.DataFrame]) None by default,
                 Training label for training the model.
-            epochs : (int) 1 by default,
-                Number of epochs to train the model.
-            generator : (Optional[torch.Generator]) None by default,
-                For generator reproducibility of data.
-            shuffle : (bool) False by default,
-                Shuffle the data.
-            batch_size : (Optional[int]) None by default,
-                Batch size for training the model.
-            validation_split : (Optional[float]) None by default,
-                Split the dataset into train and validation data using
-                validation_split as a test size and leaving the rest for
-                train size.
-            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset]) None by default,
-                Data for validating model performance
-            verbose : (str | int) 1 by default,
-                Handles the model progress bar.
+            fit_kwargs:
+                Sequential fit methods parameters
         """
 
         # Loop through the number of iterations
         for iteration in range(self.__iterations):
             # Fit and evaluate the model
             self(self._params,
-                iteration=iteration,
-                n_iterations=self.__iterations,
+                 iteration=iteration,
+                 n_iterations=self.__iterations,
                  X=X, y=y, **fit_kwargs)
 
             # Update the parameters

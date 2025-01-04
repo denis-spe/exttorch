@@ -6,8 +6,8 @@ from torch.nn import functional as f
 from dataclasses import dataclass
 from typing import Callable, Any, Dict
 import numpy as np
-from ._data_handle import SinglePredictionsFormat
-from .metrics import (
+from src.exttorch._data_handle import SinglePredictionsFormat
+from src.exttorch.metrics import (
     Accuracy, MeanSquaredError, R2, MeanAbsoluteError, Recall, Precision,
     Jaccard, MatthewsCorrcoef, Auc, ZeroOneLoss, TopKAccuracy
     )
@@ -76,10 +76,11 @@ class LossStorage:
 class MetricStorage:
     def __init__(self,
                 metrics: list,
-                batch_size: list = None):
+                batch_size: int = None):
         self.__labels = []
         self.__metrics = metrics
         self.__metric_dict = {str(metric): [] for metric in metrics}
+        self.__predicts = []
         self.__batch_size = batch_size
         self.__metric_name_proba = ['Auc', 'TopKAccuracy', 'auc', 'tka', 'TKA']
 
@@ -104,56 +105,110 @@ class MetricStorage:
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
 
-        if self.__batch_size is not None and self.__batch_size > 1:
-            # Change batched prediction to one single metric e.g 0.983.
-            # Loop over the metrics
-            for metric in self.__metrics:
-                self.__metric_dict[str(metric)].append(
-                    MetricComputation(
-                        metric,
-                        label,
-                        self.__y_prediction_or_proba(metric, predict, formatted_prediction))
-                    .compute_metric())
-        else:
-            # Add single prediction
-            # Loop over the metrics and metric names
-            for metric in self.__metrics:
-                self.__metric_dict[str(metric)].append(
-                    self.__y_prediction_or_proba(metric, predict[0], formatted_prediction)
-                    )
-            # Save labels in the list
-            self.__labels.append(label)
+        self.__predicts.append(formatted_prediction)
+        self.__labels.append(label)
+
+        # if (self.__batch_size is not None and self.__batch_size > 1) or len(label) > 1 :
+        #
+        #     # Change batched prediction to one single metric e.g 0.983.
+        #     # Loop over the metrics
+        #     for metric in self.__metrics:
+        #         self.__metric_dict[str(metric)].append(
+        #                 self.__y_prediction_or_proba(metric, predict, formatted_prediction)
+        #         )
+        #
+        #         # Save labels in the list
+        #         self.__labels.append(label)
+        #
+        #     # for metric in self.__metrics:
+        #     #     self.__metric_dict[str(metric)].append(
+        #     #         MetricComputation(
+        #     #             metric,
+        #     #             label,
+        #     #             self.__y_prediction_or_proba(metric, predict, formatted_prediction))
+        #     #         .compute_metric())
+        # else:
+        #     # Add single prediction
+        #     # Loop over the metrics and metric names
+        #     for metric in self.__metrics:
+        #         self.__metric_dict[str(metric)].append(
+        #             self.__y_prediction_or_proba(metric, predict[0], formatted_prediction)
+        #             )
+        #     # Save labels in the list
+        #     self.__labels.append(label)
 
     def metrics(self, y: Any = None):
-        if self.__batch_size is not None and self.__batch_size > 1:
-            # Return a new dictionary with list mean
-            return {
-                key: round(torch.tensor(value).mean().item(), 4)
-                for key, value in self.__metric_dict.items()
-            }
-        _metric = {str(metric): metric  for metric in self.__metrics}
         metrics_dict = {}
+        _metric = {str(metric): metric  for metric in self.__metrics}
 
-        for key, value in self.__metric_dict.items():
-            values = torch.tensor(
-                self.__handle_values_from_metric_dict(value),
-                dtype=torch.float64
-                )
-            y = y if y is not None else torch.tensor(self.__labels)
-            metric_comp = MetricComputation(
-                            _metric[key],
-                            y, values
-                        ).compute_metric()
+        if y is None:
+            y = self.__labels
 
-            metrics_dict[key] = round(
-                (metric_comp.item()
-                if type(metric_comp) != float
-                else metric_comp), 4)
+        # Predictions
+        predicts = self.__predicts
+
+        # Check if the label greater than one.
+        if len(y) > 1:
+            # Creating a dictionary to store result metric_comp product by batching of data
+            metric_dict = {
+                key: []
+                for key in _metric.keys()
+            }
+
+            # Grouping predict with y in order loop them
+            for predict, label in zip(predicts, y):
+                # Loop over the metric name as key and metric class as value.
+                for key, value in _metric.items():
+                    metric_comp = MetricComputation(
+                                        value,
+                                        label, predict
+                                    ).compute_metric()
+                    metric_dict[key].append(metric_comp)
+
+            # Alter metric_dict values (list) to mean
+            altered_list_to_mean_dict = {
+                k: np.mean(v).round(4)
+                for k, v in metric_dict.items()
+            }
+
+            # Add (update) new altered_list_to_mean_dict dictionary to metrics_dict dictionary
+            metrics_dict.update(altered_list_to_mean_dict)
+
+        # if self.__batch_size is not None and self.__batch_size > 1:
+        #     # Return a new dictionary with list mean
+        #     return {
+        #         key: round(torch.tensor(value).mean().item(), 4)
+        #         for key, value in self.__metric_dict.items()
+        #     }
+
+        # metrics_dict = {}
+        #
+        # for key, value in self.__metric_dict.items():
+        #     values = torch.tensor(
+        #         self.__handle_values_from_metric_dict(value),
+        #         dtype=torch.float64
+        #         )
+        #
+        #     # y = y if y is not None else torch.tensor(self.__labels)
+        #     if y is None:
+        #         y = torch.tensor(self.__labels)
+        #
+        #     metric_comp = MetricComputation(
+        #                     _metric[key],
+        #                     y, values
+        #                 ).compute_metric()
+        #
+        #     metrics_dict[key] = round(
+        #         (metric_comp.item()
+        #         if type(metric_comp) != float
+        #         else metric_comp), 4)
 
         return metrics_dict
     @staticmethod
     def __handle_values_from_metric_dict(value):
-        # try:
+        if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
+            return value[0].clone().detach().cpu().numpy().astype(np.float64)
+        
         return np.array([
                 val.clone().detach().cpu().numpy()
                 if type(val) == torch.Tensor
