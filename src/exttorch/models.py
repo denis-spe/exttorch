@@ -367,6 +367,7 @@ class Sequential(__nn__.Module):
 
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
+            feature, label = feature.to(self.__device), label.to(self.__device)
             # Zero the gradient.
             self.optimizer.zero_grad()
 
