@@ -37,8 +37,8 @@ class MetricComputation:
     def compute_metric(self):
         if len(self.y.shape) >= 1:
             return self.metric(
-                self.prediction,
-                self.y)
+                self.prediction.cpu().numpy() if type(self.prediction) == torch.Tensor else self.prediction,
+                self.y.cpu().numpy() if type(self.y) == torch.Tensor else self.y)
 
         # Change to cpu if it's a Tensor
         predictions = (self.prediction.cpu().numpy()
