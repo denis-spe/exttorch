@@ -1,8 +1,8 @@
 # Praise Ye The Lord
 
 # Import libraries
-from src.exttorch._sampler import GridSearchSampler as __Grid__
-from src.exttorch._sampler import RandomSearchSampler as __Random__
+from ._sampler import GridSearchSampler as __Grid__
+from ._sampler import RandomSearchSampler as __Random__
 
 
 class BaseSearch:
