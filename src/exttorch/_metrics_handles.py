@@ -6,8 +6,8 @@ from torch.nn import functional as f
 from dataclasses import dataclass
 from typing import Callable, Any, Dict
 import numpy as np
-from src.exttorch._data_handle import SinglePredictionsFormat
-from src.exttorch.metrics import (
+from ._data_handle import SinglePredictionsFormat
+from .metrics import (
     Accuracy, MeanSquaredError, R2, MeanAbsoluteError, Recall, Precision,
     Jaccard, MatthewsCorrcoef, Auc, ZeroOneLoss, TopKAccuracy
     )
