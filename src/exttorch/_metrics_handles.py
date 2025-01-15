@@ -6,11 +6,11 @@ from torch.nn import functional as f
 from dataclasses import dataclass
 from typing import Callable, Any, Dict
 import numpy as np
-from ._data_handle import SinglePredictionsFormat
-from .metrics import (
+from exttorch._data_handle import SinglePredictionsFormat
+from exttorch.metrics import (
     Accuracy, MeanSquaredError, R2, MeanAbsoluteError, Recall, Precision,
     Jaccard, MatthewsCorrcoef, Auc, ZeroOneLoss, TopKAccuracy
-    )
+)
 
 
 class Logs:
@@ -26,8 +26,8 @@ class Logs:
             "label": [],
             "loss": []
         }
-        
-        
+
+
 @dataclass
 class MetricComputation:
     metric: Callable
@@ -42,15 +42,17 @@ class MetricComputation:
 
         # Change to cpu if it's a Tensor
         predictions = (self.prediction.cpu().numpy()
-            if isinstance(self.prediction, torch.Tensor)
-            else self.prediction)
+                       if isinstance(self.prediction, torch.Tensor)
+                       else self.prediction)
 
         return self.metric(predictions, torch.tensor([self.y]).numpy())
-    
+
+
 class LossStorage:
     """
     Class for storing losses
     """
+
     def __init__(self):
         self.__loss = []
 
@@ -75,8 +77,8 @@ class LossStorage:
 
 class MetricStorage:
     def __init__(self,
-                metrics: list,
-                batch_size: int = None):
+                 metrics: list,
+                 batch_size: int = None):
         self.__labels = []
         self.__metrics = metrics
         self.__metric_dict = {str(metric): [] for metric in metrics}
@@ -93,11 +95,10 @@ class MetricStorage:
             else predict.detach().cpu().numpy()
         )
 
-
     def add_metric(self,
-                predict,
-                label,
-                ) -> None:
+                   predict,
+                   label,
+                   ) -> None:
 
         # Initializer the SinglePredictionsFormat object.
         single_format_prediction = SinglePredictionsFormat(predict)
@@ -139,7 +140,7 @@ class MetricStorage:
 
     def metrics(self, y: Any = None):
         metrics_dict = {}
-        _metric = {str(metric): metric  for metric in self.__metrics}
+        _metric = {str(metric): metric for metric in self.__metrics}
 
         if y is None:
             y = self.__labels
@@ -160,9 +161,9 @@ class MetricStorage:
                 # Loop over the metric name as key and metric class as value.
                 for key, value in _metric.items():
                     metric_comp = MetricComputation(
-                                        value,
-                                        label, predict
-                                    ).compute_metric()
+                        value,
+                        label, predict
+                    ).compute_metric()
                     metric_dict[key].append(metric_comp)
 
             # Alter metric_dict values (list) to mean
@@ -204,16 +205,18 @@ class MetricStorage:
         #         else metric_comp), 4)
 
         return metrics_dict
+
     @staticmethod
     def __handle_values_from_metric_dict(value):
         if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
             return value[0].clone().detach().cpu().numpy().astype(np.float64)
-        
+
         return np.array([
-                val.clone().detach().cpu().numpy()
-                if type(val) == torch.Tensor
-                else val
-                for val in value], dtype=np.float64)
+            val.clone().detach().cpu().numpy()
+            if type(val) == torch.Tensor
+            else val
+            for val in value], dtype=np.float64)
+
 
 def change_metric_first_position(measurements) -> Dict:
     keys = list(measurements.keys())
@@ -265,8 +268,8 @@ def str_val_to_metric(metric_list: list):
 def handle_probability(proba):
     if proba.shape[1] > 2:
         _proba = (proba.clone().detach()
-                    if type(proba) != np.ndarray
-                    else torch.tensor(proba)
-                    )
+                  if type(proba) != np.ndarray
+                  else torch.tensor(proba)
+                  )
         return f.softmax(_proba, dim=-1)
     return proba[:, 0]

@@ -1,19 +1,19 @@
 # Praise Ye The Lord
 
 # Import libraries
-from ._sampler import GridSearchSampler as __Grid__
-from ._sampler import RandomSearchSampler as __Random__
+from exttorch._sampler import GridSearchSampler as __Grid__
+from exttorch._sampler import RandomSearchSampler as __Random__
 
 
 class BaseSearch:
     def __init__(self, tuned_func,
-                 objective):
+                objective):
         self.__tuned_func = tuned_func
         self.__obj = objective
         self.each_step_param = {}
         self.__reducing_metric = [
             "mse", "val_mse"
-                   "MSE", "val_MSE",
+            "MSE", "val_MSE",
             "mae", "val_MSE",
             "MAE", "val_MAE",
             "loss", "val_loss"]
@@ -127,11 +127,11 @@ class BaseSearch:
         print(table)
 
     def __call__(self,
-                 params,
-                 iteration,
-                 n_iterations,
-                 X, y,
-                 **kwargs: any) -> any:
+                params,
+                iteration,
+                n_iterations,
+                X, y,
+                **kwargs: any) -> any:
 
         # Import libraries
         import time
@@ -179,11 +179,11 @@ class BaseSearch:
                 for key, value in param_type.__dict__.items()}
 
     def __handle_objective(self,
-                           model,
-                           history,
-                           iteration: int,
-                           params: dict
-                           ):
+                        model,
+                        history,
+                        iteration: int,
+                        params: dict
+                        ):
         """
         Handle objectives
 
@@ -322,9 +322,9 @@ class GridSearchTune(
         self.__index = 0
 
     def search(self,
-               X,
-               y=None,
-               **kwargs):
+            X,
+            y=None,
+            **kwargs):
         """
         Searches all possible combination of parameters
         from the tuned function for best parameters.
@@ -340,6 +340,7 @@ class GridSearchTune(
 
         Examples
         --------
+        >>> import torch
         >>> from sklearn.datasets import load_iris
         >>> from torch import nn
         >>> from torch.optim import SGD
@@ -347,37 +348,50 @@ class GridSearchTune(
         >>> from exttorch.hyperparameter import HyperParameters
         >>> from exttorch.tuner import RandomSearchTune
         >>>
+        >>> # Seed reproducible
+        >>> torch.manual_seed(42)
+        >>>
         >>> i_x, i_y = load_iris(return_X_y=True)
         >>> def tuned_model(hp):
-        >>>     # Define hyperparameters
-        >>>     features = hp.Choice('features', [128, 256, 512, 1062])
-        >>>     h_features = hp.Int('h_features', 8, 1062, step=16)
-        >>>     lr = hp.Float('lr', 0.0001, 0.001)
-        >>>
-        >>>     if hp.Boolean('deep_learning'):
-        >>>         model = Sequential([
-        >>>         nn.Linear(30, features),
-        >>>         nn.Linear(features, h_features),
-        >>>         nn.Linear(h_features, 2)])
-        >>>     else:
-        >>>         model = Sequential([
-        >>>         nn.Linear(30, features),
-        >>>         nn.Linear(features, 2)])
-        >>>
-        >>>     model.compile(
-        >>>         loss = nn.BCEWithLogitsLoss(),
-        >>>         optimizer = SGD(model.parameters(), lr=lr),
-        >>>         metrics = ["accuracy", "recall"]
-        >>>     )
-        >>>
-        >>>     return model
+        ...     features = hp.Choice('features', [128, 256, 512, 1062])
+        ...     h_features = hp.Int('h_features', 8, 1062, step=16)
+        ...     lr = hp.Float('lr', 0.0001, 0.001)
+        ...
+        ...     if hp.Boolean('deep_learning'):
+        ...         model = Sequential([
+        ...         nn.Linear(4, features),
+        ...         nn.Linear(features, h_features),
+        ...         nn.Linear(h_features, 3)])
+        ...     else:
+        ...         model = Sequential([
+        ...         nn.Linear(4, features),
+        ...         nn.Linear(features, 3)])
+        ...
+        ...     model.compile(
+        ...         loss = nn.CrossEntropyLoss(),
+        ...         optimizer = SGD(model.parameters(), lr=lr),
+        ...         metrics = ["accuracy"]
+        ...     )
+        ...
+        ...     return model
         >>>
         >>> # Initialize the random search
-        >>> random_search = RandomSearchTune(tuned_model, objective = 'val_loss')
+        >>> random_search = RandomSearchTune(
+        ...    tuned_model,
+        ...    objective = 'val_loss',
+        ...    random_state=42,
+        ... )
         >>>
         >>> # Search the parameters
-        >>> random_search.search(i_x, i_y, epochs=5, validation_data = (i_x, i_y))
+        >>> random_search.search(i_x, i_y, epochs=5, validation_data = (i_x, i_y)) # doctest: +ELLIPSIS
+        >>>
+        >>> # Best score for random_search
+        >>> random_search.best_score
+        Best Score
+        val_loss: 1.05704
+
         """
+
 
         # Initialize the iterations
         iteration = 0
@@ -391,9 +405,9 @@ class GridSearchTune(
             if index == 0:
                 # Fit and evaluate the model
                 self(self._params,
-                     iteration=iteration,
-                     n_iterations=self.__index,
-                     X=X, y=y, **kwargs)
+                    iteration=iteration,
+                    n_iterations=self.__index,
+                    X=X, y=y, **kwargs)
 
                 # Update the parameters
                 self._update_params()
@@ -453,9 +467,9 @@ class RandomSearchTune(
         self.__iterations = iterations
 
     def search(self,
-               X,
-               y=None,
-               **fit_kwargs):
+            X,
+            y=None,
+            **fit_kwargs):
         """
         Searches random combination of parameters
         from the tuned function for the best parameters.
@@ -474,9 +488,9 @@ class RandomSearchTune(
         for iteration in range(self.__iterations):
             # Fit and evaluate the model
             self(self._params,
-                 iteration=iteration,
-                 n_iterations=self.__iterations,
-                 X=X, y=y, **fit_kwargs)
+                iteration=iteration,
+                n_iterations=self.__iterations,
+                X=X, y=y, **fit_kwargs)
 
             # Update the parameters
             self._update_params()
