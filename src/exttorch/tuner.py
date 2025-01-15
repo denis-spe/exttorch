@@ -349,7 +349,8 @@ class GridSearchTune(
         >>> from exttorch.tuner import RandomSearchTune
         >>>
         >>> # Seed reproducible
-        >>> torch.manual_seed(42)
+        >>> torch.manual_seed(42) # doctest: +ELLIPSIS
+        <torch._C.Generator object at ...>
         >>>
         >>> i_x, i_y = load_iris(return_X_y=True)
         >>> def tuned_model(hp):
@@ -383,13 +384,12 @@ class GridSearchTune(
         ... )
         >>>
         >>> # Search the parameters
-        >>> random_search.search(i_x, i_y, epochs=5, validation_data = (i_x, i_y)) # doctest: +ELLIPSIS
+        >>> random_search.search(i_x, i_y, epochs=5, validation_data = (i_x, i_y))
         >>>
         >>> # Best score for random_search
         >>> random_search.best_score
-        Best Score
+        \033[1mBest Score\033[0m
         val_loss: 1.05704
-
         """
 
 
