@@ -1,21 +1,13 @@
 {
     "cSpell.words": [
-        "arange",
-        "argmax",
         "Corrcoef",
-        "DARKCYAN",
-        "evalate",
         "exttorch",
-        "hyparam",
         "intp",
-        "jaccard",
-        "kagglehub",
+        "Jaccard",
         "ndarray",
-        "optim",
         "proba",
         "progbar",
-        "setuptools",
-        "softmax"
+        "pycache"
     ],
     "python.testing.unittestArgs": [
         "-v",

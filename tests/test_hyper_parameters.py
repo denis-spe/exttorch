@@ -2,6 +2,7 @@
 
 # Import libraries
 import sys
+
 sys.path.append(sys.path[0].strip("tests"))
 
 import unittest as ut
@@ -19,8 +20,8 @@ class TestHyperParameter(ut.TestCase):
         """
         Test the choice parameter
         """
-        # Add feature choice 
-        self.hp.Choice('features', [128, 256, 512, 1062])
+        # Add feature choice
+        self.hp.Choice("features", [128, 256, 512, 1062])
 
         # Test if the features is equal to 128
         self.assertEqual(self.hp.features.default, 128)

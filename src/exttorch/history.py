@@ -8,6 +8,7 @@ class History:
     """
     Represents model history.
     """
+
     def __init__(self, metrics: Any) -> None:
         """
         Represents model history.
@@ -17,30 +18,19 @@ class History:
         metrics : Any
             List of metrics
         """
-        
+
         # Get the metric names
-        names = [
-        metric
-        if type(metric) == str
-        else str(metric)
-        for metric in metrics
-        ]
+        names = [metric if type(metric) == str else str(metric) for metric in metrics]
 
         # Create the history
-        self.__history = {
-            name: []
-            for name in names
-        }
+        self.__history = {name: [] for name in names}
 
         # Create the validation history
-        self.__history.update({
-            'val_' + name: []
-            for name in names
-        })
+        self.__history.update({"val_" + name: [] for name in names})
 
         # Create the loss list in history
-        self.__history['loss'] = []
-        self.__history['val_loss'] = []
+        self.__history["loss"] = []
+        self.__history["val_loss"] = []
 
         self.__metrics = metrics
 
@@ -49,11 +39,7 @@ class History:
         """
         Returns the model history
         """
-        return {
-            key: value
-            for key, value in self.__history.items()
-            if len(value) > 0
-        }
+        return {key: value for key, value in self.__history.items() if len(value) > 0}
 
     def add_history(self, metric: Dict):
         # Loop over the key and value from metric

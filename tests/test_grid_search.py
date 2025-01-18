@@ -2,6 +2,7 @@
 
 # Import libraries
 import sys
+
 sys.path.append(sys.path[0].strip("tests"))
 
 import unittest
@@ -16,16 +17,15 @@ from src.exttorch.models import Sequential
 def tuned_func(hp: HyperParameters):
     features = hp.Int("features", 1, 3)
 
-    model = Sequential([
-        nn.Linear(13, features),
-        nn.ReLU(),
-        nn.Linear(features, 3),
-    ])
-
-    model.compile(
-        loss=nn.CrossEntropyLoss(),
-        optimizer=Adam(model.parameters())
+    model = Sequential(
+        [
+            nn.Linear(13, features),
+            nn.ReLU(),
+            nn.Linear(features, 3),
+        ]
     )
+
+    model.compile(loss=nn.CrossEntropyLoss(), optimizer=Adam(model.parameters()))
 
     return model
 

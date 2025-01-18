@@ -7,15 +7,52 @@ from typing import List as __List__
 
 
 class Sequential(__nn__.Module):
-    def __init__(self,
-                 layers: list = None) -> None:
+    def __init__(self, layers: list = None) -> None:
         """
         This represents model algorithm for training and predicting data
-        
+
         Parameters
         -----------
             layers : (list)
                 List of torch layers for training the model.
+
+        Example
+        --------
+        >>> # Import libraries
+        >>> import torch
+        >>> from exttorch.models import Sequential
+        >>> from torch import nn
+        >>> from sklearn.datasets import load_iris
+        >>>
+        >>> # Load the iris dataset
+        >>> x, y = load_iris(return_X_y=True)
+        >>>
+        >>> # Create the model
+        >>> model = Sequential([
+        ...    nn.Linear(4, 8),
+        ...    nn.ReLU(),
+        ...    nn.Linear(8, 3),
+        ...    nn.Softmax(dim=1)
+        ... ])
+        >>>
+        >>> # Compile the model
+        >>> model.compile(
+        ...    optimizer=torch.optim.Adam(model.parameters()),
+        ...    loss=torch.nn.CrossEntropyLoss(),
+        ...    metrics=['accuracy']
+        ... )
+        >>>
+        >>> # Fit the model
+        >>> history = model.fit(
+        ...     x, y,
+        ...     epochs=5,
+        ...     verbose=None,
+        ...     random_seed=42
+        ... )
+        >>>
+        >>> # Evaluate the model
+        >>> model.evaluate(x, y, verbose=None) # doctest: +ELLIPSIS
+        {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
         self.__device = None
@@ -26,6 +63,7 @@ class Sequential(__nn__.Module):
 
         # Import and use the Sequential object
         from torch import nn as _nn
+
         self.__model_list = _nn.ModuleList(self.layers)
 
     def forward(self, X):
@@ -39,22 +77,24 @@ class Sequential(__nn__.Module):
     def add(self, layer: __nn__.Module):
         self.__model_list.append(layer)
 
-    def fit(self,
-            X,
-            y=None,
-            *, epochs: int = 1,
-            generator=None,
-            shuffle: bool = False,
-            batch_size: int = 1,
-            val_batch_size: int = 1,
-            validation_split: float = None,
-            validation_data=None,
-            verbose: str | int | None = 1,
-            **kwargs):
-
+    def fit(
+        self,
+        X,
+        y=None,
+        *,
+        epochs: int = 1,
+        random_seed=None,
+        shuffle: bool = False,
+        batch_size: int = 1,
+        val_batch_size: int = 1,
+        validation_split: float = None,
+        validation_data=None,
+        verbose: str | int | None = 1,
+        **kwargs,
+    ):
         """
         Fit the model to the data.
-        
+
         Parameters
         ----------
             X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
@@ -83,9 +123,14 @@ class Sequential(__nn__.Module):
         # Import libraries
         from .history import History
         from ._data_handle import DataHandler
+        import torch
 
         # Initializer the History object
         history = History(self.metrics)
+
+        if type(random_seed) == int:
+            # Set the random seed
+            torch.manual_seed(random_seed)
 
         if validation_split is not None and validation_data is None:
             for epoch in range(epochs):
@@ -94,12 +139,16 @@ class Sequential(__nn__.Module):
                     print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
-                data = DataHandler(X, y,
-                                   batch_size=batch_size,
-                                   val_batch_size=val_batch_size,
-                                   shuffle=shuffle,
-                                   generator=generator,
-                                   **kwargs)
+                data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **kwargs,
+                )
 
                 # Get the train and validation sample
                 train_sample, val_sample = data(validation_split)
@@ -110,9 +159,9 @@ class Sequential(__nn__.Module):
                     y=None,
                     batch_size=batch_size,
                     shuffle=shuffle,
-                    generator=generator,
+                    random_seed=random_seed,
                     verbose=verbose,
-                    **kwargs
+                    **kwargs,
                 )
 
                 # Add the train metric to the history
@@ -125,9 +174,9 @@ class Sequential(__nn__.Module):
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
-                    generator=generator,
+                    random_seed=random_seed,
                     verbose=None,
-                    **kwargs
+                    **kwargs,
                 )
 
                 # Make a copy from train_metric dictionary.
@@ -145,17 +194,21 @@ class Sequential(__nn__.Module):
 
         elif validation_data is not None:
             for epoch in range(epochs):
-                if verbose != 0:
+                if verbose is not None:
                     # Print the epochs
                     print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
-                train_data = DataHandler(X, y,
-                                         batch_size=batch_size,
-                                         val_batch_size=val_batch_size,
-                                         shuffle=shuffle,
-                                         generator=generator,
-                                         **kwargs)()
+                train_data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **kwargs,
+                )()
 
                 # Train the train sample
                 train_metric = self.__train(
@@ -163,31 +216,38 @@ class Sequential(__nn__.Module):
                     y=None,
                     batch_size=batch_size,
                     shuffle=shuffle,
-                    generator=generator,
+                    random_seed=random_seed,
                     verbose=verbose,
-                    **kwargs
+                    **kwargs,
                 )
 
-                if ((isinstance(validation_data, list) or
-                     isinstance(validation_data, tuple))
-                        and len(validation_data) == 2):
+                if (
+                    isinstance(validation_data, list)
+                    or isinstance(validation_data, tuple)
+                ) and len(validation_data) == 2:
                     # Initializer the data
                     val_sample = DataHandler(
-                        validation_data[0], validation_data[1],
+                        validation_data[0],
+                        validation_data[1],
                         batch_size=batch_size,
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
-                        generator=generator,
-                        **kwargs)()
+                        random_seed=random_seed,
+                        device=self.__device,
+                        **kwargs,
+                    )()
                 else:
                     # Initializer the data
                     val_sample = DataHandler(
-                        validation_data, y=None,
+                        validation_data,
+                        y=None,
                         batch_size=batch_size,
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
-                        generator=generator,
-                        **kwargs)()
+                        random_seed=random_seed,
+                        device=self.__device,
+                        **kwargs,
+                    )()
 
                 # Add the train metric to the history
                 history.add_history(train_metric)
@@ -199,9 +259,9 @@ class Sequential(__nn__.Module):
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
-                    generator=generator,
+                    random_seed=random_seed,
                     verbose=None,
-                    **kwargs
+                    **kwargs,
                 )
 
                 # Make a copy from train_metric dictionary.
@@ -219,17 +279,21 @@ class Sequential(__nn__.Module):
 
         else:
             for epoch in range(epochs):
-                if verbose != 0:
+                if verbose is not None:
                     # Print the epochs
                     print(f"Epoch {epoch + 1}/{epochs}")
 
                 # Initializer the data
-                data = DataHandler(X, y,
-                                   batch_size=batch_size,
-                                   val_batch_size=val_batch_size,
-                                   shuffle=shuffle,
-                                   generator=generator,
-                                   **kwargs)()
+                data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **kwargs,
+                )()
 
                 # Train the full dataset
                 train_metric = self.__train(
@@ -237,9 +301,9 @@ class Sequential(__nn__.Module):
                     y=None,
                     batch_size=batch_size,
                     shuffle=shuffle,
-                    generator=generator,
+                    random_seed=random_seed,
                     verbose=verbose,
-                    **kwargs
+                    **kwargs,
                 )
 
                 if verbose:
@@ -254,10 +318,9 @@ class Sequential(__nn__.Module):
     def predict_proba(self, X):
         import torch
 
-        x = (X.double()
-             if type(X) == torch.Tensor
-             else torch.tensor(X).double()
-             ).to(self.__device)
+        x = (X.double() if type(X) == torch.Tensor else torch.tensor(X).double()).to(
+            self.__device
+        )
         # Make prediction and get probabilities
         proba = self.__model(x)
         return proba.cpu().detach().numpy()
@@ -275,29 +338,36 @@ class Sequential(__nn__.Module):
         formatted_prediction = single_format_prediction.format_prediction()
 
         formatted_prediction = formatted_prediction.numpy().T
-        return formatted_prediction[0] if len(formatted_prediction) == 1 else formatted_prediction
+        return (
+            formatted_prediction[0]
+            if len(formatted_prediction) == 1
+            else formatted_prediction
+        )
 
     def __handle_one_hot(self, target):
         from torch.nn import functional as f
+
         loss_class_names = ["BCELoss", "BCEWithLogitsLoss"]
 
-        return (f.one_hot(target, num_classes=2).double()
-                if type(self.loss).__name__ in loss_class_names
-                else target)
+        return (
+            f.one_hot(target, num_classes=2).double()
+            if type(self.loss).__name__ in loss_class_names
+            else target
+        )
 
     def __train(
-            self,
-            X,
-            y=None,
-            batch_size: int = 1,
-            shuffle: bool = False,
-            generator=None,
-            verbose: str | int | None = 1,
-            **kwargs
+        self,
+        X,
+        y=None,
+        batch_size: int = 1,
+        shuffle: bool = False,
+        random_seed=None,
+        verbose: str | int | None = 1,
+        **kwargs,
     ) -> dict:
         """
         Trains the model.
-        
+
         Parameters
         ----------
             X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
@@ -321,6 +391,7 @@ class Sequential(__nn__.Module):
         """
         # Import libraries
         import torch
+
         if verbose:
             from keras.utils import Progbar  # type: ignore
         from ._metrics_handles import LossStorage, MetricStorage
@@ -328,8 +399,9 @@ class Sequential(__nn__.Module):
         from ._data_handle import DataHandler
 
         if self.optimizer is None or self.loss is None:
-            raise TypeError("Compile the model with `model.compile` before " +
-                            "fitting the model")
+            raise TypeError(
+                "Compile the model with `model.compile` before " + "fitting the model"
+            )
 
         metric_storage = None
 
@@ -338,19 +410,21 @@ class Sequential(__nn__.Module):
 
         if self.metrics:
             # Create the list for metric
-            metric_storage = MetricStorage(
-                self.metrics,
-                batch_size=batch_size)
+            metric_storage = MetricStorage(self.metrics, batch_size=batch_size)
 
         # Indicate the model to train
         self.__model.train()
 
         # Initializer the data
-        data = DataHandler(X, y,
-                           batch_size=batch_size,
-                           shuffle=shuffle,
-                           generator=generator,
-                           **kwargs)()
+        data = DataHandler(
+            X,
+            y,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            random_seed=random_seed,
+            device=self.__device,
+            **kwargs,
+        )()
 
         # Get the data size
         self.__data_size = len(data)
@@ -372,8 +446,7 @@ class Sequential(__nn__.Module):
             self.optimizer.zero_grad()
 
             # Set the device for X and y
-            feature, label = (feature.to(self.__device),
-                              label.to(self.__device))
+            feature, label = (feature.to(self.__device), label.to(self.__device))
 
             # Make prediction
             predict = self.__model(feature.double())
@@ -382,10 +455,13 @@ class Sequential(__nn__.Module):
             target = self.__handle_one_hot(label)
 
             # Change size of torch.size([1]) to torch.size([1, 1])
-            target = (target.view(1, 1)
-                      if (target.dim() == 1
-                          and target.dtype in [torch.float32, torch.float64])
-                      else target)
+            target = (
+                target.view(1, 1)
+                if (
+                    target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
+                )
+                else target
+            )
 
             # Compute the loss
             loss = self.loss(predict, target)
@@ -410,27 +486,29 @@ class Sequential(__nn__.Module):
 
         if self.metrics and metric_storage:
             measurements = metric_storage.metrics(y=y)
-            measurements['loss'] = loss_storage.loss
+            measurements["loss"] = loss_storage.loss
 
             # Place the val_loss to first position
             measurements = change_metric_first_position(measurements)
 
             return measurements
 
-        return {'loss': loss_storage.loss}
+        return {"loss": loss_storage.loss}
 
-    def evaluate(self,
-                 X,
-                 y=None,
-                 batch_size: int = 1,
-                 val_batch_size: int | None = None,
-                 shuffle: bool = False,
-                 generator=None,
-                 verbose: int | None = 1,
-                 **kwargs):
+    def evaluate(
+        self,
+        X,
+        y=None,
+        batch_size: int = 1,
+        val_batch_size: int | None = None,
+        shuffle: bool = False,
+        random_seed: int | None = None,
+        verbose: int | None = 1,
+        **kwargs,
+    ):
         """
         Evaluate the model.
-        
+
         Parameters
         ----------
             X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
@@ -452,6 +530,7 @@ class Sequential(__nn__.Module):
         # Import libraries
         import torch
         from ._metrics_handles import LossStorage, MetricStorage
+
         if verbose:
             from keras.utils import Progbar  # type: ignore
         from ._metrics_handles import change_metric_first_position
@@ -464,20 +543,23 @@ class Sequential(__nn__.Module):
 
         if self.metrics:
             # Create the list for metric
-            metric_storage = MetricStorage(
-                self.metrics,
-                batch_size=batch_size)
+            metric_storage = MetricStorage(self.metrics, batch_size=batch_size)
 
-        # Indicate the model to train
+        # Indicate the model to evaluate
         self.__model.eval()
 
         # Initializer the data
-        data = DataHandler(X, y,
-                           batch_size=batch_size,
-                           val_batch_size=val_batch_size,
-                           shuffle=shuffle,
-                           generator=generator,
-                           **kwargs)()
+        data = DataHandler(
+            X,
+            y,
+            batch_size=batch_size,
+            val_batch_size=val_batch_size,
+            shuffle=shuffle,
+            random_seed=random_seed,
+            device=self.__device,
+            **kwargs,
+        )()
+
         # Declare the progbar
         progbar = None
 
@@ -490,23 +572,23 @@ class Sequential(__nn__.Module):
             for idx, (feature, label) in enumerate(data):
 
                 # Set the device for X and y
-                feature, label = (feature.to(self.__device),
-                                  label.to(self.__device))
+                feature, label = (feature.to(self.__device), label.to(self.__device))
 
                 # Make prediction
                 predict = self.__model(feature.double())
-
-                if self.metrics and metric_storage:
-                    metric_storage.add_metric(predict, label)
 
                 # Check if using BCELoss optimizer
                 target = self.__handle_one_hot(label)
 
                 # Change size of torch.size([1]) to torch.size([1, 1])
-                target = (target.view(1, 1)
-                          if (target.dim() == 1 and
-                              target.dtype in [torch.float32, torch.float64])
-                          else target)
+                target = (
+                    target.view(1, 1)
+                    if (
+                        target.dim() == 1
+                        and target.dtype in [torch.float32, torch.float64]
+                    )
+                    else target
+                )
 
                 if self.loss is not None:
                     # Compute the loss
@@ -517,31 +599,34 @@ class Sequential(__nn__.Module):
 
                     if idx != len(data) - 1 and verbose is not None:
                         # Update the progress bar
-                        progbar.update(idx + 1, [("loss", loss_storage.loss)])
+                        progbar.update(idx + 1, [("val_loss", loss_storage.loss)])
+
+                if self.metrics and metric_storage:
+                    metric_storage.add_metric(predict, label)
 
         if self.metrics and metric_storage:
             measurements = metric_storage.metrics(y)
-            measurements['loss'] = loss_storage.loss
+            measurements["loss"] = loss_storage.loss
 
             # Place the val_loss to first position
             measurements = change_metric_first_position(measurements)
 
             # Add val to each key
-            measurements = ({'val_' + key: value
-                             for key, value in measurements.items()})
+            measurements = {"val_" + key: value for key, value in measurements.items()}
 
             return measurements
-        return {'val_loss': loss_storage.loss}
+        return {"val_loss": loss_storage.loss}
 
-    def compile(self,
-                optimizer: __Any__,
-                loss: __Any__,
-                metrics: __List__ | None = None,
-                device: str = 'cpu'
-                ):
+    def compile(
+        self,
+        optimizer: __Any__,
+        loss: __Any__,
+        metrics: __List__ | None = None,
+        device: str = "cpu",
+    ):
         """
         Compile the model.
-        
+
         Parameters
         ----------
             optimizer : (torch.optim)
@@ -558,7 +643,11 @@ class Sequential(__nn__.Module):
 
         self.optimizer = optimizer
         self.loss = loss
-        self.metrics = (
-            str_val_to_metric(metrics)
-            if metrics is not None else [])
+        self.metrics = str_val_to_metric(metrics) if metrics is not None else []
         self.__device = device
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()

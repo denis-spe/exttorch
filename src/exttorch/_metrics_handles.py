@@ -8,8 +8,17 @@ from typing import Callable, Any, Dict
 import numpy as np
 from exttorch._data_handle import SinglePredictionsFormat
 from exttorch.metrics import (
-    Accuracy, MeanSquaredError, R2, MeanAbsoluteError, Recall, Precision,
-    Jaccard, MatthewsCorrcoef, Auc, ZeroOneLoss, TopKAccuracy
+    Accuracy,
+    MeanSquaredError,
+    R2,
+    MeanAbsoluteError,
+    Recall,
+    Precision,
+    Jaccard,
+    MatthewsCorrcoef,
+    Auc,
+    ZeroOneLoss,
+    TopKAccuracy,
 )
 
 
@@ -20,11 +29,11 @@ class Logs:
 
     def create_step(self):
         # Create the key in the logs
-        self.logs[f'step_{self.step}'] = {
+        self.logs[f"step_{self.step}"] = {
             "model": None,
             "feature": [],
             "label": [],
-            "loss": []
+            "loss": [],
         }
 
 
@@ -35,15 +44,23 @@ class MetricComputation:
     y: Any
 
     def compute_metric(self):
+
         if len(self.y.shape) >= 1:
             return self.metric(
-                self.prediction.cpu().numpy() if type(self.prediction) == torch.Tensor else self.prediction,
-                self.y.cpu().numpy() if type(self.y) == torch.Tensor else self.y)
+                (
+                    self.prediction.cpu().numpy()
+                    if type(self.prediction) == torch.Tensor
+                    else self.prediction
+                ),
+                self.y.cpu().numpy() if type(self.y) == torch.Tensor else self.y,
+            )
 
         # Change to cpu if it's a Tensor
-        predictions = (self.prediction.cpu().numpy()
-                       if isinstance(self.prediction, torch.Tensor)
-                       else self.prediction)
+        predictions = (
+            self.prediction.cpu().numpy()
+            if isinstance(self.prediction, torch.Tensor)
+            else self.prediction
+        )
 
         return self.metric(predictions, torch.tensor([self.y]).numpy())
 
@@ -76,15 +93,13 @@ class LossStorage:
 
 
 class MetricStorage:
-    def __init__(self,
-                 metrics: list,
-                 batch_size: int = None):
+    def __init__(self, metrics: list, batch_size: int = None):
         self.__labels = []
         self.__metrics = metrics
         self.__metric_dict = {str(metric): [] for metric in metrics}
         self.__predicts = []
         self.__batch_size = batch_size
-        self.__metric_name_proba = ['Auc', 'TopKAccuracy', 'auc', 'tka', 'TKA']
+        self.__metric_name_proba = ["Auc", "TopKAccuracy", "auc", "tka", "TKA"]
 
     def __y_prediction_or_proba(self, metric, predict, formatted_prediction):
 
@@ -95,10 +110,11 @@ class MetricStorage:
             else predict.detach().cpu().numpy()
         )
 
-    def add_metric(self,
-                   predict,
-                   label,
-                   ) -> None:
+    def add_metric(
+        self,
+        predict,
+        label,
+    ) -> None:
 
         # Initializer the SinglePredictionsFormat object.
         single_format_prediction = SinglePredictionsFormat(predict)
@@ -108,35 +124,6 @@ class MetricStorage:
 
         self.__predicts.append(formatted_prediction)
         self.__labels.append(label)
-
-        # if (self.__batch_size is not None and self.__batch_size > 1) or len(label) > 1 :
-        #
-        #     # Change batched prediction to one single metric e.g 0.983.
-        #     # Loop over the metrics
-        #     for metric in self.__metrics:
-        #         self.__metric_dict[str(metric)].append(
-        #                 self.__y_prediction_or_proba(metric, predict, formatted_prediction)
-        #         )
-        #
-        #         # Save labels in the list
-        #         self.__labels.append(label)
-        #
-        #     # for metric in self.__metrics:
-        #     #     self.__metric_dict[str(metric)].append(
-        #     #         MetricComputation(
-        #     #             metric,
-        #     #             label,
-        #     #             self.__y_prediction_or_proba(metric, predict, formatted_prediction))
-        #     #         .compute_metric())
-        # else:
-        #     # Add single prediction
-        #     # Loop over the metrics and metric names
-        #     for metric in self.__metrics:
-        #         self.__metric_dict[str(metric)].append(
-        #             self.__y_prediction_or_proba(metric, predict[0], formatted_prediction)
-        #             )
-        #     # Save labels in the list
-        #     self.__labels.append(label)
 
     def metrics(self, y: Any = None):
         metrics_dict = {}
@@ -148,62 +135,33 @@ class MetricStorage:
         # Predictions
         predicts = self.__predicts
 
+        if type(y) == np.ndarray:
+            y = y.reshape(-1, 1)
+        elif type(y) == torch.Tensor:
+            y = y.cpu().numpy().reshape(-1, 1)
+
         # Check if the label greater than one.
         if len(y) > 1:
             # Creating a dictionary to store result metric_comp product by batching of data
-            metric_dict = {
-                key: []
-                for key in _metric.keys()
-            }
+            metric_dict = {key: [] for key in _metric.keys()}
 
             # Grouping predict with y in order loop them
             for predict, label in zip(predicts, y):
+
                 # Loop over the metric name as key and metric class as value.
                 for key, value in _metric.items():
                     metric_comp = MetricComputation(
-                        value,
-                        label, predict
+                        value, label, predict
                     ).compute_metric()
                     metric_dict[key].append(metric_comp)
 
             # Alter metric_dict values (list) to mean
             altered_list_to_mean_dict = {
-                k: np.mean(v).round(4)
-                for k, v in metric_dict.items()
+                k: np.mean(v).round(4) for k, v in metric_dict.items()
             }
 
             # Add (update) new altered_list_to_mean_dict dictionary to metrics_dict dictionary
             metrics_dict.update(altered_list_to_mean_dict)
-
-        # if self.__batch_size is not None and self.__batch_size > 1:
-        #     # Return a new dictionary with list mean
-        #     return {
-        #         key: round(torch.tensor(value).mean().item(), 4)
-        #         for key, value in self.__metric_dict.items()
-        #     }
-
-        # metrics_dict = {}
-        #
-        # for key, value in self.__metric_dict.items():
-        #     values = torch.tensor(
-        #         self.__handle_values_from_metric_dict(value),
-        #         dtype=torch.float64
-        #         )
-        #
-        #     # y = y if y is not None else torch.tensor(self.__labels)
-        #     if y is None:
-        #         y = torch.tensor(self.__labels)
-        #
-        #     metric_comp = MetricComputation(
-        #                     _metric[key],
-        #                     y, values
-        #                 ).compute_metric()
-        #
-        #     metrics_dict[key] = round(
-        #         (metric_comp.item()
-        #         if type(metric_comp) != float
-        #         else metric_comp), 4)
-
         return metrics_dict
 
     @staticmethod
@@ -211,22 +169,21 @@ class MetricStorage:
         if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
             return value[0].clone().detach().cpu().numpy().astype(np.float64)
 
-        return np.array([
-            val.clone().detach().cpu().numpy()
-            if type(val) == torch.Tensor
-            else val
-            for val in value], dtype=np.float64)
+        return np.array(
+            [
+                val.clone().detach().cpu().numpy() if type(val) == torch.Tensor else val
+                for val in value
+            ],
+            dtype=np.float64,
+        )
 
 
 def change_metric_first_position(measurements) -> Dict:
     keys = list(measurements.keys())
-    loss_idx = keys.index('loss')
+    loss_idx = keys.index("loss")
     keys.pop(loss_idx)
-    keys.insert(0, 'loss')
-    measurements = {
-        key: measurements[key]
-        for key in keys
-    }
+    keys.insert(0, "loss")
+    measurements = {key: measurements[key] for key in keys}
     return measurements
 
 
@@ -235,30 +192,30 @@ def str_val_to_metric(metric_list: list):
     for new_metric_name in metric_list:
         if type(new_metric_name) == str:
             match new_metric_name:
-                case 'acc' | 'Acc' | 'accuracy' | 'Accuracy':
+                case "acc" | "Acc" | "accuracy" | "Accuracy":
                     new_metric_list.append(Accuracy(new_metric_name))
-                case 'mse' | 'MSE' | 'MeanSquaredError':
+                case "mse" | "MSE" | "MeanSquaredError":
                     new_metric_list.append(MeanSquaredError(new_metric_name))
-                case 'r2' | 'R2':
+                case "r2" | "R2":
                     new_metric_list.append(R2(new_metric_name))
-                case 'mae' | 'MAE' | 'MeanAbsoluteError':
+                case "mae" | "MAE" | "MeanAbsoluteError":
                     new_metric_list.append(MeanAbsoluteError(new_metric_name))
-                case 'recall' | 'rec' | 'Recall':
+                case "recall" | "rec" | "Recall":
                     new_metric_list.append(Recall(new_metric_name))
-                case 'precision' | 'pre' | 'Precision':
+                case "precision" | "pre" | "Precision":
                     new_metric_list.append(Precision(new_metric_name))
-                case 'jaccard' | 'jac' | 'Jaccard':
+                case "jaccard" | "jac" | "Jaccard":
                     new_metric_list.append(Jaccard(new_metric_name))
-                case 'Auc' | 'auc':
+                case "Auc" | "auc":
                     new_metric_list.append(Auc(new_metric_name))
-                case 'MatthewsCorrcoef' | 'mat' | 'mc' | 'MC':
+                case "MatthewsCorrcoef" | "mat" | "mc" | "MC":
                     new_metric_list.append(MatthewsCorrcoef(new_metric_name))
-                case 'ZeroOneLoss' | 'zero' | 'zol':
+                case "ZeroOneLoss" | "zero" | "zol":
                     new_metric_list.append(ZeroOneLoss(new_metric_name))
-                case 'TopKAccuracy' | 'TKA' | 'tka':
+                case "TopKAccuracy" | "TKA" | "tka":
                     new_metric_list.append(TopKAccuracy(new_metric_name))
                 case _:
-                    raise ValueError(f'Unknown metric name `{new_metric_name}`')
+                    raise ValueError(f"Unknown metric name `{new_metric_name}`")
         else:
             new_metric_list.append(new_metric_name)
 
@@ -267,9 +224,8 @@ def str_val_to_metric(metric_list: list):
 
 def handle_probability(proba):
     if proba.shape[1] > 2:
-        _proba = (proba.clone().detach()
-                  if type(proba) != np.ndarray
-                  else torch.tensor(proba)
-                  )
+        _proba = (
+            proba.clone().detach() if type(proba) != np.ndarray else torch.tensor(proba)
+        )
         return f.softmax(_proba, dim=-1)
     return proba[:, 0]
