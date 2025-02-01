@@ -78,7 +78,8 @@ class LossStorage:
         """
         Returns the average loss
         """
-        return round(np.array(self.__loss).mean(), 4)
+        roundLoss = round(np.array(self.__loss).mean(), 4)
+        return roundLoss
 
     @loss.setter
     def loss(self, loss) -> None:

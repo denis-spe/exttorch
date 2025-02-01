@@ -4,6 +4,7 @@
 from torch import nn as __nn__
 from typing import Any as __Any__
 from typing import List as __List__
+from exttorch._callbacks import Callback as __Callback__
 
 
 class Sequential(__nn__.Module):
@@ -60,6 +61,7 @@ class Sequential(__nn__.Module):
         self.optimizer = None
         self.layers = layers if layers else []
         self.metrics = None
+        self.__callbacks = None
 
         # Import and use the Sequential object
         from torch import nn as _nn
@@ -76,6 +78,28 @@ class Sequential(__nn__.Module):
 
     def add(self, layer: __nn__.Module):
         self.__model_list.append(layer)
+        
+    def __handle_callbacks(self, callback_method, logs=None, epoch: int = None):
+        if self.__callbacks is not None:
+            for callback in self.__callbacks:
+                match callback_method:
+                    case "on_train_begin":
+                        callback.on_train_begin()
+                    case "on_train_end":
+                        callback.on_train_end(logs)
+                    case "on_validation_begin":
+                        callback.on_validation_begin()
+                    case "on_validation_end":
+                        callback.on_validation_end(logs)
+                    case "on_batch_begin":
+                        callback.on_batch_begin()
+                    case "on_batch_end":
+                        callback.on_batch_end(logs)
+                    case "on_epoch_begin":
+                        callback.on_epoch_begin(epoch)
+                    case "on_epoch_end":
+                        callback.on_epoch_end(epoch, logs)
+                
 
     def fit(
         self,
@@ -90,6 +114,7 @@ class Sequential(__nn__.Module):
         validation_split: float = None,
         validation_data=None,
         verbose: str | int | None = 1,
+        callbacks: __List__[__Callback__] = None,
         **kwargs,
     ):
         """
@@ -119,6 +144,8 @@ class Sequential(__nn__.Module):
                 Data for validating model performance
             verbose : (str | int) 1 by default,
                 Handles the model progress bar.
+            callbacks: (Optional[List[Callback]])
+                Model list of callbacks.
         """
         # Import libraries
         from .history import History
@@ -131,9 +158,19 @@ class Sequential(__nn__.Module):
         if type(random_seed) == int:
             # Set the random seed
             torch.manual_seed(random_seed)
+            
+        if callbacks is not None:
+            self.__callbacks = callbacks
 
         if validation_split is not None and validation_data is None:
+            # Handle the callbacks on train begin
+            self.__handle_callbacks("on_train_begin")
+                
             for epoch in range(epochs):
+                
+                # Handle the callbacks on epoch begin
+                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                
                 if verbose != 0:
                     # Print the epochs
                     print(f"Epoch {epoch + 1}/{epochs}")
@@ -191,9 +228,25 @@ class Sequential(__nn__.Module):
 
                 # Add the validation metric to the history
                 history.add_history(val_metric)
+                
+                # Make a copy
+                metric_copy = train_metric.copy()
+                metric_copy.update(val_metric)
+                
+                # Handle the callbacks on epoch end
+                self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
+                
+            # Handle the callbacks on train end
+            self.__handle_callbacks("on_train_end", logs=history.history)
 
         elif validation_data is not None:
+            # Handle the callbacks on train begin
+            self.__handle_callbacks("on_train_begin")
+            
             for epoch in range(epochs):
+                # Handle the callbacks on epoch begin
+                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                
                 if verbose is not None:
                     # Print the epochs
                     print(f"Epoch {epoch + 1}/{epochs}")
@@ -276,9 +329,25 @@ class Sequential(__nn__.Module):
 
                 # Add the validation metric to the history
                 history.add_history(val_metric)
+                
+                # Make a copy
+                metric_copy = train_metric.copy()
+                metric_copy.update(val_metric)
+                
+                # Handle the callbacks on epoch end
+                self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
+            
+            # Handle the callbacks on train end
+            self.__handle_callbacks("on_train_end", logs=history.history)
 
         else:
+            # Handle the callbacks on train begin
+            self.__handle_callbacks("on_train_begin")
+            
             for epoch in range(epochs):
+                # Handle the callbacks on epoch begin
+                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                
                 if verbose is not None:
                     # Print the epochs
                     print(f"Epoch {epoch + 1}/{epochs}")
@@ -305,13 +374,20 @@ class Sequential(__nn__.Module):
                     verbose=verbose,
                     **kwargs,
                 )
+                
 
                 if verbose:
                     # Show the progress bar on each epoch
                     self.__progbar.add(1, train_metric.items())
+                    
+                # Handle the callbacks on epoch end
+                self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
 
                 # Add the train metric to the history
                 history.add_history(train_metric)
+            
+            # Handle the callbacks on train end
+            self.__handle_callbacks("on_train_end", logs=history.history)
 
         return history
 
@@ -439,6 +515,9 @@ class Sequential(__nn__.Module):
             # Assign progbar
             self.__progbar = progbar
 
+        # Handle on batch begin callback
+        self.__handle_callbacks('on_batch_begin')
+        
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
             feature, label = feature.to(self.__device), label.to(self.__device)
@@ -469,9 +548,9 @@ class Sequential(__nn__.Module):
             # Add loss to the storage
             loss_storage.loss = loss.item()
 
-            if idx != len(data) - 1 and verbose is not None:
+            if idx != len(data) - 2 and verbose is not None:
                 # Update the progress bar
-                progbar.update(idx + 1, [("loss", loss_storage.loss)])
+                progbar.update(idx + 1, [("loss", loss_storage.loss )])
 
             if self.metrics and metric_storage:
                 metric_storage.add_metric(predict, label=label)
@@ -490,10 +569,18 @@ class Sequential(__nn__.Module):
 
             # Place the val_loss to first position
             measurements = change_metric_first_position(measurements)
-
+            
+            # Handle on batch begin callback
+            self.__handle_callbacks('on_batch_end', logs={"loss": loss_storage.loss})
+            
             return measurements
-
-        return {"loss": loss_storage.loss}
+        
+        loss_dict = {"loss": loss_storage.loss}
+        
+        # Handle on batch begin callback
+        self.__handle_callbacks('on_batch_end', logs=loss_dict)
+        
+        return loss_dict
 
     def evaluate(
         self,
@@ -566,6 +653,9 @@ class Sequential(__nn__.Module):
         if verbose:
             # Instantiate the progress bar
             progbar = Progbar(len(data), verbose=verbose)
+        
+        # Handle on validation begin
+        self.__handle_callbacks("on_validation_begin")
 
         with torch.no_grad():
             # Loop over the data
@@ -614,8 +704,17 @@ class Sequential(__nn__.Module):
             # Add val to each key
             measurements = {"val_" + key: value for key, value in measurements.items()}
 
+            # Handle on validation begin
+            self.__handle_callbacks("on_validation_end", logs=measurements)
+        
             return measurements
-        return {"val_loss": loss_storage.loss}
+        
+        val_loss_dict = {"val_loss": loss_storage.loss}
+        
+        # Handle on validation begin
+        self.__handle_callbacks("on_validation_end", logs=val_loss_dict)
+            
+        return val_loss_dict
 
     def compile(
         self,

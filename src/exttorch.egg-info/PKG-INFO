@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: exttorch
 Version: 0.0.1
 Summary: A torch sequential extension with hyperparameter tuner for Sequential model

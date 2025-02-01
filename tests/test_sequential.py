@@ -1,23 +1,17 @@
 # Praise Ye The Lord
 
 # Import libraries
-import sys
-import os
-
-sys.path.append(os.path.join(sys.path[0].strip("tests"), "src"))
-
 import torch
 import unittest as ut
-import doctest
 from torch import nn
 from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader
-from src.exttorch.models import Sequential
-from src.exttorch import models
+from exttorch.models import Sequential
+from exttorch import models
 from sklearn.datasets import load_iris, load_digits
-from src.exttorch.metrics import Accuracy
+from exttorch.metrics import Accuracy
 import pandas as pd
-from src.exttorch._data_handle import DataHandler
+from exttorch._data_handle import DataHandler
 
 
 class TestSequential(ut.TestCase):

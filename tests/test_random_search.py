@@ -1,17 +1,13 @@
 # Praise Ye The Lord
 
 # Import libraries
-import sys
-
-sys.path.append(sys.path[0].strip("tests"))
-
 import unittest
 from torch import nn
 from torch.optim import Adam
 from sklearn.datasets import load_wine
-from src.exttorch.tuner import RandomSearchTune
-from src.exttorch.hyperparameter import HyperParameters
-from src.exttorch.models import Sequential
+from exttorch.tuner import RandomSearchTune
+from exttorch.hyperparameter import HyperParameters
+from exttorch.models import Sequential
 
 
 def tuned_func(hp: HyperParameters):

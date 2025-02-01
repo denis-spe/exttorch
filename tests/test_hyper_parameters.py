@@ -1,12 +1,8 @@
 # Praise Ye The Lord.
 
 # Import libraries
-import sys
-
-sys.path.append(sys.path[0].strip("tests"))
-
 import unittest as ut
-from src.exttorch.hyperparameter import HyperParameters
+from exttorch.hyperparameter import HyperParameters
 
 
 class TestHyperParameter(ut.TestCase):
