@@ -1,7 +1,12 @@
 # Praise The LORD of Host.
+
 """
-======== ExtTorch Callbacks Abstract ========
+======== ExtTorch Callbacks implementation ========
 """
+
+# Import libraries
+from typing import Dict
+
 from typing import Dict
 
 class Callback:
@@ -28,3 +33,8 @@ class Callback:
         
     def on_batch_end(self, logs: Dict) -> None:
         ...
+
+class EarlyStopping(Callback):
+    def on_batch_end(self, logs):
+        pass
+        # print(logs)

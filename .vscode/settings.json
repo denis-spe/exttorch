@@ -17,5 +17,11 @@
         "test_*.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "code-runner.executorMap": {
+        "python": "conda activate ds && python"
+    }
 }

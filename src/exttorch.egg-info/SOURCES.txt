@@ -3,7 +3,6 @@ README.md
 pyproject.toml
 setup.py
 src/exttorch/__init__.py
-src/exttorch/_callbacks.py
 src/exttorch/_data_handle.py
 src/exttorch/_metrics_handles.py
 src/exttorch/_sampler.py

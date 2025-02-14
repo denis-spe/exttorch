@@ -2,6 +2,7 @@
 
 # Import libraries
 import unittest as ut
+from contexts import exttorch
 from exttorch.hyperparameter import HyperParameters
 
 

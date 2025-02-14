@@ -62,8 +62,6 @@ class Sequential(__nn__.Module):
         self.layers = layers if layers else []
         self.metrics = None
         self.__callbacks = None
-        self.__progbar = None
-        self.stop_training = False
 
         # Import and use the Sequential object
         from torch import nn as _nn
@@ -77,24 +75,13 @@ class Sequential(__nn__.Module):
     @property
     def __model(self):
         return __nn__.Sequential(*self.__model_list).double().to(self.__device)
-    
-    def get_weights(self):
-        return self.__model.state_dict()
-    
-    def set_weights(self, weight):
-        self.__model.load_state_dict(weight)
 
     def add(self, layer: __nn__.Module):
         self.__model_list.append(layer)
         
     def __handle_callbacks(self, callback_method, logs=None, epoch: int = None):
-    
         if self.__callbacks is not None:
             for callback in self.__callbacks:
-                # Set the model and stop_training to the callback
-                callback.model = self
-                
-                # Check if the present callback method
                 match callback_method:
                     case "on_train_begin":
                         callback.on_train_begin()
@@ -164,8 +151,6 @@ class Sequential(__nn__.Module):
         from .history import History
         from ._data_handle import DataHandler
         import torch
-        
-        self.stop_training = False
 
         # Initializer the History object
         history = History(self.metrics)
@@ -178,11 +163,8 @@ class Sequential(__nn__.Module):
             self.__callbacks = callbacks
 
         if validation_split is not None and validation_data is None:
-            
             # Handle the callbacks on train begin
             self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
                 
             for epoch in range(epochs):
                 
@@ -242,7 +224,7 @@ class Sequential(__nn__.Module):
 
                 if verbose:
                     # Show the progress bar on each epoch
-                    self.__progbar.update(self.__train_data_size, val_metric.items(), finalize=True)
+                    self.__progbar.add(1, metrics.items())
 
                 # Add the validation metric to the history
                 history.add_history(val_metric)
@@ -250,22 +232,16 @@ class Sequential(__nn__.Module):
                 # Make a copy
                 metric_copy = train_metric.copy()
                 metric_copy.update(val_metric)
-                                
+                
                 # Handle the callbacks on epoch end
                 self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
-                
-                if self.stop_training:
-                    break
                 
             # Handle the callbacks on train end
             self.__handle_callbacks("on_train_end", logs=history.history)
 
         elif validation_data is not None:
-            
             # Handle the callbacks on train begin
             self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
             
             for epoch in range(epochs):
                 # Handle the callbacks on epoch begin
@@ -357,21 +333,16 @@ class Sequential(__nn__.Module):
                 # Make a copy
                 metric_copy = train_metric.copy()
                 metric_copy.update(val_metric)
-                                
+                
                 # Handle the callbacks on epoch end
                 self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
-                
-                if self.stop_training:
-                    break
             
             # Handle the callbacks on train end
             self.__handle_callbacks("on_train_end", logs=history.history)
 
-        else:            
+        else:
             # Handle the callbacks on train begin
             self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
             
             for epoch in range(epochs):
                 # Handle the callbacks on epoch begin
@@ -403,23 +374,15 @@ class Sequential(__nn__.Module):
                     verbose=verbose,
                     **kwargs,
                 )        
+                    
+                # Handle the callbacks on epoch end
+                self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
 
                 # Add the train metric to the history
                 history.add_history(train_metric)
-                
-                print(end="\n")
-                
-                # Handle the callbacks on epoch end
-                self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
-                
-                if self.stop_training:
-                    break
             
-            
-
             # Handle the callbacks on train end
             self.__handle_callbacks("on_train_end", logs=history.history)
-            
 
         return history
 
@@ -499,8 +462,6 @@ class Sequential(__nn__.Module):
         """
         # Import libraries
         import torch
-        import time
-        from IPython.display import clear_output
 
         if verbose:
             from keras.utils import Progbar  # type: ignore
@@ -537,19 +498,17 @@ class Sequential(__nn__.Module):
         )()
 
         # Get the data size
-        self.__train_data_size = len(data)
+        self.__data_size = len(data)
 
         # Declare the progbar
         progbar: Progbar = None
         steps = 0
         
         final_loss = 0.0
-        
-        metrics = []
 
-        if verbose is not None:
+        if verbose:
             # Instantiate the progress bar
-            self.__progbar = Progbar(len(data), verbose=verbose)
+            progbar = Progbar(len(data), verbose=verbose, stateful_metrics=[])
 
         # Handle on batch begin callback
         self.__handle_callbacks('on_batch_begin')
@@ -587,20 +546,20 @@ class Sequential(__nn__.Module):
 
             if self.metrics and metric_storage:
                 metric_storage.add_metric(predict, label=label)
+                
+            if verbose is not None:
+                # Update the progress bar
+                progbar.update(steps, [("loss",  final_loss)], finalize=False)
+                steps += 1
 
             # Compute the gradient
             loss.backward()
 
             # update the parameters
             self.optimizer.step()
-            
-            if verbose is not None:
-                if idx != len(data) - 1:
-                    # Update the progress bar
-                    self.__progbar.update(steps, [("loss",  loss.item())], finalize=False)
-                steps += 1
-            
-        
+
+            self.__train_idx = idx
+
         if self.metrics and metric_storage:
             measurements = metric_storage.metrics(y=y)
             measurements["loss"] = final_loss
@@ -609,9 +568,11 @@ class Sequential(__nn__.Module):
             measurements = change_metric_first_position(measurements)
                         
             if verbose is not None:
-                
                 # Show the progress bar on each epoch
-                self.__progbar.update(steps, measurements.items(), finalize=False)
+                progbar.update(steps, measurements.items(), finalize=True)
+                
+                # Assign progbar
+                self.__progbar = progbar
                 
             # Handle on batch begin callback
             self.__handle_callbacks('on_batch_end', logs=measurements)
@@ -622,14 +583,16 @@ class Sequential(__nn__.Module):
         
         if verbose is not None:
             # Show the progress bar on each epoch
-            self.__progbar.update(steps, loss_dict.items(), finalize=False)
+            progbar.update(steps, loss_dict.items(), finalize=True)
             
             # Assign progbar
             self.__progbar = progbar
         
         # Handle on batch begin callback
         self.__handle_callbacks('on_batch_end', logs=loss_dict)
-                
+        
+        self.__steps = steps
+        
         return loss_dict
 
     def evaluate(
@@ -697,10 +660,8 @@ class Sequential(__nn__.Module):
             **kwargs,
         )()
 
-        # # Declare the progbar
-        # progbar = None
-        
-        steps = 0
+        # Declare the progbar
+        progbar = None
 
         if verbose:
             # Instantiate the progress bar
@@ -739,13 +700,9 @@ class Sequential(__nn__.Module):
                     # Add loss to the storage
                     loss_storage.loss = loss.item()
 
-                    if verbose is not None:
-                        if idx != len(data) - 1:
-                            # Update the progress bar
-                            progbar.update(steps, [("val_loss", loss.item())])
-                
-                # Increment the steps by 1
-                steps += 1
+                    if idx != len(data) - 1 and verbose is not None:
+                        # Update the progress bar
+                        progbar.update(idx + 1, [("val_loss", loss_storage.loss)])
 
                 if self.metrics and metric_storage:
                     metric_storage.add_metric(predict, label)
@@ -759,10 +716,6 @@ class Sequential(__nn__.Module):
 
             # Add val to each key
             measurements = {"val_" + key: value for key, value in measurements.items()}
-            
-            if verbose is not None:
-                # Show the progress bar on each epoch
-                progbar.update(steps, measurements.items(), finalize=False)
 
             # Handle on validation begin
             self.__handle_callbacks("on_validation_end", logs=measurements)

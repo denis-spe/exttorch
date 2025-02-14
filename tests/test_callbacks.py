@@ -1,22 +1,14 @@
 # Praise Ye The Lord
 
 # Import libraries
-import sys
-import os
-
-
-import torch
 import unittest as ut
+from contexts import exttorch
+from exttorch.callbacks import EarlyStopping
+from exttorch.metrics import Accuracy
+from exttorch.models import Sequential
+from sklearn.datasets import load_iris, load_digits
 from torch import nn
 from torch.optim import Adam
-from torch.utils.data import TensorDataset, DataLoader
-from exttorch.models import Sequential
-from exttorch.callbacks import EarlyStopping
-from exttorch import models
-from sklearn.datasets import load_iris, load_digits
-from exttorch.metrics import Accuracy
-import pandas as pd
-from exttorch._data_handle import DataHandler
 
 
 class TestCallbacks(ut.TestCase):
@@ -46,9 +38,10 @@ class TestCallbacks(ut.TestCase):
 
         history = self.iris_model.fit(
             self.ir_x, self.ir_y,
-            callbacks=[EarlyStopping()]
+            validation_data=[self.ir_x, self.ir_y],
+            epochs=120,
+            callbacks=[EarlyStopping(patience=2)]
             )
-        print(history.history)
         
         self.assertIsInstance(history.history, dict)
 
