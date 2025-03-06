@@ -58,6 +58,7 @@ class DataHandler:
 
         # Import the libraries
         import torch, os
+        from exttorch._env import _ENV
 
         if isinstance(x, pd.DataFrame):
             self.__x = x.to_numpy()
@@ -72,7 +73,7 @@ class DataHandler:
         self.__shuffle = shuffle
         self.__kwargs = kwargs
         self.__generator = torch.Generator(device=device)
-        self.__ENV = os.environ
+        self.__ENV = _ENV
         if random_seed is not None:
             self.__generator.manual_seed(random_seed)
 

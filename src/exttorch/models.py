@@ -3,8 +3,9 @@
 # Import libraries
 from torch import nn as __nn__
 from typing import Any as __Any__
-from typing import List as __List__
+from typing import List as __List__ 
 from exttorch.callbacks import Callback as __Callback__
+from exttorch._env import _ENV as __ENV__
 
 
 class Sequential(__nn__.Module):
@@ -65,7 +66,7 @@ class Sequential(__nn__.Module):
         self.__callbacks = None
         self.__progbar = None
         self.stop_training = False
-        self.__ENV = os.environ
+        self.__ENV = __ENV__
 
         # Import and use the Sequential object
         from torch import nn as _nn
