@@ -102,7 +102,7 @@ class DataHandler:
 
             if val_size is not None:
                 train_data, val_data = self.__split_data(__Dataset_obj, val_size)
-                dataloader = (
+                return (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -118,7 +118,7 @@ class DataHandler:
                     ),
                 )
 
-            dataloader = DataLoader(
+            return DataLoader(
                 __Dataset_obj,
                 batch_size=self.__batch_size,
                 generator=self.__generator,
@@ -126,12 +126,12 @@ class DataHandler:
             )
 
         elif isinstance(self.__x, Subset):
-            dataloader = self.__x.dataset
+            return self.__x.dataset
 
         elif isinstance(self.__x, Dataset) or isinstance(self.__x, TensorDataset):
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
-                dataloader = (
+                return (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -147,7 +147,7 @@ class DataHandler:
                     ),
                 )
 
-            dataloader = DataLoader(
+            return DataLoader(
                 self.__x,
                 batch_size=self.__batch_size,
                 generator=self.__generator,
@@ -158,7 +158,7 @@ class DataHandler:
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
 
-                dataloader = (
+                return (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -174,14 +174,16 @@ class DataHandler:
                     ),
                 )
 
-            dataloader = self.__x
+            return self.__x
         else:
             raise ValueError(
                 f"Invalid data of type {type(self.__x)} for x, expected type of "
                 + "`np.ndarray | DataLoader | Dataset | TensorDataset` for x "
                 + "and np.ndarray for y"
             )
-        
+    
+    def data_preprocessing(self, val_size: Optional[float] = None):
+        dataloader = self.__call__(val_size=val_size)
         
         if "EXTTORCH_TPU" in self.__ENV:
             if isinstance(dataloader, tuple):

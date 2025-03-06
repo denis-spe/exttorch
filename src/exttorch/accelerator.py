@@ -11,6 +11,7 @@ class TpuScope:
         ENV["EXTTORCH_TPU"] = xm.xla_device()
         ENV["EXTTORCH_XMP"] = xmp
         ENV["EXTTORCH_PL"] = pl
+        ENV["EXTTORCH_XM"] = xm
         
         return self
     

@@ -209,7 +209,7 @@ class Sequential(__nn__.Module):
                     )
 
                     # Get the train and validation sample
-                    train_sample, val_sample = data(validation_split)
+                    train_sample, val_sample = data.data_preprocessing(validation_split)
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -260,7 +260,8 @@ class Sequential(__nn__.Module):
                     if self.stop_training:
                         break
                     
-                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+                    if "EXTTORCH_TPU" in self.__ENV:
+                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
                     
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
@@ -290,7 +291,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         device=self.__device,
                         **kwargs,
-                    )()
+                    ).data_preprocessing()
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -317,7 +318,7 @@ class Sequential(__nn__.Module):
                             random_seed=random_seed,
                             device=self.__device,
                             **kwargs,
-                        )()
+                        ).data_preprocessing()
                     else:
                         # Initializer the data
                         val_sample = DataHandler(
@@ -329,7 +330,7 @@ class Sequential(__nn__.Module):
                             random_seed=random_seed,
                             device=self.__device,
                             **kwargs,
-                        )()
+                        ).data_preprocessing()
 
                     # Add the train metric to the history
                     history.add_history(train_metric)
@@ -369,7 +370,8 @@ class Sequential(__nn__.Module):
                     if self.stop_training:
                         break
                     
-                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+                    if "EXTTORCH_TPU" in self.__ENV:
+                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
                 
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
@@ -398,7 +400,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         device=self.__device,
                         **kwargs,
-                    )()
+                    ).data_preprocessing()
 
                     # Train the full dataset
                     train_metric = self.__train(
@@ -422,7 +424,8 @@ class Sequential(__nn__.Module):
                     if self.stop_training:
                         break
                     
-                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+                    if "EXTTORCH_TPU" in self.__ENV:
+                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
 
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
