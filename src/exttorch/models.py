@@ -180,7 +180,7 @@ class Sequential(__nn__.Module):
         if callbacks is not None:
             self.__callbacks = callbacks
         
-        def training():
+        def training(rank = None, flags=None):
             if validation_split is not None and validation_data is None:
                 
                 # Handle the callbacks on train begin

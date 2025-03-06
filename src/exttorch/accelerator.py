@@ -14,4 +14,4 @@ class TpuScope:
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        print(exc_type, exc_value, traceback)
