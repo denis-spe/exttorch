@@ -56,6 +56,7 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
+        import os
         self.__device = None
         self.loss = None
         self.optimizer = None
@@ -64,6 +65,7 @@ class Sequential(__nn__.Module):
         self.__callbacks = None
         self.__progbar = None
         self.stop_training = False
+        self.__ENV = os.environ
 
         # Import and use the Sequential object
         from torch import nn as _nn
@@ -176,251 +178,260 @@ class Sequential(__nn__.Module):
             
         if callbacks is not None:
             self.__callbacks = callbacks
-
-        if validation_split is not None and validation_data is None:
-            
-            # Handle the callbacks on train begin
-            self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
+        
+        def training():
+            if validation_split is not None and validation_data is None:
                 
-            for epoch in range(epochs):
+                # Handle the callbacks on train begin
+                self.__handle_callbacks("on_train_begin")
                 
-                # Handle the callbacks on epoch begin
-                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
-                
-                if verbose != 0:
-                    # Print the epochs
-                    print(f"Epoch {epoch + 1}/{epochs}")
+                print(end="\n")
+                    
+                for epoch in range(epochs):
+                    
+                    # Handle the callbacks on epoch begin
+                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    
+                    if verbose != 0:
+                        # Print the epochs
+                        print(f"Epoch {epoch + 1}/{epochs}")
 
-                # Initializer the data
-                data = DataHandler(
-                    X,
-                    y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    device=self.__device,
-                    **kwargs,
-                )
-
-                # Get the train and validation sample
-                train_sample, val_sample = data(validation_split)
-
-                # Train the train sample
-                train_metric = self.__train(
-                    train_sample,
-                    y=None,
-                    batch_size=batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=verbose,
-                    **kwargs,
-                )
-
-                # Add the train metric to the history
-                history.add_history(train_metric)
-
-                # Evaluate the validation sample
-                val_metric = self.evaluate(
-                    val_sample,
-                    y=None,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=None,
-                    **kwargs,
-                )
-
-                # Make a copy from train_metric dictionary.
-                metrics = train_metric.copy()
-
-                # Update the metrics by adding val_metric.
-                metrics.update(val_metric)
-
-                if verbose:
-                    # Show the progress bar on each epoch
-                    self.__progbar.update(self.__train_data_size, val_metric.items(), finalize=True)
-
-                # Add the validation metric to the history
-                history.add_history(val_metric)
-                
-                # Make a copy
-                metric_copy = train_metric.copy()
-                metric_copy.update(val_metric)
-                                
-                # Handle the callbacks on epoch end
-                self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
-                
-                if self.stop_training:
-                    break
-                
-            # Handle the callbacks on train end
-            self.__handle_callbacks("on_train_end", logs=history.history)
-
-        elif validation_data is not None:
-            
-            # Handle the callbacks on train begin
-            self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
-            
-            for epoch in range(epochs):
-                # Handle the callbacks on epoch begin
-                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
-                
-                if verbose is not None:
-                    # Print the epochs
-                    print(f"Epoch {epoch + 1}/{epochs}")
-
-                # Initializer the data
-                train_data = DataHandler(
-                    X,
-                    y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    device=self.__device,
-                    **kwargs,
-                )()
-
-                # Train the train sample
-                train_metric = self.__train(
-                    train_data,
-                    y=None,
-                    batch_size=batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=verbose,
-                    **kwargs,
-                )
-
-                if (
-                    isinstance(validation_data, list)
-                    or isinstance(validation_data, tuple)
-                ) and len(validation_data) == 2:
                     # Initializer the data
-                    val_sample = DataHandler(
-                        validation_data[0],
-                        validation_data[1],
+                    data = DataHandler(
+                        X,
+                        y,
                         batch_size=batch_size,
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
                         device=self.__device,
                         **kwargs,
-                    )()
-                else:
-                    # Initializer the data
-                    val_sample = DataHandler(
-                        validation_data,
+                    )
+
+                    # Get the train and validation sample
+                    train_sample, val_sample = data(validation_split)
+
+                    # Train the train sample
+                    train_metric = self.__train(
+                        train_sample,
+                        y=None,
+                        batch_size=batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        verbose=verbose,
+                        **kwargs,
+                    )
+
+                    # Add the train metric to the history
+                    history.add_history(train_metric)
+
+                    # Evaluate the validation sample
+                    val_metric = self.evaluate(
+                        val_sample,
                         y=None,
                         batch_size=batch_size,
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
+                        verbose=None,
+                        **kwargs,
+                    )
+
+                    # Make a copy from train_metric dictionary.
+                    metrics = train_metric.copy()
+
+                    # Update the metrics by adding val_metric.
+                    metrics.update(val_metric)
+
+                    if verbose:
+                        # Show the progress bar on each epoch
+                        self.__progbar.update(self.__train_data_size, val_metric.items(), finalize=True)
+
+                    # Add the validation metric to the history
+                    history.add_history(val_metric)
+                    
+                    # Make a copy
+                    metric_copy = train_metric.copy()
+                    metric_copy.update(val_metric)
+                                    
+                    # Handle the callbacks on epoch end
+                    self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
+                    
+                    if self.stop_training:
+                        break
+                    
+                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+                    
+                # Handle the callbacks on train end
+                self.__handle_callbacks("on_train_end", logs=history.history)
+
+            elif validation_data is not None:
+                
+                # Handle the callbacks on train begin
+                self.__handle_callbacks("on_train_begin")
+                
+                print(end="\n")
+                
+                for epoch in range(epochs):
+                    # Handle the callbacks on epoch begin
+                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    
+                    if verbose is not None:
+                        # Print the epochs
+                        print(f"Epoch {epoch + 1}/{epochs}")
+
+                    # Initializer the data
+                    train_data = DataHandler(
+                        X,
+                        y,
+                        batch_size=batch_size,
+                        val_batch_size=val_batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
                         device=self.__device,
                         **kwargs,
                     )()
 
-                # Add the train metric to the history
-                history.add_history(train_metric)
+                    # Train the train sample
+                    train_metric = self.__train(
+                        train_data,
+                        y=None,
+                        batch_size=batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        verbose=verbose,
+                        **kwargs,
+                    )
 
-                # Evaluate the validation sample
-                val_metric = self.evaluate(
-                    val_sample,
-                    y=None,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=None,
-                    **kwargs,
-                )
+                    if (
+                        isinstance(validation_data, list)
+                        or isinstance(validation_data, tuple)
+                    ) and len(validation_data) == 2:
+                        # Initializer the data
+                        val_sample = DataHandler(
+                            validation_data[0],
+                            validation_data[1],
+                            batch_size=batch_size,
+                            val_batch_size=val_batch_size,
+                            shuffle=shuffle,
+                            random_seed=random_seed,
+                            device=self.__device,
+                            **kwargs,
+                        )()
+                    else:
+                        # Initializer the data
+                        val_sample = DataHandler(
+                            validation_data,
+                            y=None,
+                            batch_size=batch_size,
+                            val_batch_size=val_batch_size,
+                            shuffle=shuffle,
+                            random_seed=random_seed,
+                            device=self.__device,
+                            **kwargs,
+                        )()
 
-                # Make a copy from train_metric dictionary.
-                metrics = train_metric.copy()
+                    # Add the train metric to the history
+                    history.add_history(train_metric)
 
-                # Update the metrics by adding val_metric.
-                metrics.update(val_metric)
+                    # Evaluate the validation sample
+                    val_metric = self.evaluate(
+                        val_sample,
+                        y=None,
+                        batch_size=batch_size,
+                        val_batch_size=val_batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        verbose=None,
+                        **kwargs,
+                    )
 
-                if verbose:
-                    # Show the progress bar on each epoch
-                    self.__progbar.add(1, metrics.items())
+                    # Make a copy from train_metric dictionary.
+                    metrics = train_metric.copy()
 
-                # Add the validation metric to the history
-                history.add_history(val_metric)
+                    # Update the metrics by adding val_metric.
+                    metrics.update(val_metric)
+
+                    if verbose:
+                        # Show the progress bar on each epoch
+                        self.__progbar.add(1, metrics.items())
+
+                    # Add the validation metric to the history
+                    history.add_history(val_metric)
+                    
+                    # Make a copy
+                    metric_copy = train_metric.copy()
+                    metric_copy.update(val_metric)
+                                    
+                    # Handle the callbacks on epoch end
+                    self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
+                    
+                    if self.stop_training:
+                        break
+                    
+                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
                 
-                # Make a copy
-                metric_copy = train_metric.copy()
-                metric_copy.update(val_metric)
-                                
-                # Handle the callbacks on epoch end
-                self.__handle_callbacks("on_epoch_end", logs=metric_copy, epoch=epoch)
-                
-                if self.stop_training:
-                    break
-            
-            # Handle the callbacks on train end
-            self.__handle_callbacks("on_train_end", logs=history.history)
+                # Handle the callbacks on train end
+                self.__handle_callbacks("on_train_end", logs=history.history)
 
-        else:            
-            # Handle the callbacks on train begin
-            self.__handle_callbacks("on_train_begin")
-            
-            print(end="\n")
-            
-            for epoch in range(epochs):
-                # Handle the callbacks on epoch begin
-                self.__handle_callbacks("on_epoch_begin", epoch=epoch)
-                
-                if verbose is not None:
-                    # Print the epochs
-                    print(f"Epoch {epoch + 1}/{epochs}")
-
-                # Initializer the data
-                data = DataHandler(
-                    X,
-                    y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    device=self.__device,
-                    **kwargs,
-                )()
-
-                # Train the full dataset
-                train_metric = self.__train(
-                    data,
-                    y=None,
-                    batch_size=batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=verbose,
-                    **kwargs,
-                )        
-
-                # Add the train metric to the history
-                history.add_history(train_metric)
+            else:            
+                # Handle the callbacks on train begin
+                self.__handle_callbacks("on_train_begin")
                 
                 print(end="\n")
                 
-                # Handle the callbacks on epoch end
-                self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
+                for epoch in range(epochs):
+                    # Handle the callbacks on epoch begin
+                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    
+                    if verbose is not None:
+                        # Print the epochs
+                        print(f"Epoch {epoch + 1}/{epochs}")
+
+                    # Initializer the data
+                    data = DataHandler(
+                        X,
+                        y,
+                        batch_size=batch_size,
+                        val_batch_size=val_batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        device=self.__device,
+                        **kwargs,
+                    )()
+
+                    # Train the full dataset
+                    train_metric = self.__train(
+                        data,
+                        y=None,
+                        batch_size=batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        verbose=verbose,
+                        **kwargs,
+                    )        
+
+                    # Add the train metric to the history
+                    history.add_history(train_metric)
+                    
+                    print(end="\n")
+                    
+                    # Handle the callbacks on epoch end
+                    self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
+                    
+                    if self.stop_training:
+                        break
+                    
+                    self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+
+                # Handle the callbacks on train end
+                self.__handle_callbacks("on_train_end", logs=history.history)
                 
-                if self.stop_training:
-                    break
-            
-            
-
-            # Handle the callbacks on train end
-            self.__handle_callbacks("on_train_end", logs=history.history)
-            
-
+        if "EXTTORCH_TPU" in self.__ENV:
+            if __name__ == "__main__":
+                self.__EN["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
+        else:
+            training()
         return history
 
     def predict_proba(self, X):
@@ -499,7 +510,6 @@ class Sequential(__nn__.Module):
         """
         # Import libraries
         import torch
-        import time
         from IPython.display import clear_output
 
         if verbose:
@@ -592,7 +602,11 @@ class Sequential(__nn__.Module):
             loss.backward()
 
             # update the parameters
-            self.optimizer.step()
+            if "EXTTORCH_TPU" in self.__ENV:
+                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
+                self.__ENV["EXTTORCH_XM"].mark_step()
+            else:
+                self.optimizer.step()
             
             if verbose is not None:
                 if idx != len(data) - 1:
@@ -803,10 +817,13 @@ class Sequential(__nn__.Module):
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
-        self.__device = device
+        self.__device = (
+            self.__ENV["EXTTORCH_TPU"] 
+            if "EXTTORCH_TPU" in self.__ENV
+            else device
+        )
 
 
 if __name__ == "__main__":
     import doctest
-
     doctest.testmod()

@@ -1,9 +1,10 @@
 # Praise Ye The Lord
 
-from typing import Any, Optional
+from typing import Tuple, Optional, Any
 
 import numpy as np
 import pandas as pd
+from torch.utils.data import DataLoader as __dataloader__
 
 # Import the libraries
 import torch
@@ -56,7 +57,7 @@ class DataHandler:
     ) -> None:
 
         # Import the libraries
-        import torch
+        import torch, os
 
         if isinstance(x, pd.DataFrame):
             self.__x = x.to_numpy()
@@ -71,6 +72,7 @@ class DataHandler:
         self.__shuffle = shuffle
         self.__kwargs = kwargs
         self.__generator = torch.Generator(device=device)
+        self.__ENV = os.environ
         if random_seed is not None:
             self.__generator.manual_seed(random_seed)
 
@@ -87,7 +89,7 @@ class DataHandler:
 
         return (sample for sample in data_split)
 
-    def __call__(self, val_size: Optional[float] = None) -> Any:
+    def __call__(self, val_size: Optional[float] = None) -> __dataloader__ | Tuple[__dataloader__]:
         from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset
 
         if isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
@@ -100,7 +102,7 @@ class DataHandler:
 
             if val_size is not None:
                 train_data, val_data = self.__split_data(__Dataset_obj, val_size)
-                return (
+                dataloader = (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -116,7 +118,7 @@ class DataHandler:
                     ),
                 )
 
-            return DataLoader(
+            dataloader = DataLoader(
                 __Dataset_obj,
                 batch_size=self.__batch_size,
                 generator=self.__generator,
@@ -124,12 +126,12 @@ class DataHandler:
             )
 
         elif isinstance(self.__x, Subset):
-            return self.__x.dataset
+            dataloader = self.__x.dataset
 
         elif isinstance(self.__x, Dataset) or isinstance(self.__x, TensorDataset):
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
-                return (
+                dataloader = (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -145,7 +147,7 @@ class DataHandler:
                     ),
                 )
 
-            return DataLoader(
+            dataloader = DataLoader(
                 self.__x,
                 batch_size=self.__batch_size,
                 generator=self.__generator,
@@ -156,7 +158,7 @@ class DataHandler:
             if val_size is not None:
                 train_data, val_data = self.__split_data(self.__x, val_size)
 
-                return (
+                dataloader = (
                     DataLoader(
                         train_data,
                         batch_size=self.__batch_size,
@@ -172,10 +174,20 @@ class DataHandler:
                     ),
                 )
 
-            return self.__x
+            dataloader = self.__x
         else:
             raise ValueError(
                 f"Invalid data of type {type(self.__x)} for x, expected type of "
                 + "`np.ndarray | DataLoader | Dataset | TensorDataset` for x "
                 + "and np.ndarray for y"
             )
+        
+        
+        if "EXTTORCH_TPU" in self.__ENV:
+            if isinstance(dataloader, tuple):
+                return (
+                    self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
+                    for data in dataloader
+                )
+            return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
+        return dataloader

@@ -5,6 +5,7 @@
         "intp",
         "Jaccard",
         "ndarray",
+        "nprocs",
         "proba",
         "progbar",
         "pycache"
