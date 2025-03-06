@@ -432,7 +432,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
-            self.__EN["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
+            self.__ENV["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
         else:
             training()
         return history
