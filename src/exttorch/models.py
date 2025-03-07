@@ -432,6 +432,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
+            print("spawn")
             self.__ENV["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
         else:
             training()
@@ -606,6 +607,7 @@ class Sequential(__nn__.Module):
 
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
+                print("optimizer_step")
                 self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
