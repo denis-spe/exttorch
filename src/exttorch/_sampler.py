@@ -42,13 +42,13 @@ class GridSearchSampler:
         import itertools
 
         # Turn HyperParameters into a dict
-        hyparam = self._params.__dict__
+        hyperparameter = self._params.__dict__
 
         # Get the keys
-        keys = list(hyparam.keys())
+        keys = list(hyperparameter.keys())
 
         # Get the values
-        values = list(map(lambda x: x.values, hyparam.values()))
+        values = list(map(lambda x: x.values, hyperparameter.values()))
 
         # Get the length of iter product
         self.product_len = len(list(itertools.product(*values)))

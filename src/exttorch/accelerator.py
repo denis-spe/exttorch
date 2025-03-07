@@ -1,4 +1,12 @@
-class TpuScope:
+class TPUScope:
+    def install(self):
+        import os
+        os.system("""
+            pip install torchvision torch~=2.6.0 'torch_xla[tpu]~=2.6.0' \ 
+            -f https://storage.googleapis.com/libtpu-releases/index.html 
+            -f https://storage.googleapis.com/libtpu-wheels/index.html
+        """)
+        
     def __enter__(self):
         from exttorch._env import _ENV
         import torch_xla.core.xla_model as xm
