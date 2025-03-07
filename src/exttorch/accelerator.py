@@ -1,6 +1,5 @@
 class TpuScope:
     def __enter__(self):
-        import os
         from exttorch._env import _ENV
         import torch_xla.core.xla_model as xm
         import torch_xla.distributed.xla_multiprocessing as xmp
@@ -14,4 +13,8 @@ class TpuScope:
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        print(exc_type, exc_value, traceback)
+        from exttorch._env import _ENV
+        del _ENV["EXTTORCH_TPU"]
+        del _ENV["EXTTORCH_XMP"]
+        del _ENV["EXTTORCH_PL"]
+        del _ENV["EXTTORCH_XM"]
