@@ -602,11 +602,13 @@ class Sequential(__nn__.Module):
             loss.backward()
 
             # update the parameters
-            if "EXTTORCH_TPU" in self.__ENV:
-                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-                self.__ENV["EXTTORCH_XM"].mark_step()
-            else:
-                self.optimizer.step()
+            # if "EXTTORCH_TPU" in self.__ENV:
+            #     self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
+            #     self.__ENV["EXTTORCH_XM"].mark_step()
+            # else:
+            #     self.optimizer.step()
+            self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
+            self.__ENV["EXTTORCH_XM"].mark_step()
             
             if verbose is not None:
                 if idx != len(data) - 1:
@@ -817,11 +819,12 @@ class Sequential(__nn__.Module):
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
-        self.__device = (
-            self.__ENV["EXTTORCH_TPU"] 
-            if "EXTTORCH_TPU" in self.__ENV
-            else device
-        )
+        # self.__device = (
+        #     self.__ENV["EXTTORCH_TPU"] 
+        #     if "EXTTORCH_TPU" in self.__ENV
+        #     else device
+        # )
+        self.__device = self.__ENV["EXTTORCH_TPU"]
 
 
 if __name__ == "__main__":
