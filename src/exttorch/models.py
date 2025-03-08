@@ -140,6 +140,7 @@ class Sequential(__nn__.Module):
         validation_data=None,
         verbose: str | int | None = 1,
         callbacks: __List__[__Callback__] = None,
+        nprocs: int = 1,
         **dataloader_kwargs,
     ):
         """
@@ -171,7 +172,10 @@ class Sequential(__nn__.Module):
                 Handles the model progress bar.
             callbacks: (Optional[List[Callback]])
                 Model list of callbacks.
-            dataloader_kwargs: (Optional[Dict])
+            nprocs: (int)
+                The number of processes/devices for the replication. 
+                At the moment, if specified, can be either 1 or the maximum number of devices.
+            kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
         # Import libraries
@@ -445,7 +449,7 @@ class Sequential(__nn__.Module):
         if "EXTTORCH_TPU" in self.__ENV:
             self.__ENV["EXTTORCH_XMP"].spawn(
                 training, args=(None,), 
-                nprocs=self.__ENV["EXTTORCH_XM"].runtime.world_size(), 
+                nprocs=nprocs, 
                 start_method="spawn")
         else:
             training()
