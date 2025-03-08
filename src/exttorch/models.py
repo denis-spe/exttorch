@@ -139,7 +139,7 @@ class Sequential(__nn__.Module):
         validation_data=None,
         verbose: str | int | None = 1,
         callbacks: __List__[__Callback__] = None,
-        **kwargs,
+        **dataloader_kwargs,
     ):
         """
         Fit the model to the data.
@@ -170,6 +170,8 @@ class Sequential(__nn__.Module):
                 Handles the model progress bar.
             callbacks: (Optional[List[Callback]])
                 Model list of callbacks.
+            dataloader_kwargs: (Optional[Dict])
+                Additional arguments for DataLoader.
         """
         # Import libraries
         from .history import History
