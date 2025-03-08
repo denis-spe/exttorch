@@ -22,7 +22,7 @@ class TPUScope:
     
     def __exit__(self, exc_type, exc_value, traceback):
         from exttorch._env import _ENV
-        # del _ENV["EXTTORCH_TPU"]
-        # del _ENV["EXTTORCH_XMP"]
-        # del _ENV["EXTTORCH_PL"]
-        # del _ENV["EXTTORCH_XM"]
+        del _ENV["EXTTORCH_TPU"]
+        del _ENV["EXTTORCH_XMP"]
+        del _ENV["EXTTORCH_PL"]
+        del _ENV["EXTTORCH_XM"]
