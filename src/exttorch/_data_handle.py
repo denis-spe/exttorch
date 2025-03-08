@@ -188,11 +188,11 @@ class DataHandler:
     def data_preprocessing(self, val_size: Optional[float] = None):
         dataloader = self.__call__(val_size=val_size)
         
-        # if "EXTTORCH_TPU" in self.__ENV:
-        if isinstance(dataloader, tuple):
-            return (
-                self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
-                for data in dataloader
-            )
-        return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
-        # return dataloader
+        if "EXTTORCH_TPU" in self.__ENV:
+            if isinstance(dataloader, tuple):
+                return (
+                    self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
+                    for data in dataloader
+                )
+            return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
+        return dataloader

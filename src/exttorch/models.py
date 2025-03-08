@@ -58,7 +58,6 @@ class Sequential(__nn__.Module):
         """
         super(Sequential, self).__init__()
         import os
-        self.__device = None
         self.loss = None
         self.optimizer = None
         self.layers = layers if layers else []
@@ -67,11 +66,20 @@ class Sequential(__nn__.Module):
         self.__progbar = None
         self.stop_training = False
         self.__ENV = __ENV__
+        self.__device = (
+            self.__ENV["EXTTORCH_TPU"] 
+            if "EXTTORCH_TPU" in self.__ENV 
+            else (
+                "cuda" 
+                if torch.cuda.is_available() 
+                else "cpu"
+            ))
 
         # Import and use the Sequential object
         from torch import nn as _nn
 
-        self.__model_list = _nn.ModuleList(self.layers)
+        self.__model_list = _nn.ModuleList(self.layers).to(self.__device)
+        
 
     def forward(self, X):
         model = self.__model
@@ -79,7 +87,7 @@ class Sequential(__nn__.Module):
 
     @property
     def __model(self):
-        return __nn__.Sequential(*self.__model_list).double().to(self.__device)
+        return __nn__.Sequential(*self.__model_list).to(self.__device).double()
     
     def get_weights(self):
         return self.__model.state_dict()
@@ -180,7 +188,7 @@ class Sequential(__nn__.Module):
         if callbacks is not None:
             self.__callbacks = callbacks
         
-        def training(rank, flags):
+        def training(rank = 0, flags = None):
             if validation_split is not None and validation_data is None:
                 
                 # Handle the callbacks on train begin
@@ -432,9 +440,12 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
-            self.__ENV["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
+            self.__ENV["EXTTORCH_XMP"].spawn(
+                training, args=(None,), 
+                nprocs=self.__ENV["EXTTORCH_XM"].runtime.world_size(), 
+                start_method="spawn")
         else:
-            training(None, None)
+            training()
         return history
 
     def predict_proba(self, X):
@@ -602,13 +613,11 @@ class Sequential(__nn__.Module):
             loss.backward()
 
             # update the parameters
-            # if "EXTTORCH_TPU" in self.__ENV:
-            #     self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-            #     self.__ENV["EXTTORCH_XM"].mark_step()
-            # else:
-            #     self.optimizer.step()
-            self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-            self.__ENV["EXTTORCH_XM"].mark_step()
+            if "EXTTORCH_TPU" in self.__ENV:
+                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
+                self.__ENV["EXTTORCH_XM"].mark_step()
+            else:
+                self.optimizer.step()
             
             if verbose is not None:
                 if idx != len(data) - 1:
@@ -797,7 +806,6 @@ class Sequential(__nn__.Module):
         optimizer: __Any__,
         loss: __Any__,
         metrics: __List__ | None = None,
-        device: str = "cpu",
     ):
         """
         Compile the model.
@@ -819,12 +827,6 @@ class Sequential(__nn__.Module):
         self.optimizer = optimizer
         self.loss = loss
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
-        # self.__device = (
-        #     self.__ENV["EXTTORCH_TPU"] 
-        #     if "EXTTORCH_TPU" in self.__ENV
-        #     else device
-        # )
-        self.__device = self.__ENV["EXTTORCH_TPU"]
 
 
 if __name__ == "__main__":
