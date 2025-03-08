@@ -180,7 +180,7 @@ class Sequential(__nn__.Module):
         if callbacks is not None:
             self.__callbacks = callbacks
         
-        def training(rank = None, flags=None):
+        def training(rank, flags):
             if validation_split is not None and validation_data is None:
                 
                 # Handle the callbacks on train begin
@@ -434,7 +434,7 @@ class Sequential(__nn__.Module):
         if "EXTTORCH_TPU" in self.__ENV:
             self.__ENV["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
         else:
-            training()
+            training(None, None)
         return history
 
     def predict_proba(self, X):
