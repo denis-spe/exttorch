@@ -57,7 +57,8 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
-        import os
+        import torch
+        
         self.loss = None
         self.optimizer = None
         self.layers = layers if layers else []
@@ -216,7 +217,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         device=self.__device,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )
 
                     # Get the train and validation sample
@@ -230,7 +231,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )
 
                     # Add the train metric to the history
@@ -245,7 +246,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=None,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )
 
                     # Make a copy from train_metric dictionary.
@@ -301,7 +302,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         device=self.__device,
-                        **kwargs,
+                        **dataloader_kwargs,
                     ).data_preprocessing()
 
                     # Train the train sample
@@ -312,7 +313,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )
 
                     if (
@@ -328,7 +329,7 @@ class Sequential(__nn__.Module):
                             shuffle=shuffle,
                             random_seed=random_seed,
                             device=self.__device,
-                            **kwargs,
+                            **dataloader_kwargs,
                         ).data_preprocessing()
                     else:
                         # Initializer the data
@@ -340,7 +341,7 @@ class Sequential(__nn__.Module):
                             shuffle=shuffle,
                             random_seed=random_seed,
                             device=self.__device,
-                            **kwargs,
+                            **dataloader_kwargs,
                         ).data_preprocessing()
 
                     # Add the train metric to the history
@@ -355,7 +356,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=None,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )
 
                     # Make a copy from train_metric dictionary.
@@ -410,7 +411,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         device=self.__device,
-                        **kwargs,
+                        **dataloader_kwargs,
                     ).data_preprocessing()
 
                     # Train the full dataset
@@ -421,7 +422,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
-                        **kwargs,
+                        **dataloader_kwargs,
                     )        
 
                     # Add the train metric to the history

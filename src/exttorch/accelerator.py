@@ -1,4 +1,10 @@
 class TPUScope:
+    @property
+    def num_tpu_devices(self):
+        import torch_xla.core.xla_model as xm
+        return xm.xrt_world_size()
+    
+    @property
     def install(self):
         import os
         os.system("""
