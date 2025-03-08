@@ -432,7 +432,6 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
-            print("spawn")
             self.__ENV["EXTTORCH_XMP"].spawn(training, args=(None,), nprocs=1, start_method="spawn")
         else:
             training()
@@ -574,9 +573,6 @@ class Sequential(__nn__.Module):
             # Zero the gradient.
             self.optimizer.zero_grad()
 
-            # Set the device for X and y
-            feature, label = (feature.to(self.__device), label.to(self.__device))
-
             # Make prediction
             predict = self.__model(feature.double())
 
@@ -596,7 +592,7 @@ class Sequential(__nn__.Module):
             loss = self.loss(predict, target)
 
             # Add loss to the storage
-            loss_storage.loss = loss.item()
+            loss_storage.loss = loss.float().detach().cpu().numpy()
             final_loss = loss_storage.loss
 
             if self.metrics and metric_storage:
@@ -607,7 +603,6 @@ class Sequential(__nn__.Module):
 
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
-                print("optimizer_step")
                 self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
