@@ -176,8 +176,6 @@ class DataHandler:
                 )
 
             return self.__x
-        elif "EXTTORCH_TPU" in self.__ENV and isinstance(self.__x, self.__ENV["EXTTORCH_PL"].MpDeviceLoader):
-            return self.__x
         else:
             raise ValueError(
                 f"Invalid data of type {type(self.__x)} for x, expected type of "
