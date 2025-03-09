@@ -189,7 +189,7 @@ class DataHandler:
         dataloader = self.__call__(val_size=val_size)
         
         if "EXTTORCH_TPU" in self.__ENV:
-            # print(dataloader)
+            print(dataloader)
             # if isinstance(dataloader, tuple):
             #     return (
             #         self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
