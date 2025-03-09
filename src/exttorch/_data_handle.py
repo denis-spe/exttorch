@@ -72,7 +72,7 @@ class DataHandler:
         self.__val_batch_size = val_batch_size
         self.__shuffle = shuffle
         self.__kwargs = kwargs
-        self.__generator = torch.Generator(device="cuda" if "cuda" == device else "cpu")
+        self.__generator = torch.Generator()
         self.__ENV = _ENV
         if random_seed is not None:
             self.__generator.manual_seed(random_seed)
