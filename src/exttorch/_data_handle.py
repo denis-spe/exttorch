@@ -175,7 +175,9 @@ class DataHandler:
                     ),
                 )
 
-            return self.__x 
+            return self.__x
+        elif 'EXTTORCH_TPU' in self.__ENV and isinstance(self.__x, self.__ENV["EXTTORCH_PL"].MpDeviceLoader):
+            return self.__x
         else:
             raise ValueError(
                 f"Invalid data of type {type(self.__x)} for x, expected type of "
@@ -190,7 +192,12 @@ class DataHandler:
             if isinstance(dataloader, tuple):
                 return (
                     self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
+                    if isinstance(data, __dataloader__)
+                    else data 
                     for data in dataloader
                 )
-            return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
+            elif isinstance(dataloader, self.__ENV['EXTTORCH_PL'].MpDeviceLoader):
+                return dataloader
+            elif isinstance(dataloader, __dataloader__):
+                return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
         return dataloader
