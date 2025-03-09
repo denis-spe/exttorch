@@ -82,10 +82,13 @@ class DataHandler:
         Split the data into train and validation data.
         """
         from torch.utils.data import random_split
+        
+        # Check if the data is a DataLoader object
+        dataset = data.dataset if isinstance(data, __dataloader__) else data
 
         # Split the data into train and validation.
         data_split = random_split(
-            data, lengths=[1 - val_size, val_size], generator=self.__generator
+            dataset, lengths=[1 - val_size, val_size], generator=self.__generator
         )
 
         return (sample for sample in data_split)
@@ -189,16 +192,13 @@ class DataHandler:
         dataloader = self.__call__(val_size=val_size)
         
         if "EXTTORCH_TPU" in self.__ENV:
-            print(dataloader)
-            # if isinstance(dataloader, tuple):
-            #     return (
-            #         self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
-            #         if isinstance(data, __dataloader__)
-            #         else data 
-            #         for data in dataloader
-            #     )
-            # elif isinstance(dataloader, self.__ENV['EXTTORCH_PL'].MpDeviceLoader):
-            #     return dataloader
+            if isinstance(dataloader, tuple):
+                return (
+                    self.__ENV["EXTTORCH_PL"].MpDeviceLoader(data, self.__ENV["EXTTORCH_TPU"])
+                    for data in dataloader
+                )
+            elif isinstance(dataloader, self.__ENV['EXTTORCH_PL'].MpDeviceLoader):
+                return dataloader
             if isinstance(dataloader, __dataloader__):
                 return self.__ENV["EXTTORCH_PL"].MpDeviceLoader(dataloader, self.__ENV["EXTTORCH_TPU"])
             elif isinstance(dataloader, self.__ENV['EXTTORCH_PL'].MpDeviceLoader):
