@@ -612,7 +612,7 @@ class Sequential(__nn__.Module):
                 
                 return predict, target, loss
             
-            if self.__ENV["EXTTORCH_TPU"]:
+            if 'EXTTORCH_TPU' in self.__ENV:
                 with self.__ENV["EXTTORCH_AMP"].autocast(self.__ENV["EXTTORCH_TPU"]):
                     predict, target, loss = forward()
             else:
