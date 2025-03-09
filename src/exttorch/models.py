@@ -590,24 +590,33 @@ class Sequential(__nn__.Module):
             feature, label = feature.to(self.__device), label.to(self.__device)
             # Zero the gradient.
             self.optimizer.zero_grad()
+            
+            def forward():
+                # Make prediction
+                predict = self.__model(feature.double())
 
-            # Make prediction
-            predict = self.__model(feature.double())
+                # Check if using BCELoss optimizer
+                target = self.__handle_one_hot(label)
 
-            # Check if using BCELoss optimizer
-            target = self.__handle_one_hot(label)
-
-            # Change size of torch.size([1]) to torch.size([1, 1])
-            target = (
-                target.view(1, 1)
-                if (
-                    target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
+                # Change size of torch.size([1]) to torch.size([1, 1])
+                target = (
+                    target.view(1, 1)
+                    if (
+                        target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
+                    )
+                    else target
                 )
-                else target
-            )
 
-            # Compute the loss
-            loss = self.loss(predict, target)
+                # Compute the loss
+                loss = self.loss(predict, target)
+                
+                return predict, target, loss
+            
+            if self.__ENV["EXTTORCH_TPU"]:
+                with self.__ENV["EXTTORCH_AMP"].autocast(self.__ENV["EXTTORCH_TPU"]):
+                    predict, target, loss = forward()
+            else:
+                predict, target, loss = forward()
 
             # Add loss to the storage
             loss_storage.loss = loss.float().detach().cpu().numpy()
@@ -781,6 +790,9 @@ class Sequential(__nn__.Module):
 
                 if self.metrics and metric_storage:
                     metric_storage.add_metric(predict, label)
+                    
+                if "EXTTORCH_TPU" in self.__ENV:
+                    self.__ENV["EXTTORCH_XM"].mark_step()
 
         if self.metrics and metric_storage:
             measurements = metric_storage.metrics(y)

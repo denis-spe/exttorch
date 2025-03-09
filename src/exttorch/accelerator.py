@@ -18,11 +18,13 @@ class TPUScope:
         import torch_xla.core.xla_model as xm
         import torch_xla.distributed.xla_multiprocessing as xmp
         import torch_xla.distributed.parallel_loader as pl
+        import torch_xla.amp as amp
                 
         _ENV["EXTTORCH_TPU"] = xm.xla_device()
         _ENV["EXTTORCH_XMP"] = xmp
         _ENV["EXTTORCH_PL"] = pl
         _ENV["EXTTORCH_XM"] = xm
+        _ENV["EXTTORCH_AMP"] = amp
         
         return self
     
@@ -32,3 +34,4 @@ class TPUScope:
         del _ENV["EXTTORCH_XMP"]
         del _ENV["EXTTORCH_PL"]
         del _ENV["EXTTORCH_XM"]
+        del _ENV["EXTTORCH_AMP"]
