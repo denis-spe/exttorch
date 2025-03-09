@@ -175,7 +175,7 @@ class DataHandler:
                     ),
                 )
 
-            return self.__x
+            return self.__x 
         else:
             raise ValueError(
                 f"Invalid data of type {type(self.__x)} for x, expected type of "
