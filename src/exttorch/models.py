@@ -622,13 +622,13 @@ class Sequential(__nn__.Module):
                 return predict, target, loss
             
             if 'EXTTORCH_TPU' in self.__ENV:
-                with self.__ENV["EXTTORCH_AMP"].autocast(self.__ENV["EXTTORCH_TPU"]):
+                with self.__ENV["EXTTORCH_AMP"].autocast():
                     predict, target, loss = forward()
             else:
                 predict, target, loss = forward()
 
             # Add loss to the storage
-            loss_storage.loss = loss.float().detach().cpu().numpy()
+            loss_storage.loss = loss.detach()
             final_loss = loss_storage.loss
 
             if self.metrics and metric_storage:
@@ -639,7 +639,7 @@ class Sequential(__nn__.Module):
 
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
-                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer, barrier=True)
+                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
