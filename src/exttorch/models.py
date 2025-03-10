@@ -628,7 +628,7 @@ class Sequential(__nn__.Module):
                 predict, target, loss = forward()
 
             # Add loss to the storage
-            loss_storage.loss = loss.detach()
+            loss_storage.loss = loss.detach().cpu().numpy()
             final_loss = loss_storage.loss
 
             if self.metrics and metric_storage:
