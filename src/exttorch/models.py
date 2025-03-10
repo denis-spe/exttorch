@@ -511,7 +511,7 @@ class Sequential(__nn__.Module):
         shuffle: bool = False,
         random_seed=None,
         verbose: str | int | None = 1,
-        nprocs: int = 1
+        nprocs: int = 1,
         **kwargs,
     ) -> dict:
         """
