@@ -639,10 +639,7 @@ class Sequential(__nn__.Module):
 
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
-                if nprocs > 1:
-                    self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-                else:
-                    self.optimizer.step()
+                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
