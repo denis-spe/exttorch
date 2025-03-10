@@ -692,7 +692,7 @@ class Sequential(__nn__.Module):
         shuffle: bool = False,
         random_seed: int | None = None,
         verbose: int | None = 1,
-        nprocs: int = 1
+        nprocs: int = 1,
         **kwargs,
     ):
         """
