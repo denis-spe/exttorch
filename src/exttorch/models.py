@@ -225,7 +225,7 @@ class Sequential(__nn__.Module):
                     )
 
                     # Get the train and validation sample
-                    train_sample, val_sample = data.data_preprocessing(validation_split)
+                    train_sample, val_sample = data.data_preprocessing(nprocs, val_size=validation_split)
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -235,6 +235,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
+                        nprocs=nprocs,
                         **dataloader_kwargs,
                     )
 
@@ -250,6 +251,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=None,
+                        nprocs=nprocs,
                         **dataloader_kwargs,
                     )
 
@@ -307,7 +309,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         device=self.__device,
                         **dataloader_kwargs,
-                    ).data_preprocessing()
+                    ).data_preprocessing(nprocs)
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -317,6 +319,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
+                        nprocs=nprocs,
                         **dataloader_kwargs,
                     )
 
@@ -334,7 +337,7 @@ class Sequential(__nn__.Module):
                             random_seed=random_seed,
                             device=self.__device,
                             **dataloader_kwargs,
-                        ).data_preprocessing()
+                        ).data_preprocessing(nprocs)
                     else:
                         # Initializer the data
                         val_sample = DataHandler(
@@ -346,7 +349,7 @@ class Sequential(__nn__.Module):
                             random_seed=random_seed,
                             device=self.__device,
                             **dataloader_kwargs,
-                        ).data_preprocessing()
+                        ).data_preprocessing(nprocs)
 
                     # Add the train metric to the history
                     history.add_history(train_metric)
@@ -360,6 +363,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=None,
+                        nprocs=nprocs,
                         **dataloader_kwargs,
                     )
 
@@ -416,7 +420,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         device=self.__device,
                         **dataloader_kwargs,
-                    ).data_preprocessing()
+                    ).data_preprocessing(nprocs)
 
                     # Train the full dataset
                     train_metric = self.__train(
@@ -426,6 +430,7 @@ class Sequential(__nn__.Module):
                         shuffle=shuffle,
                         random_seed=random_seed,
                         verbose=verbose,
+                        nprocs=nprocs,
                         **dataloader_kwargs,
                     )        
 
@@ -447,10 +452,13 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
-            self.__ENV["EXTTORCH_XMP"].spawn(
-                training, args=(None,), 
-                nprocs=nprocs, 
-                start_method="spawn")
+            if nprocs == 1
+                self.__ENV["EXTTORCH_XMP"].spawn(
+                    training, args=(None,), 
+                    nprocs=nprocs, 
+                    start_method="spawn")
+            else:
+                pass
         else:
             training()
         return history
@@ -503,6 +511,7 @@ class Sequential(__nn__.Module):
         shuffle: bool = False,
         random_seed=None,
         verbose: str | int | None = 1,
+        nprocs: int = 1
         **kwargs,
     ) -> dict:
         """
@@ -565,7 +574,7 @@ class Sequential(__nn__.Module):
             random_seed=random_seed,
             device=self.__device,
             **kwargs,
-        )()
+        ).data_preprocessing(nprocs)
 
         # Get the data size
         self.__train_data_size = len(data)
@@ -630,7 +639,8 @@ class Sequential(__nn__.Module):
 
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
-                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
+                if nprocs > 1:
+                    self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
@@ -682,6 +692,7 @@ class Sequential(__nn__.Module):
         shuffle: bool = False,
         random_seed: int | None = None,
         verbose: int | None = 1,
+        nprocs: int = 1
         **kwargs,
     ):
         """
@@ -736,7 +747,7 @@ class Sequential(__nn__.Module):
             random_seed=random_seed,
             device=self.__device,
             **kwargs,
-        )()
+        ).data_preprocessing(nprocs=nprocs)
 
         # # Declare the progbar
         # progbar = None
