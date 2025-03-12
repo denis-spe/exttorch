@@ -564,6 +564,10 @@ class Sequential(__nn__.Module):
 
         # Indicate the model to train
         self.__model.train()
+        
+        if "EXTTORCH_TPU" in self.__ENV:
+            # Optional for TPU v4 and GPU
+            self.__ENV["EXTTORCH_XM"].broadcast_master_param(self.__model)
 
         # Initializer the data
         data = DataHandler(

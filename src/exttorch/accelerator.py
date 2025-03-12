@@ -27,7 +27,7 @@ class TPUScope:
         del _ENV["EXTTORCH_XM"]
         del _ENV["EXTTORCH_AMP"]
         
-def install(self):
+def install():
     import os
     os.system("""
         pip install torchvision torch~=2.6.0 'torch_xla[tpu]~=2.6.0' \ 
