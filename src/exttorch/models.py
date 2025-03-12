@@ -432,24 +432,26 @@ class Sequential(__nn__.Module):
                         verbose=verbose,
                         nprocs=nprocs,
                         **dataloader_kwargs,
-                    )        
+                    )
+                    
+                    print(f"Epoch {epoch}, Loss: {torch.tensor(train_metric).mean()}")        
 
-                    # Add the train metric to the history
-                    history.add_history(train_metric)
+                #     # Add the train metric to the history
+                #     history.add_history(train_metric)
                     
-                    print(end="\n")
+                #     print(end="\n")
                     
-                    # Handle the callbacks on epoch end
-                    self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
+                #     # Handle the callbacks on epoch end
+                #     self.__handle_callbacks("on_epoch_end", epoch=epoch, logs=train_metric)
                     
-                    if self.stop_training:
-                        break
+                #     if self.stop_training:
+                #         break
                     
-                    if "EXTTORCH_TPU" in self.__ENV:
-                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
+                #     if "EXTTORCH_TPU" in self.__ENV:
+                #         self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
 
-                # Handle the callbacks on train end
-                self.__handle_callbacks("on_train_end", logs=history.history)
+                # # Handle the callbacks on train end
+                # self.__handle_callbacks("on_train_end", logs=history.history)
                 
         if "EXTTORCH_TPU" in self.__ENV:
             if nprocs == 1:
@@ -553,21 +555,21 @@ class Sequential(__nn__.Module):
                 "Compile the model with `model.compile` before " + "fitting the model"
             )
 
-        metric_storage = None
+        # metric_storage = None
 
-        # Initializer the loss storage
-        loss_storage = LossStorage()
+        # # Initializer the loss storage
+        # loss_storage = LossStorage()
 
-        if self.metrics:
-            # Create the list for metric
-            metric_storage = MetricStorage(self.metrics, batch_size=batch_size)
+        # if self.metrics:
+        #     # Create the list for metric
+        #     metric_storage = MetricStorage(self.metrics, batch_size=batch_size)
 
         # Indicate the model to train
         self.__model.train()
         
-        if "EXTTORCH_TPU" in self.__ENV:
-            # Optional for TPU v4 and GPU
-            self.__ENV["EXTTORCH_XM"].broadcast_master_param(self.__model)
+        # if "EXTTORCH_TPU" in self.__ENV:
+        #     # Optional for TPU v4 and GPU
+        #     self.__ENV["EXTTORCH_XM"].broadcast_master_param(self.__model)
 
         # Initializer the data
         data = DataHandler(
@@ -580,23 +582,23 @@ class Sequential(__nn__.Module):
             **kwargs,
         ).data_preprocessing(nprocs)
 
-        # Get the data size
-        self.__train_data_size = len(data)
+        # # Get the data size
+        # self.__train_data_size = len(data)
 
-        # Declare the progbar
-        progbar: Progbar = None
-        steps = 0
+        # # Declare the progbar
+        # progbar: Progbar = None
+        # steps = 0
         
-        final_loss = 0.0
+        # final_loss = 0.0
         
         metrics = []
 
-        if verbose is not None:
-            # Instantiate the progress bar
-            self.__progbar = Progbar(len(data), verbose=verbose)
+        # if verbose is not None:
+        #     # Instantiate the progress bar
+        #     self.__progbar = Progbar(len(data), verbose=verbose)
 
-        # Handle on batch begin callback
-        self.__handle_callbacks('on_batch_begin')
+        # # Handle on batch begin callback
+        # self.__handle_callbacks('on_batch_begin')
         
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
@@ -630,13 +632,15 @@ class Sequential(__nn__.Module):
             #         predict, target, loss = forward()
             # else:
             predict, target, loss = forward()
+            
+            metrics.append(loss.item())
 
-            # Add loss to the storage
-            loss_storage.loss = loss.detach().cpu().numpy()
-            final_loss = loss_storage.loss
+            # # Add loss to the storage
+            # loss_storage.loss = loss.detach().cpu().numpy()
+            # final_loss = loss_storage.loss
 
-            if self.metrics and metric_storage:
-                metric_storage.add_metric(predict, label=label)
+            # if self.metrics and metric_storage:
+            #     metric_storage.add_metric(predict, label=label)
 
             # Compute the gradient
             loss.backward()
@@ -649,43 +653,44 @@ class Sequential(__nn__.Module):
             else:
                 self.optimizer.step()
             
-            if verbose is not None:
-                if idx != len(data) - 1:
-                    # Update the progress bar
-                    self.__progbar.update(steps, [("loss",  loss.item())], finalize=False)
-                steps += 1
+        #     if verbose is not None:
+        #         if idx != len(data) - 1:
+        #             # Update the progress bar
+        #             self.__progbar.update(steps, [("loss",  loss.item())], finalize=False)
+        #         steps += 1
             
         
-        if self.metrics and metric_storage:
-            measurements = metric_storage.metrics(y=y)
-            measurements["loss"] = final_loss
+        # if self.metrics and metric_storage:
+        #     measurements = metric_storage.metrics(y=y)
+        #     measurements["loss"] = final_loss
 
-            # Place the val_loss to first position
-            measurements = change_metric_first_position(measurements)
+        #     # Place the val_loss to first position
+        #     measurements = change_metric_first_position(measurements)
                         
-            if verbose is not None:
+        #     if verbose is not None:
                 
-                # Show the progress bar on each epoch
-                self.__progbar.update(steps, measurements.items(), finalize=False)
+        #         # Show the progress bar on each epoch
+        #         self.__progbar.update(steps, measurements.items(), finalize=False)
                 
-            # Handle on batch begin callback
-            self.__handle_callbacks('on_batch_end', logs=measurements)
+        #     # Handle on batch begin callback
+        #     self.__handle_callbacks('on_batch_end', logs=measurements)
                 
-            return measurements
+        #     return measurements
         
-        loss_dict = {"loss": final_loss}
+        # loss_dict = {"loss": final_loss}
         
-        if verbose is not None:
-            # Show the progress bar on each epoch
-            self.__progbar.update(steps, loss_dict.items(), finalize=False)
+        # if verbose is not None:
+        #     # Show the progress bar on each epoch
+        #     self.__progbar.update(steps, loss_dict.items(), finalize=False)
             
-            # Assign progbar
-            self.__progbar = progbar
+        #     # Assign progbar
+        #     self.__progbar = progbar
         
-        # Handle on batch begin callback
-        self.__handle_callbacks('on_batch_end', logs=loss_dict)
+        # # Handle on batch begin callback
+        # self.__handle_callbacks('on_batch_end', logs=loss_dict)
                 
-        return loss_dict
+        # return loss_dict
+        return metrics
 
     def evaluate(
         self,
