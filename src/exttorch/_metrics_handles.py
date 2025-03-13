@@ -4,7 +4,7 @@
 import torch
 from torch.nn import functional as f
 from dataclasses import dataclass
-from typing import Callable, Any, Dict
+from typing import Callable, Any, Dict, List, Tuple
 import numpy as np
 from exttorch._data_handle import SinglePredictionsFormat
 from exttorch.metrics import (
@@ -40,29 +40,15 @@ class Logs:
 @dataclass
 class MetricComputation:
     metric: Callable
-    prediction: torch.Tensor | np.intp | np.ndarray
-    y: Any
+    predictions: torch.Tensor
+    labels: torch.Tensor
 
-    def compute_metric(self):
-
-        if len(self.y.shape) >= 1:
-            return self.metric(
-                (
-                    self.prediction.cpu().numpy()
-                    if type(self.prediction) == torch.Tensor
-                    else self.prediction
-                ),
-                self.y.cpu().numpy() if type(self.y) == torch.Tensor else self.y,
+    def compute_metric(self, data_size: int):    
+        return self.metric(
+            self.predictions, 
+            self.labels,
+            size=data_size
             )
-
-        # Change to cpu if it's a Tensor
-        predictions = (
-            self.prediction.cpu().numpy()
-            if isinstance(self.prediction, torch.Tensor)
-            else self.prediction
-        )
-
-        return self.metric(predictions, torch.tensor([self.y]).numpy())
 
 
 class LossStorage:
@@ -70,16 +56,20 @@ class LossStorage:
     Class for storing losses
     """
 
-    def __init__(self):
+    def __init__(self, device):
         self.__loss = []
+        self.__device = device
 
 
     @property
-    def loss(self) -> float:
+    def loss(self) -> torch.Tensor:
         """
         Returns the average loss
         """
-        return round(np.array(self.__loss).mean(), 4)
+        return torch.round(
+            torch.tensor(self.__loss, device=self.__device).mean(), 
+            decimals=4
+            ).item()
 
     @loss.setter
     def loss(self, loss) -> None:
@@ -94,11 +84,17 @@ class LossStorage:
 
 
 class MetricStorage:
-    def __init__(self, metrics: list, batch_size: int = None):
-        self.__labels = []
+    def __init__(self, device: str, metrics: list, batch_size: int, train: bool = True):
+        
+        self.__device = device
         self.__metrics = metrics
-        self.__metric_dict = {str(metric): [] for metric in metrics}
+        self.__metric_dict = {}
+        self.__loss_name = "loss" if train else "val_loss"
+        self.__metric_dict[self.__loss_name] = []
+        self.__metric_dict.update({str(metric): [] for metric in metrics})
         self.__predicts = []
+        self.__labels = []
+        self.__loss = []
         self.__batch_size = batch_size
         self.__metric_name_proba = ["Auc", "TopKAccuracy", "auc", "tka", "TKA"]
 
@@ -108,13 +104,14 @@ class MetricStorage:
         return (
             formatted_prediction
             if str(metric) not in self.__metric_name_proba
-            else predict.detach().cpu().numpy()
+            else predict
         )
 
     def add_metric(
         self,
         predict,
         label,
+        loss,
     ) -> None:
 
         # Initializer the SinglePredictionsFormat object.
@@ -125,66 +122,83 @@ class MetricStorage:
 
         self.__predicts.append(formatted_prediction)
         self.__labels.append(label)
-
-    def metrics(self, y: Any = None):
-        metrics_dict = {}
+        self.__loss.append(loss)
+        
+    def measurements_compiler(self) -> List[Tuple[str, float]]:
         _metric = {str(metric): metric for metric in self.__metrics}
-
-        if y is None:
-            y = self.__labels
-
-        # Predictions
-        predicts = self.__predicts
-
-        if type(y) == np.ndarray:
-            y = y.reshape(-1, 1)
-        elif type(y) == torch.Tensor:
-            y = y.cpu().numpy().reshape(-1, 1)
-
-        # Check if the label greater than one.
-        if len(y) > 1:
-            # Creating a dictionary to store result metric_comp product by batching of data
-            metric_dict = {key: [] for key in _metric.keys()}
-
-            # Grouping predict with y in order loop them
-            for predict, label in zip(predicts, y):
-
-                # Loop over the metric name as key and metric class as value.
+        over_all_metrics = []
+        
+        if self.__batch_size > 1:
+            predications = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__predicts))
+            labels = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__labels))
+            loss = round(torch.tensor(self.__loss, device=self.__device).mean().item(), 4)
+            
+            over_all_metrics.append((self.__loss_name, loss))
+            self.__metric_dict[self.__loss_name].append(loss)
+            
+            _inner_metrics = {str(metric): [] for metric in self.__metrics}
+            
+            for predict, label in zip(predications, labels):
                 for key, value in _metric.items():
                     metric_comp = MetricComputation(
-                        value, label, predict
-                    ).compute_metric()
-                    metric_dict[key].append(metric_comp)
-
-            # Alter metric_dict values (list) to mean
-            altered_list_to_mean_dict = {
-                k: np.mean(v).round(4) for k, v in metric_dict.items()
+                        value, predictions=predict, labels=label
+                    ).compute_metric(self.__batch_size)
+                    
+                    _inner_metrics[key].append(metric_comp)
+            
+            _inner_metrics = {
+                key: round(torch.tensor(value, device=self.__device).mean().item(), 4)
+                for key, value in _inner_metrics.items()
             }
+            lst = list(_inner_metrics.items())
+            over_all_metrics.extend(lst)
+            
+            for key, value in _inner_metrics.items():
+                self.__metric_dict[key].append(value)
+                
+            return over_all_metrics
+        else:
+            predications = torch.tensor(self.__predicts, device=self.__device).reshape(-1, 1)
+            labels = torch.tensor(self.__labels, device=self.__device).reshape(-1, 1)
+            loss = round(torch.tensor(self.__loss, device=self.__device).mean().item(), 4)
+            
+            over_all_metrics.append((self.__loss_name, loss))
+            self.__metric_dict[self.__loss_name].append(loss)
+            
+            for key, value in _metric.items():
+                metric_comp = MetricComputation(
+                    value, predictions=predications, labels=labels
+                ).compute_metric(self.__batch_size)
+                            
+                over_all_metrics.append((key, metric_comp))
+                self.__metric_dict[key].append(metric_comp)
+                
+            return over_all_metrics
 
-            # Add (update) new altered_list_to_mean_dict dictionary to metrics_dict dictionary
-            metrics_dict.update(altered_list_to_mean_dict)
-        return metrics_dict
+    @property
+    def measurements(self) -> Dict[str, float]:
+        
+        # # Alter metric_dict values (list) to mean
+        altered_list_to_mean_dict = {
+            k: round(torch.tensor(v).mean().item(), 4) for k, v in self.__metric_dict.items()
+        }
+        
+        return altered_list_to_mean_dict
 
-    @staticmethod
-    def __handle_values_from_metric_dict(value):
-        if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
-            return value[0].clone().detach().cpu().numpy().astype(np.float64)
+    # @staticmethod
+    # def __handle_values_from_metric_dict(value):
+    #     if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
+    #         return value[0]
 
-        return np.array(
-            [
-                val.clone().detach().cpu().numpy() if type(val) == torch.Tensor else val
-                for val in value
-            ],
-            dtype=np.float64,
-        )
+    #     return value
 
 
-def change_metric_first_position(measurements) -> Dict:
+def change_metric_first_position(measurements) -> Dict[str, float]:
     keys = list(measurements.keys())
     loss_idx = keys.index("loss")
     keys.pop(loss_idx)
     keys.insert(0, "loss")
-    measurements = {key: measurements[key] for key in keys}
+    measurements = {key: round(measurements[key], 4) for key in keys}
     return measurements
 
 
@@ -223,10 +237,7 @@ def str_val_to_metric(metric_list: list):
     return new_metric_list
 
 
-def handle_probability(proba):
+def handle_probability(proba: torch.Tensor):
     if proba.shape[1] > 2:
-        _proba = (
-            proba.clone().detach() if type(proba) != np.ndarray else torch.tensor(proba)
-        )
-        return f.softmax(_proba, dim=-1)
+        return f.softmax(proba, dim=-1)
     return proba[:, 0]

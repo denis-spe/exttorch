@@ -2,6 +2,7 @@
 
 # Import libraries
 from abc import ABCMeta as __abc__, abstractmethod as __abs__
+import torch
 
 class Metric(metaclass=__abc__):
     """
@@ -12,7 +13,7 @@ class Metric(metaclass=__abc__):
         ...
 
     @__abs__
-    def __call__(self, prediction, y):
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor, size: int):
         ...
         
 
@@ -36,7 +37,7 @@ class Accuracy(Metric):
         """
         return self.name
 
-    def __call__(self, prediction, y):
+    def __call__(self, prediction, y, size: int):
         """
         Parameters
         ----------
@@ -45,9 +46,7 @@ class Accuracy(Metric):
         y : torch.Tensor
             True values
         """
-        from sklearn.metrics import accuracy_score
-        return accuracy_score(y, prediction)
-
+        return round((prediction == y).float().mean().item(), 4)
 
 class ZeroOneLoss(Metric):
     """

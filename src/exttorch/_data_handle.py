@@ -22,11 +22,8 @@ class SinglePredictionsFormat:
     def __single_format(self, prediction):
         if self.__size[1] > 1:
             # That's a category prediction
-            return (
-                torch.argmax(prediction)
-                if isinstance(prediction, torch.Tensor)
-                else np.argmax(prediction)
-            )
+            return torch.argmax(prediction)
+                
         # else it's a continuous prediction
         return prediction
 
