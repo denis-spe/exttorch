@@ -47,22 +47,11 @@ class MetricComputation:
 
         if len(self.y.shape) >= 1:
             return self.metric(
-                (
-                    self.prediction.cpu().numpy()
-                    if type(self.prediction) == torch.Tensor
-                    else self.prediction
-                ),
-                self.y.cpu().numpy() if type(self.y) == torch.Tensor else self.y,
+                self.prediction,
+                self.y
             )
 
-        # Change to cpu if it's a Tensor
-        predictions = (
-            self.prediction.cpu().numpy()
-            if isinstance(self.prediction, torch.Tensor)
-            else self.prediction
-        )
-
-        return self.metric(predictions, torch.tensor([self.y]).numpy())
+        return self.metric(self.prediction, torch.tensor([self.y]))
 
 
 class LossStorage:
@@ -108,7 +97,7 @@ class MetricStorage:
         return (
             formatted_prediction
             if str(metric) not in self.__metric_name_proba
-            else predict.detach().cpu().numpy()
+            else predict
         )
 
     def add_metric(
@@ -139,7 +128,7 @@ class MetricStorage:
         if type(y) == np.ndarray:
             y = y.reshape(-1, 1)
         elif type(y) == torch.Tensor:
-            y = y.cpu().numpy().reshape(-1, 1)
+            y = y.reshape(-1, 1)
 
         # Check if the label greater than one.
         if len(y) > 1:
@@ -164,19 +153,6 @@ class MetricStorage:
             # Add (update) new altered_list_to_mean_dict dictionary to metrics_dict dictionary
             metrics_dict.update(altered_list_to_mean_dict)
         return metrics_dict
-
-    @staticmethod
-    def __handle_values_from_metric_dict(value):
-        if type(value[0]) == torch.Tensor and value[0].shape[0] > 1:
-            return value[0].clone().detach().cpu().numpy().astype(np.float64)
-
-        return np.array(
-            [
-                val.clone().detach().cpu().numpy() if type(val) == torch.Tensor else val
-                for val in value
-            ],
-            dtype=np.float64,
-        )
 
 
 def change_metric_first_position(measurements) -> Dict:

@@ -1,14 +1,22 @@
 {
     "cSpell.words": [
+        "Binarize",
         "Corrcoef",
+        "cumsum",
         "exttorch",
         "intp",
         "Jaccard",
+        "multiclass",
         "ndarray",
+        "ndimension",
         "nprocs",
+        "prec",
+        "preds",
         "proba",
         "progbar",
-        "pycache"
+        "pycache",
+        "trapz",
+        "Wilcoxon"
     ],
     "python.testing.unittestArgs": [
         "-v",

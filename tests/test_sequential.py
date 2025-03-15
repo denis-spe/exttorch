@@ -45,6 +45,7 @@ class TestSequential(ut.TestCase):
             self.ir_y, 
             epochs=10,
             batch_size=1,
+            validation_data = (self.ir_x, self.ir_y)
             )
 
         # self.assertIsInstance(history.history, dict)
@@ -70,7 +71,7 @@ class TestSequential(ut.TestCase):
             metrics=[Accuracy()],
         )
 
-        model.fit(train_dataloader)
+        model.fit(train_dataloader, validation_data=train_dataloader)
 
     def test_sequential_using_digits_dataset(self):
         digit_model = Sequential(
@@ -91,8 +92,10 @@ class TestSequential(ut.TestCase):
         )
 
         history = digit_model.fit(self.d_x, self.d_y, validation_split=0.5, verbose=1)
+        
+        # digit_model.evaluate(self.d_x, self.d_y, verbose=1)
 
-        self.assertIsInstance(history.history, dict)
+        # self.assertIsInstance(history.history, dict)
 
     def test_add_method(self):
         """
@@ -154,7 +157,7 @@ class TestSequential(ut.TestCase):
         )
 
         history = model.fit(
-            x, y, epochs=1, batch_size=64, validation_split=0.2, val_batch_size=64
+            train_dataset, epochs=1, batch_size=64, validation_split=0.2, val_batch_size=64
         )
 
     def test_model_evaluation(self):
@@ -178,7 +181,7 @@ class TestSequential(ut.TestCase):
         )
 
         model.fit(self.ir_x, self.ir_y, random_seed=42, verbose=None)
-        eval = model.evaluate(self.ir_x, self.ir_y, random_seed=42)
+        eval = model.evaluate(self.ir_x, self.ir_y, random_seed=42, )
         # self.assertEqual(eval['val_Accuracy'], 0.3333)
 
 

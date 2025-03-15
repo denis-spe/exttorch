@@ -394,7 +394,7 @@ class Sequential(__nn__.Module):
         )
         # Make prediction and get probabilities
         proba = self.__model(x)
-        return proba.cpu().detach().numpy()
+        return proba
 
     def predict(self, X):
         from ._data_handle import SinglePredictionsFormat
