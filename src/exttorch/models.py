@@ -3,7 +3,7 @@
 # Import libraries
 from torch import nn as __nn__
 from typing import Any as __Any__
-from typing import List as __List__ 
+from typing import List as __List__
 from exttorch.callbacks import Callback as __Callback__
 from exttorch._env import _ENV as __ENV__
 
@@ -135,7 +135,7 @@ class Sequential(__nn__.Module):
         random_seed=None,
         shuffle: bool = False,
         batch_size: int = 1,
-        val_batch_size: int = 1,
+        val_batch_size: int | None = None,
         validation_split: float = None,
         validation_data=None,
         verbose: str | int | None = 1,
@@ -160,7 +160,7 @@ class Sequential(__nn__.Module):
                 Shuffle the data.
             batch_size : (Optional[int]) None by default,
                 Batch size for training data.
-            val_batch_size : (Optional[int]) None by default
+            val_batch_size : (Optional[int]) batch_size by default
                 Batch size for validation data
             validation_split : (Optional[float]) None by default,
                 Split the dataset into train and validation data using
@@ -184,6 +184,8 @@ class Sequential(__nn__.Module):
         import torch
         
         self.stop_training = False
+        #
+        val_batch_size = val_batch_size if val_batch_size is not None else batch_size
 
         # Initializer the History object
         history = History(self.metrics)
