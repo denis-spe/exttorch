@@ -66,7 +66,7 @@ class TestMetrics(ut.TestCase):
         self.assertEqual(rec, 0.3333)
         
         test_case = recall_score(self.cancer_y, self.cancer_pred)
-        
+    
         recall = Recall()
         y_true = torch.tensor(self.cancer_y)
         y_pred = torch.tensor(self.cancer_pred)

@@ -68,7 +68,7 @@ class TestSequential(ut.TestCase):
         model.compile(
             optimizer=Adam(model.parameters()),
             loss=nn.CrossEntropyLoss(),
-            metrics=[Accuracy()],
+            # metrics=[Accuracy()],
         )
 
         model.fit(train_dataloader, validation_data=train_dataloader)

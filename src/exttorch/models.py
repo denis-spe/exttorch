@@ -79,7 +79,7 @@ class Sequential(__nn__.Module):
         # Import and use the Sequential object
         from torch import nn as _nn
 
-        self.__model_list = _nn.ModuleList(self.layers).to(self.__device)
+        self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device)
         
 
     def forward(self, X):
@@ -88,7 +88,7 @@ class Sequential(__nn__.Module):
 
     @property
     def __model(self):
-        return __nn__.Sequential(*self.__model_list).to(self.__device).double()
+        return __nn__.Sequential(*self.__model_list).to(self.__device).float()
     
     def get_weights(self):
         return self.__model.state_dict()
@@ -557,13 +557,12 @@ class Sequential(__nn__.Module):
         # Initializer the loss storage
         loss_storage = LossStorage(device=self.__device)
 
-        if self.metrics:
-            # Create the list for metric
-            metric_storage = MetricStorage(
-                self.__device, 
-                self.metrics, 
-                batch_size=batch_size
-                )
+        # Create the list for metric
+        metric_storage = MetricStorage(
+            self.__device, 
+            self.metrics, 
+            batch_size=batch_size
+            )
 
         # Indicate the model to train
         self.__model.train()
@@ -604,7 +603,7 @@ class Sequential(__nn__.Module):
             self.optimizer.zero_grad()
             
             # Make prediction
-            predict = self.__model(feature.double())
+            predict = self.__model(feature.float())
 
             # Check if using BCELoss optimizer
             target = self.__handle_one_hot(label)
@@ -747,7 +746,7 @@ class Sequential(__nn__.Module):
                 feature, label = (feature.to(self.__device), label.to(self.__device))
 
                 # Make prediction
-                predict = self.__model(feature.double())
+                predict = self.__model(feature.float())
 
                 # Check if using BCELoss optimizer
                 target = self.__handle_one_hot(label)
