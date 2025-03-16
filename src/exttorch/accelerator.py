@@ -39,5 +39,7 @@ def initialize_xla():
     import torch.distributed as dist
     import torch_xla.distributed.xla_backend # Registers `xla://` init_method
     import torch_xla.experimental.pjrt_backend # Required for torch.distributed on TPU v2 and v3
-    
-    dist.init_process_group('xla', init_method='xla://')
+    try:
+        dist.init_process_group('xla', init_method='xla://')
+    except RuntimeError:
+        print("xla has already been initialized")

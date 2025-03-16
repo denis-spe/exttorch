@@ -141,6 +141,7 @@ class Sequential(__nn__.Module):
         verbose: str | int | None = 1,
         callbacks: __List__[__Callback__] = None,
         nprocs: int = 1,
+        start_method="fork",
         **dataloader_kwargs,
     ):
         """
@@ -175,6 +176,8 @@ class Sequential(__nn__.Module):
             nprocs: (int)
                 The number of processes/devices for the replication. 
                 At the moment, if specified, can be either 1 or the maximum number of devices.
+            start_method: (str) "fork" by default
+                The method to start the process.
             kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
@@ -456,7 +459,7 @@ class Sequential(__nn__.Module):
                 self.__ENV["EXTTORCH_XMP"].spawn(
                     training, args=(None,), 
                     nprocs=nprocs, 
-                    start_method="spawn")
+                    start_method=start_method)
             else:
                 pass
         else:
