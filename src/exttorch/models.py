@@ -622,7 +622,7 @@ class Sequential(__nn__.Module):
                 
             
             # # Add loss to the storage
-            loss_storage.loss = loss.item()
+            # loss_storage.loss = loss.item()
 
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(predict, label=target, loss=loss.item())
@@ -639,7 +639,8 @@ class Sequential(__nn__.Module):
                         self.__progbar.update(idx + 1, measurements)
                 else:
                     # Update the progress bar
-                    self.__progbar.update(idx + 1, measurements)
+                    # self.__progbar.update(idx + 1, measurements)
+                    print(measurements)
                     
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
