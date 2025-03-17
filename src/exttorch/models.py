@@ -184,7 +184,7 @@ class Sequential(__nn__.Module):
         if callbacks is not None:
             self.__callbacks = callbacks
         
-        def training(rank = 0, flags = None):
+        def training():
             
             self.__device = (
             self.__ENV["EXTTORCH_XM"].xla_device() 
@@ -459,10 +459,11 @@ class Sequential(__nn__.Module):
                 
         if "EXTTORCH_TPU" in self.__ENV:
             if nprocs == 1:
-                self.__ENV["EXTTORCH_XMP"].spawn(
-                    training, args=(None,), 
-                    nprocs=nprocs, 
-                    start_method=start_method)
+                training()
+                # self.__ENV["EXTTORCH_XMP"].spawn(
+                #     training, args=(), 
+                #     nprocs=nprocs, 
+                #     start_method=start_method)
             else:
                 pass
         else:
