@@ -187,7 +187,7 @@ class Sequential(__nn__.Module):
         def training(rank = 0, flags = None):
             
             self.__device = (
-            self.__ENV["EXTTORCH_TPU"] 
+            self.__ENV["EXTTORCH_XM"].xla_device() 
             if "EXTTORCH_TPU" in self.__ENV 
             else (
                 "cuda" 
