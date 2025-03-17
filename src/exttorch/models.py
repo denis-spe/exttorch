@@ -589,14 +589,6 @@ class Sequential(__nn__.Module):
         # # Get the data size
         self.__train_data_size = len(data)
 
-        # Declare the progbar
-        progbar: Progbar = None
-        steps = 0
-        
-        final_loss = 0.0
-        
-        # metrics = []
-
         if verbose is not None:
             # Instantiate the progress bar
             self.__progbar = Progbar(len(data), verbose=verbose)
