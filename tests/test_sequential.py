@@ -67,8 +67,8 @@ class TestSequential(ut.TestCase):
         )
 
         model.compile(
-            optimizer=Adam(model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             # metrics=[Accuracy()],
         )
 
@@ -87,8 +87,8 @@ class TestSequential(ut.TestCase):
         )
 
         digit_model.compile(
-            optimizer=Adam(digit_model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             metrics=["accuracy"],
         )
 
@@ -112,8 +112,8 @@ class TestSequential(ut.TestCase):
         digit_model.add(nn.Linear(64, 10))
 
         digit_model.compile(
-            optimizer=Adam(digit_model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             metrics=["accuracy"],
         )
 
@@ -152,8 +152,8 @@ class TestSequential(ut.TestCase):
         )
 
         model.compile(
-            optimizer=Adam(model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             metrics=[Accuracy()],
         )
 
@@ -176,8 +176,8 @@ class TestSequential(ut.TestCase):
         )
 
         model.compile(
-            optimizer=Adam(model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             metrics=[Accuracy()],
         )
 

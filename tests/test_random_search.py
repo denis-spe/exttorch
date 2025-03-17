@@ -2,9 +2,9 @@
 
 # Import libraries
 import unittest
-from torch import nn
-from torch.optim import Adam
 from contexts import exttorch
+from torch import nn
+from exttorch.optimizers import Adam
 from sklearn.datasets import load_wine
 from exttorch.tuner import RandomSearchTune
 from exttorch.hyperparameter import HyperParameters

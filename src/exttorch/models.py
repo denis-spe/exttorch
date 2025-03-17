@@ -70,19 +70,6 @@ class Sequential(__nn__.Module):
         self.__progbar = None
         self.stop_training = False
         self.__ENV = __ENV__
-        self.__device = (
-            self.__ENV["EXTTORCH_TPU"] 
-            if "EXTTORCH_TPU" in self.__ENV 
-            else (
-                "cuda" 
-                if torch.cuda.is_available() 
-                else "cpu"
-            ))
-
-        # Import and use the Sequential object
-        from torch import nn as _nn
-
-        self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device) 
     
     def get_weights(self):
         return self.__model.state_dict()
@@ -91,7 +78,7 @@ class Sequential(__nn__.Module):
         self.__model.load_state_dict(weight)
 
     def add(self, layer: __nn__.Module):
-        self.__model_list.append(layer)
+        self.layers.append(layer)
         
     def __handle_callbacks(self, callback_method, logs=None, epoch: int = None):
     
@@ -179,6 +166,7 @@ class Sequential(__nn__.Module):
         from .history import History
         from ._data_handle import DataHandler
         import torch
+        from torch import nn as _nn
         
         self.stop_training = False
         
@@ -197,6 +185,17 @@ class Sequential(__nn__.Module):
             self.__callbacks = callbacks
         
         def training(rank = 0, flags = None):
+            
+            self.__device = (
+            self.__ENV["EXTTORCH_TPU"] 
+            if "EXTTORCH_TPU" in self.__ENV 
+            else (
+                "cuda" 
+                if torch.cuda.is_available() 
+                else "cpu"
+            ))            
+
+            self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device)
             
             # Initialize the model
             self.__model = __nn__.Sequential(*self.__model_list).to(self.__device).float()
