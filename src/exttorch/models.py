@@ -4,6 +4,9 @@
 from torch import nn as __nn__
 from typing import Any as __Any__
 from typing import List as __List__
+from exttorch.loss import Loss as __Loss__
+from exttorch.metrics import Metric as __Metric__
+from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
 from exttorch._env import _ENV as __ENV__
 
@@ -79,16 +82,7 @@ class Sequential(__nn__.Module):
         # Import and use the Sequential object
         from torch import nn as _nn
 
-        self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device)
-        
-
-    def forward(self, X):
-        model = self.__model
-        return model(X)
-
-    @property
-    def __model(self):
-        return __nn__.Sequential(*self.__model_list).to(self.__device).float()
+        self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device) 
     
     def get_weights(self):
         return self.__model.state_dict()
@@ -187,7 +181,9 @@ class Sequential(__nn__.Module):
         import torch
         
         self.stop_training = False
-        #
+        
+        
+        # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
 
         # Initializer the History object
@@ -201,6 +197,14 @@ class Sequential(__nn__.Module):
             self.__callbacks = callbacks
         
         def training(rank = 0, flags = None):
+            
+            # Initialize the model
+            self.__model = __nn__.Sequential(*self.__model_list).to(self.__device).float()
+            
+            # Instantiate the Loss and optimizer
+            self.loss = self.loss()
+            self.optimizer = self.optimizer(self.__model.parameters())
+            
             if validation_split is not None and validation_data is None:
                 
                 # Handle the callbacks on train begin
@@ -797,23 +801,21 @@ class Sequential(__nn__.Module):
 
     def compile(
         self,
-        optimizer: __Any__,
-        loss: __Any__,
-        metrics: __List__ | None = None,
+        optimizer: __Optimizer__ | str,
+        loss: __Loss__ | str,
+        metrics: __List__[str | __Metric__] | None = None,
     ):
         """
         Compile the model.
 
         Parameters
         ----------
-            optimizer : (torch.optim)
+            optimizer : (Optimizer | str)
                 For updating the model parameters.
-            loss : (torch.nn)
+            loss : (Loss | str)
                 Measures model's performance.
             metrics : (Optional[List[Metric|str]]) default
                 Measures model's performance.
-            device : (str) default cpu
-                For model acceleration.
         """
         # Import libraries
         from ._metrics_handles import str_val_to_metric

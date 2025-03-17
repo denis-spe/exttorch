@@ -79,7 +79,7 @@ class ZeroOneLoss(Metric):
         from sklearn.metrics import zero_one_loss
         return zero_one_loss(y, prediction)
 
-class F1Score:
+class F1Score(Metric):
     def __init__(self, name=None, average='binary', num_classes: int = 2):
         self.name = 'F1Score' if name is None else name
         self.__average = average

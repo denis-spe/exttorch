@@ -5,12 +5,13 @@ import torch
 from contexts import exttorch
 import unittest as ut
 from torch import nn
-from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader
 from exttorch.models import Sequential
 from exttorch import models
 from sklearn.datasets import load_iris, load_digits
 from exttorch.metrics import Accuracy
+from exttorch.optimizers import Adam
+from exttorch.loss import CrossEntropyLoss
 import pandas as pd
 from exttorch._data_handle import DataHandler
 
@@ -35,8 +36,8 @@ class TestSequential(ut.TestCase):
         )
 
         self.iris_model.compile(
-            optimizer=Adam(self.iris_model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer=Adam(),
+            loss=CrossEntropyLoss(),
             metrics=[Accuracy()],
         )
 

@@ -1,14 +1,18 @@
 {
     "cSpell.words": [
+        "Adamax",
+        "ASGD",
         "Binarize",
         "Corrcoef",
         "cumsum",
         "exttorch",
         "intp",
         "Jaccard",
+        "lambd",
         "multiclass",
         "ndarray",
         "ndimension",
+        "nesterov",
         "nprocs",
         "prec",
         "preds",
