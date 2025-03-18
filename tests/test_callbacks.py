@@ -31,9 +31,9 @@ class TestCallbacks(ut.TestCase):
         )
 
         self.iris_model.compile(
-            optimizer=Adam(self.iris_model.parameters()),
-            loss=nn.CrossEntropyLoss(),
-            metrics=[Accuracy()],
+            optimizer="adam",
+            loss="crossentropy",
+            metrics=["acc"],
         )
 
         history = self.iris_model.fit(

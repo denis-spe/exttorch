@@ -1,4 +1,4 @@
-# Praise Ye The Lord
+""" Praise Ye The Lord God Almighty """
 
 # Import Libraries
 from typing import Any, Dict

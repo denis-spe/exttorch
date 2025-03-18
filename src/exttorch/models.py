@@ -1,10 +1,12 @@
-# Praise Ye The Lord
+""" Praise Ye The Lord Your God """
 
 # Import libraries
 from torch import nn as __nn__
 from typing import Any as __Any__
 from typing import List as __List__
-from exttorch.loss import Loss as __Loss__
+from exttorch.losses import Loss as __Loss__
+from exttorch.losses import __change_str_to_loss as __change_str_to_loss__
+from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_optimizer__
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
@@ -42,8 +44,8 @@ class Sequential(__nn__.Module):
         >>>
         >>> # Compile the model
         >>> model.compile(
-        ...    optimizer=torch.optim.Adam(model.parameters()),
-        ...    loss=torch.nn.CrossEntropyLoss(),
+        ...    optimizer="Adam",
+        ...    loss="CrossEntropyLoss",
         ...    metrics=['accuracy']
         ... )
         >>>
@@ -639,9 +641,8 @@ class Sequential(__nn__.Module):
                         self.__progbar.update(idx + 1, measurements)
                 else:
                     # Update the progress bar
-                    # self.__progbar.update(idx + 1, measurements)
-                    print(measurements)
-                    
+                    self.__progbar.update(idx + 1, measurements)
+                                        
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
                 # self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
@@ -804,16 +805,44 @@ class Sequential(__nn__.Module):
         ----------
             optimizer : (Optimizer | str)
                 For updating the model parameters.
+                Here are some of the options:
+                    - Adam: Adam optimizer
+                    - SGD: Stochastic Gradient Descent
+                    - RMSprop: RMSprop optimizer
+                    - Adadelta: Adadelta optimizer
             loss : (Loss | str)
                 Measures model's performance.
+                Here are some of the options:
+                    - BCELoss: Binary Cross Entropy Loss
+                    - BCEWithLogitsLoss: Binary Cross Entropy Loss with Logits
+                    - CrossEntropyLoss: Cross Entropy Loss
+                    - MSELoss: Mean Squared Error Loss
+                    - NLLLoss: Negative Log Likelihood Loss
             metrics : (Optional[List[Metric|str]]) default
                 Measures model's performance.
+                Here are some of the options:
+                    - Accuracy: A classification metric for measuring model accuracy.
+                    - F1Score: A classification metric for measuring model f1 score.
+                    - MAE: Mean absolute error for regression problem.
+                    - MSE: Mean squared error for regression problem.
+                    - AUC: Area under the curve for classification problem.
+                    - Recall: A classification metric for measuring model recall score.
+                    - Precision: A classification metric for measuring model precision score.
+                
         """
         # Import libraries
         from ._metrics_handles import str_val_to_metric
 
-        self.optimizer = optimizer
-        self.loss = loss
+        self.optimizer = (
+            optimizer 
+            if isinstance(optimizer, __Optimizer__) 
+            else __change_str_to_optimizer__(optimizer)
+        )
+        self.loss = (
+            loss 
+            if isinstance(loss, __Loss__) 
+            else __change_str_to_loss__(loss)
+        )
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
 
 

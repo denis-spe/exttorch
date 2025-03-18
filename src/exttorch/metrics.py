@@ -24,10 +24,9 @@ class Accuracy(Metric):
     """
     def __init__(self, name = None):
         """
-        Parameters
-        ----------
-        name : str, optional
-            Name of the metric, by default None
+        This calculates the accuracy of the model
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
         """
         self.name = 'Accuracy' if name is None else name
 
@@ -54,10 +53,9 @@ class ZeroOneLoss(Metric):
     """
     def __init__(self, name = None):
         """
-        Parameters
-        ----------
-        name : str, optional
-            Name of the metric, by default None
+        This calculates the zero-one loss of the model
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
         """
         self.name = 'ZeroOneLoss' if name is None else name
 
@@ -81,6 +79,16 @@ class ZeroOneLoss(Metric):
 
 class F1Score(Metric):
     def __init__(self, name=None, average='binary', num_classes: int = 2):
+        """
+        Computes the F1 score for binary or multi-class classification.
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
+            average (str, optional): Type of averaging to use. Defaults to 'binary'.
+                    binary: Only report results for the class specified by `pos_label`.
+                    macro: Calculate metrics for each label, and find their unweighted mean.
+                    weighted: Calculate metrics for each label, and find their average weighted by support.
+            num_classes (int, optional): Number of classes. Defaults to 2.
+        """
         self.name = 'F1Score' if name is None else name
         self.__average = average
         self.__num_classes = num_classes
@@ -173,6 +181,16 @@ class MatthewsCorrcoef(Metric):
 
 class Recall(Metric):
     def __init__(self, name = None, average: str = "binary", num_classes: int = 2):
+        """
+        Compute recall for binary or multi-class classification.
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
+            average (str, optional): Type of averaging to use. Defaults to 'binary'.
+                    binary: Only report results for the class specified by `pos_label`.
+                    macro: Calculate metrics for each label, and find their unweighted mean.
+                    weighted: Calculate metrics for each label, and find their average weighted by support.
+            num_classes (int, optional): Number of classes. Defaults
+        """
         self.__average = average
         self.__num_classes = num_classes
         self.name = 'Recall' if name is None else name
@@ -246,6 +264,16 @@ class Jaccard(Metric):
 
 class Precision(Metric):
     def __init__(self, name = None,  average: str = "binary", num_classes: int = 2):
+        """
+        Compute precision for binary or multi-class classification.
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
+            average (str, optional): Type of averaging to use. Defaults to 'binary'.
+                    binary: Only report results for the class specified by `pos_label`.
+                    macro: Calculate metrics for each label, and find their unweighted mean.
+                    weighted: Calculate metrics for each label, and find their average weighted by support.
+            num_classes (int, optional): Number of classes. Defaults to 2.
+        """
         self.__average = average
         self.__num_classes = num_classes
         self.name = 'Precision' if name is None else name
@@ -328,8 +356,12 @@ class TopKAccuracy(Metric):
         return top_k_accuracy_score(y, proba, **self.__kwargs)
 
 class Auc(Metric):
-    def __init__(self, name = None, **kwargs):
-        self.__kwargs = kwargs
+    def __init__(self, name = None):
+        """
+        Compute the area under the ROC curve (AUC).
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
+        """
         self.name = 'Auc' if name is None else name
 
     def __str__(self) -> str:
@@ -367,6 +399,16 @@ class Auc(Metric):
 
 class MeanSquaredError(Metric):
     def __init__(self, name = None,  strategy: str = "mean"):
+        """
+        Compute the mean squared error (MSE) or squared log error.
+        Args:
+            name (str, optional): Name of the metric. Defaults to None.
+            strategy (str, optional): Strategy to use:
+                - 'root': Root mean squared error.
+                - 'mean': Mean squared error.
+                - 'root_log': Root mean squared log error.
+                - 'mean_log': Mean squared log error.
+        """
         self.__strategy = strategy
         name = 'Squared' if name is None else name
         match strategy:
@@ -431,8 +473,12 @@ class MeanSquaredError(Metric):
 
 
 class MeanAbsoluteError(Metric):
-    def __init__(self, name = None, **kwargs):
-        self.__kwargs = kwargs
+    def __init__(self, name = None):
+        """
+        Compute the mean absolute error (MAE).
+        Args:
+            name (str, optional): Name of the metric. Defaults
+        """
         self.name = 'MeanAbsoluteError' if name is None else name
 
     def __str__(self) -> str:
@@ -443,8 +489,12 @@ class MeanAbsoluteError(Metric):
         return round(mae.item(), 4)
 
 class R2(Metric):
-    def __init__(self, name = None, **kwargs):
-        self.__kwargs = kwargs
+    def __init__(self, name = None):
+        """
+        Compute the R^2 score for regression problem.
+        Args:
+            name (str, optional): Name of the metric. Defaults
+        """
         self.name = 'R2' if name is None else name
 
     def __str__(self) -> str:

@@ -194,8 +194,8 @@ class TestMetrics(ut.TestCase):
         )
 
         self.iris_model.compile(
-            optimizer=Adam(self.iris_model.parameters()),
-            loss=nn.CrossEntropyLoss(),
+            optimizer="adam",
+            loss="nll",
             metrics=[Auc()],
         )
 

@@ -13,6 +13,7 @@ from exttorch.models import Sequential
 
 def tuned_func(hp: HyperParameters):
     features = hp.Int("features", 1, 512)
+    lr = hp.Choice("lr", [0.001, 0.005, 0.01, 0.05, 0.1])
 
     model = Sequential(
         [
@@ -22,7 +23,7 @@ def tuned_func(hp: HyperParameters):
         ]
     )
 
-    model.compile(loss=nn.CrossEntropyLoss(), optimizer=Adam(model.parameters()))
+    model.compile(loss="CrossEntropyLoss", optimizer=Adam(lr=lr), metrics=["acc"])
 
     return model
 

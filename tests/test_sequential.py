@@ -11,7 +11,7 @@ from exttorch import models
 from sklearn.datasets import load_iris, load_digits
 from exttorch.metrics import Accuracy
 from exttorch.optimizers import Adam
-from exttorch.loss import CrossEntropyLoss
+from exttorch.losses import CrossEntropyLoss
 import pandas as pd
 from exttorch._data_handle import DataHandler
 
@@ -105,7 +105,6 @@ class TestSequential(ut.TestCase):
         """
         digit_model = Sequential([])
 
-        nn.Linear(64, 64)
         digit_model.add(nn.ReLU())
         digit_model.add(nn.Linear(64, 64))
         digit_model.add(nn.ReLU())

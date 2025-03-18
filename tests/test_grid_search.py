@@ -6,6 +6,8 @@ from torch import nn
 from torch.optim import Adam
 from contexts import exttorch
 from sklearn.datasets import load_wine
+from exttorch.losses import CrossEntropyLoss
+from exttorch.optimizers import Adam
 from exttorch.tuner import GridSearchTune
 from exttorch.hyperparameter import HyperParameters
 from exttorch.models import Sequential
@@ -22,7 +24,7 @@ def tuned_func(hp: HyperParameters):
         ]
     )
 
-    model.compile(loss=nn.CrossEntropyLoss(), optimizer=Adam(model.parameters()))
+    model.compile(loss=CrossEntropyLoss(), optimizer=Adam(lr=0.005), metrics=["acc"])
 
     return model
 
