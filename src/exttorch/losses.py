@@ -222,5 +222,3 @@ class MarginRankingLoss(Loss):
             reduce=self.__reduce,
             reduction=self.__reduction
             )
-        
-class

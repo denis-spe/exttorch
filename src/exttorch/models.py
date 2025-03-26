@@ -62,7 +62,6 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
-        import torch
         
         self.loss = None
         self.optimizer = None
@@ -461,10 +460,11 @@ class Sequential(__nn__.Module):
                 
         if "EXTTORCH_TPU" in self.__ENV:
             if nprocs == 1:
-                self.__ENV["EXTTORCH_XMP"].spawn(
-                    training, args=(None,), 
-                    nprocs=nprocs, 
-                    start_method=start_method)
+                # self.__ENV["EXTTORCH_XMP"].spawn(
+                #     training, args=(None,), 
+                #     nprocs=nprocs, 
+                #     start_method=start_method)
+                training(0, None)
             else:
                 pass
         else:
