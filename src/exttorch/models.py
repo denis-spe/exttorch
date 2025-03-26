@@ -612,7 +612,7 @@ class Sequential(__nn__.Module):
 
             # Change size of torch.size([1]) to torch.size([1, 1])
             target = (
-                target.view(1, 1)
+                target.view(-1, 1)
                 if (
                     target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
                 )
