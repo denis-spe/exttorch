@@ -11,7 +11,7 @@ from exttorch import models
 from sklearn.datasets import load_iris, load_digits
 from exttorch.metrics import Accuracy
 from exttorch.optimizers import Adam
-from exttorch.losses import CrossEntropyLoss
+from exttorch.losses import CrossEntropyLoss, NLLLoss
 import pandas as pd
 from exttorch._data_handle import DataHandler
 
@@ -32,12 +32,13 @@ class TestSequential(ut.TestCase):
                 nn.Linear(32, 32),
                 nn.ReLU(),
                 nn.Linear(32, 3),
+                nn.LogSoftmax(dim=1)
             ]
         )
 
         self.iris_model.compile(
             optimizer=Adam(),
-            loss=CrossEntropyLoss(),
+            loss=NLLLoss(),
             metrics=[Accuracy()],
         )
 

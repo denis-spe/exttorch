@@ -610,18 +610,8 @@ class Sequential(__nn__.Module):
             # Check if using BCELoss optimizer
             target = self.__handle_one_hot(label)
 
-            # Change size of torch.size([1]) to torch.size([1, 1])
-            target = (
-                target.view(-1, 1)
-                if (
-                    target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
-                )
-                else target
-            )
-
             # Compute the loss
             loss = self.loss(predict, target)
-                
             
             # # Add loss to the storage
             # loss_storage.loss = loss.item()
@@ -753,15 +743,15 @@ class Sequential(__nn__.Module):
                 # Check if using BCELoss optimizer
                 target = self.__handle_one_hot(label)
 
-                # Change size of torch.size([1]) to torch.size([1, 1])
-                target = (
-                    target.view(1, 1)
-                    if (
-                        target.dim() == 1
-                        and target.dtype in [torch.float32, torch.float64]
-                    )
-                    else target
-                )
+                # # Change size of torch.size([1]) to torch.size([1, 1])
+                # target = (
+                #     target.view(1, 1)
+                #     if (
+                #         target.dim() == 1
+                #         and target.dtype in [torch.float32, torch.float64]
+                #     )
+                #     else target
+                # )
 
                 if self.loss is not None:
                     # Compute the loss
