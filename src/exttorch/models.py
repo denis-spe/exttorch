@@ -196,7 +196,7 @@ class Sequential(__nn__.Module):
                 else "cpu"
             ))            
 
-            self.__model_list = _nn.ModuleList(self.layers).float().to(self.__device)
+            self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
             
             # Initialize the model
             self.__model = __nn__.Sequential(*self.__model_list).to(self.__device).float()
@@ -596,7 +596,9 @@ class Sequential(__nn__.Module):
         
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
+            
             feature, label = feature.to(self.__device), label.to(self.__device)
+            
             # Zero the gradient.
             self.optimizer.zero_grad()
             
