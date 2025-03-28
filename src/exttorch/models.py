@@ -622,7 +622,7 @@ class Sequential(__nn__.Module):
             # Compute the loss
             loss = self.loss(predict, target)
             
-            loss.list.append(loss)
+            loss_list.append(loss)
 
             # Add the prediction, labels(target) and loss to metric storage
             # metric_storage.add_metric(predict, label=target, loss=loss.item())
