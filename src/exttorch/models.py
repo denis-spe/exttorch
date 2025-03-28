@@ -565,6 +565,7 @@ class Sequential(__nn__.Module):
         from ._metrics_handles import LossStorage, MetricStorage
         from ._metrics_handles import change_metric_first_position
         from ._data_handle import DataHandler
+        import torch_xla.core.xla_model as xm
 
         if self.optimizer is None or self.loss is None:
             raise TypeError(
