@@ -457,16 +457,21 @@ class Sequential(__nn__.Module):
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
                 
-        if "EXTTORCH_TPU" in self.__ENV:
-            if nprocs == 1:
-                self.__ENV["EXTTORCH_XMP"].spawn(
+        # if "EXTTORCH_TPU" in self.__ENV:
+        #     if nprocs == 1:
+                # self.__ENV["EXTTORCH_XMP"].spawn(
+                #     training, args=(None,), 
+                #     nprocs=nprocs, 
+                #     start_method=start_method)
+        #     else:
+        #         pass
+        # else:
+        # training(None, None)
+        self.__ENV["EXTTORCH_XMP"].spawn(
                     training, args=(None,), 
                     nprocs=nprocs, 
-                    start_method=start_method)
-            else:
-                pass
-        else:
-            training(None, None)
+                    start_method=start_method
+                    )
         return history
 
     def predict_proba(self, X):
@@ -549,8 +554,8 @@ class Sequential(__nn__.Module):
         import torch
         from IPython.display import clear_output
 
-        if verbose:
-            from keras.utils import Progbar  # type: ignore
+        # if verbose:
+        #     from keras.utils import Progbar  # type: ignore
         from ._metrics_handles import LossStorage, MetricStorage
         from ._metrics_handles import change_metric_first_position
         from ._data_handle import DataHandler
@@ -586,9 +591,9 @@ class Sequential(__nn__.Module):
         # # Get the data size
         self.__train_data_size = len(data)
 
-        if verbose is not None:
-            # Instantiate the progress bar
-            self.__progbar = Progbar(len(data), verbose=verbose)
+        # if verbose is not None:
+        #     # Instantiate the progress bar
+        #     self.__progbar = Progbar(len(data), verbose=verbose)
 
         # # Handle on batch begin callback
         self.__handle_callbacks('on_batch_begin')
@@ -633,7 +638,7 @@ class Sequential(__nn__.Module):
             # if "EXTTORCH_TPU" in self.__ENV:
                 # self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
             self.optimizer.step()
-            self.__ENV["EXTTORCH_XM"].mark_step()
+            xm.mark_step()
             # else:
             #     self.optimizer.step()
                 
