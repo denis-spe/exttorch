@@ -602,6 +602,8 @@ class Sequential(__nn__.Module):
 
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
+        
+        loss_list = []
 
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
@@ -619,17 +621,19 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, target)
+            
+            loss.list.append(loss)
 
             # Add the prediction, labels(target) and loss to metric storage
-            metric_storage.add_metric(predict, label=target, loss=loss.item())
+            # metric_storage.add_metric(predict, label=target, loss=loss.item())
 
             # Compute the gradient
             loss.backward()
 
             # Measurement live update
-            measurements = metric_storage.measurements_compiler()
+            # measurements = metric_storage.measurements_compiler()
 
-            print(measurements)
+            # print(measurements)
 
             # if verbose is not None:
             #     if show_val_progress:
@@ -646,7 +650,7 @@ class Sequential(__nn__.Module):
             xm.mark_step()
             # else:
             #     self.optimizer.step()
-
+        print(torch.tensor(loss_list).mean())
         # Measurements
         measurements = metric_storage.measurements
 
