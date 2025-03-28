@@ -196,10 +196,10 @@ class Sequential(__nn__.Module):
                 else "cpu"
             ))            
 
-            self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
+            # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
             
             # Initialize the model
-            self.__model = __nn__.Sequential(*self.__model_list).to(self.__device).float()
+            self.__model = __nn__.Sequential(*self.layers).to(self.__device).float()
             
             # Instantiate the Loss and optimizer
             self.loss = self.loss()
