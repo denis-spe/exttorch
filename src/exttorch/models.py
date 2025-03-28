@@ -187,14 +187,13 @@ class Sequential(__nn__.Module):
         
         def training(rank, flag):
             
-            self.__device = (
-            self.__ENV["EXTTORCH_XM"].xla_device() 
-            if "EXTTORCH_TPU" in self.__ENV 
-            else (
-                "cuda" 
-                if torch.cuda.is_available() 
-                else "cpu"
-            ))            
+            self.__device = self.__ENV["EXTTORCH_XM"].xla_device() 
+            # if "EXTTORCH_TPU" in self.__ENV 
+            # else (
+            #     "cuda" 
+            #     if torch.cuda.is_available() 
+            #     else "cpu"
+            # ))            
 
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
             
@@ -620,21 +619,23 @@ class Sequential(__nn__.Module):
             # Measurement live update
             measurements = metric_storage.measurements_compiler()
             
-            if verbose is not None:
-                if show_val_progress:
-                    if idx < len(data) - 1:
-                        self.__progbar.update(idx + 1, measurements)
-                else:
-                    # Update the progress bar
-                    self.__progbar.update(idx + 1, measurements)
+            print(measurements)
+            
+            # if verbose is not None:
+            #     if show_val_progress:
+            #         if idx < len(data) - 1:
+            #             self.__progbar.update(idx + 1, measurements)
+            #     else:
+            #         # Update the progress bar
+            #         self.__progbar.update(idx + 1, measurements)
                                         
             # update the parameters
-            if "EXTTORCH_TPU" in self.__ENV:
+            # if "EXTTORCH_TPU" in self.__ENV:
                 # self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-                self.optimizer.step()
-                self.__ENV["EXTTORCH_XM"].mark_step()
-            else:
-                self.optimizer.step()
+            self.optimizer.step()
+            self.__ENV["EXTTORCH_XM"].mark_step()
+            # else:
+            #     self.optimizer.step()
                 
         # Measurements
         measurements = metric_storage.measurements    
