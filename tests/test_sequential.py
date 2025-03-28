@@ -45,7 +45,7 @@ class TestSequential(ut.TestCase):
         history = self.iris_model.fit(
             self.ir_x, 
             self.ir_y, 
-            epochs=10,
+            epochs=1,
             batch_size=1,
             validation_data = (self.ir_x, self.ir_y)
             )

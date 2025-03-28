@@ -460,11 +460,10 @@ class Sequential(__nn__.Module):
                 
         if "EXTTORCH_TPU" in self.__ENV:
             if nprocs == 1:
-                # self.__ENV["EXTTORCH_XMP"].spawn(
-                #     training, args=(None,), 
-                #     nprocs=nprocs, 
-                #     start_method=start_method)
-                training(0, None)
+                self.__ENV["EXTTORCH_XMP"].spawn(
+                    training, args=(None,), 
+                    nprocs=nprocs, 
+                    start_method=start_method)
             else:
                 pass
         else:
@@ -564,9 +563,6 @@ class Sequential(__nn__.Module):
 
         metric_storage = None
 
-        # Initializer the loss storage
-        loss_storage = LossStorage(device=self.__device)
-
         # Create the list for metric
         metric_storage = MetricStorage(
             self.__device, 
@@ -612,9 +608,6 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, target)
-            
-            # # Add loss to the storage
-            # loss_storage.loss = loss.item()
 
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(predict, label=target, loss=loss.item())
@@ -693,9 +686,6 @@ class Sequential(__nn__.Module):
 
         metric_storage = None
 
-        # Initializer the loss storage
-        loss_storage = LossStorage(self.__device)
-
         # Create the list for metric
         metric_storage = MetricStorage(
             self.__device, 
@@ -756,9 +746,6 @@ class Sequential(__nn__.Module):
                 if self.loss is not None:
                     # Compute the loss
                     loss = self.loss(predict, target)
-
-                    # Add loss to the storage
-                    loss_storage.loss = loss.item()                
 
                 # Add the prediction, labels(target) and loss to metric storage
                 metric_storage.add_metric(predict, label=target, loss=loss.item())

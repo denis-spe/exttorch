@@ -1,6 +1,6 @@
 [project]
 name = "exttorch"
-version = "0.0.1"
+version = "0.8.8"
 authors = [
   { name="denis-spe", email="denisbrian07@gmail.com" },
 ]

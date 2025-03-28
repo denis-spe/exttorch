@@ -529,13 +529,13 @@ class Sequential(__nn__.Module):
             target = self.__handle_one_hot(label)
 
             # Change size of torch.size([1]) to torch.size([1, 1])
-            target = (
-                target.view(1, 1)
-                if (
-                    target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
-                )
-                else target
-            )
+            # target = (
+            #     target.view(1, 1)
+            #     if (
+            #         target.dim() == 1 and target.dtype in [torch.float32, torch.float64]
+            #     )
+            #     else target
+            # )
 
             # Compute the loss
             loss = self.loss(predict, target)

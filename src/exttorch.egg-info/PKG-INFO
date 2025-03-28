@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: exttorch
-Version: 0.0.1
+Version: 0.8.8
 Summary: A torch sequential extension with hyperparameter tuner for Sequential model
 Author-email: denis-spe <denisbrian07@gmail.com>
 Project-URL: Homepage, https://github.com/denis-spe/exttorch
@@ -11,3 +11,4 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Dynamic: license-file
