@@ -622,16 +622,16 @@ class Sequential(__nn__.Module):
             # Compute the loss
             loss = self.loss(predict, target)
             
-            loss_list.append(loss)
 
             # Add the prediction, labels(target) and loss to metric storage
-            # metric_storage.add_metric(predict, label=target, loss=loss.item())
+            metric_storage.add_metric(predict, label=target, loss=loss.item())
+            
+            # Measurement live update
+            measurements = metric_storage.measurements_compiler()
+            print(measurements)
 
             # Compute the gradient
             loss.backward()
-
-            # Measurement live update
-            # measurements = metric_storage.measurements_compiler()
 
             # print(measurements)
 
