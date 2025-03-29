@@ -9,37 +9,6 @@ from torch.utils.data import DataLoader as __dataloader__
 # Import the libraries
 import torch
 
-
-class SinglePredictionsFormat:
-    def __init__(self, prediction):
-        self.__prediction = prediction
-        self.__size = (
-            prediction.size()
-            if isinstance(prediction, torch.Tensor)
-            else prediction.shape
-        )
-
-    def __single_format(self, prediction):
-        if self.__size[1] > 1:
-            # That's a category prediction
-            return torch.argmax(prediction)
-                
-        # else it's a continuous prediction
-        return prediction
-
-    def format_prediction(self) -> Any:
-        if self.__size[0] > 1:
-            # It's a batched prediction
-            return self.__batched_prediction()
-        # It's a single prediction
-        return self.__single_format(self.__prediction)
-
-    def __batched_prediction(self) -> torch.Tensor:
-        return torch.tensor(
-            list(map(lambda tensor: self.__single_format(tensor), self.__prediction))
-        ).view(-1, 1)
-
-
 class DataHandler:
     def __init__(
         self,
