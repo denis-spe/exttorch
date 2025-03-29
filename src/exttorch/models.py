@@ -187,11 +187,8 @@ class Sequential(__nn__.Module):
             self.__device = (
                 self.__ENV["EXTTORCH_XM"].xla_device()
                 if "EXTTORCH_TPU" in self.__ENV
-                else (
-                    "cuda"
-                    if torch.cuda.is_available()
-                    else "cpu"
-                ))
+                else ("cuda" if torch.cuda.is_available() else "cpu")
+            )
 
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
@@ -413,7 +410,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
-                
+
                 # Initializer the data
                 data = DataHandler(
                     X,
@@ -425,26 +422,26 @@ class Sequential(__nn__.Module):
                     device=self.__device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
-                
-                train_metric = self.__train(
-                        data,
-                        y=None,
-                        batch_size=batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        verbose=verbose,
-                        nprocs=nprocs,
-                        warmup_steps=5,
-                        **dataloader_kwargs,
-                    )
 
-                for epoch in range(epochs):
+                self.__train(
+                    data,
+                    y=None,
+                    batch_size=batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    verbose=verbose,
+                    nprocs=nprocs,
+                    warmup_steps=5,
+                    **dataloader_kwargs,
+                )
+
+                for epoch in range(1, epochs + 1):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
                     if verbose != 0 and verbose is not None:
                         # Print the epochs
-                        print(f"Epoch {epoch + 1}/{epochs}")
+                        print(f"Epoch {epoch}/{epochs}")
 
                     # Train the full dataset
                     train_metric = self.__train(
@@ -471,21 +468,10 @@ class Sequential(__nn__.Module):
                     if self.stop_training:
                         break
 
-                    if "EXTTORCH_TPU" in self.__ENV:
-                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
-
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
-        # if "EXTTORCH_TPU" in self.__ENV:
-        #     if nprocs == 1:
-        #         training()
-        #     else:
-        #         pass
-        # else:
-        #     training(None, None)
         training()
-            
         return history
 
     def predict_proba(self, X):
@@ -610,7 +596,6 @@ class Sequential(__nn__.Module):
 
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
-        
 
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
@@ -631,10 +616,9 @@ class Sequential(__nn__.Module):
 
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(predict, label=target, loss=loss.item())
-            
+
             # Measurement live update
             measurements = metric_storage.measurements_compiler()
-
 
             # Compute the gradient
             loss.backward()
@@ -645,18 +629,17 @@ class Sequential(__nn__.Module):
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
-                
+
             if idx < warmup_steps:
                 pass
-            else:
-                if verbose is not None:
-                    if show_val_progress:
-                        if idx < len(data) - 1:
-                            self.__progbar.update(idx + 1, measurements)
-                    else:
-                        # Update the progress bar
+            elif verbose is not None and idx % 2 == 0:
+                if show_val_progress:
+                    if idx < len(data) - 1:
                         self.__progbar.update(idx + 1, measurements)
-            
+                else:
+                    # Update the progress bar
+                    self.__progbar.update(idx + 1, measurements)
+
         # Measurements
         measurements = metric_storage.measurements
 
