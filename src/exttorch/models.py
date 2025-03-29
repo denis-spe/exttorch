@@ -182,7 +182,7 @@ class Sequential(__nn__.Module):
         if callbacks is not None:
             self.__callbacks = callbacks
 
-        def training(rank, flag):
+        def training():
 
             self.__device = (
                 self.__ENV["EXTTORCH_XM"].xla_device()
@@ -413,6 +413,18 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
+                
+                train_metric = self.__train(
+                        data,
+                        y=None,
+                        batch_size=batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        verbose=verbose,
+                        nprocs=nprocs,
+                        warmup_steps=5,
+                        **dataloader_kwargs,
+                    )
 
                 for epoch in range(epochs):
                     # Handle the callbacks on epoch begin
@@ -465,16 +477,14 @@ class Sequential(__nn__.Module):
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
-        if "EXTTORCH_TPU" in self.__ENV:
-            if nprocs == 1:
-                self.__ENV["EXTTORCH_XMP"].spawn(
-                    training, args=(None,),
-                    nprocs=nprocs,
-                    start_method=start_method)
-            else:
-                pass
-        else:
-            training(None, None)
+        # if "EXTTORCH_TPU" in self.__ENV:
+        #     if nprocs == 1:
+        #         training()
+        #     else:
+        #         pass
+        # else:
+        #     training(None, None)
+        training()
             
         return history
 
@@ -528,6 +538,7 @@ class Sequential(__nn__.Module):
         verbose: str | int | None = 1,
         nprocs: int = 1,
         show_val_progress: bool = False,
+        warmup_steps: int = 5,
         **kwargs,
     ) -> dict:
         """
@@ -628,20 +639,23 @@ class Sequential(__nn__.Module):
             # Compute the gradient
             loss.backward()
 
-            if verbose is not None:
-                if show_val_progress:
-                    if idx < len(data) - 1:
-                        self.__progbar.update(idx + 1, measurements)
-                else:
-                    # Update the progress bar
-                    self.__progbar.update(idx + 1, measurements)
-
             # update the parameters
             if "EXTTORCH_TPU" in self.__ENV:
-                self.optimizer.step()
+                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
+                
+            if idx < warmup_steps:
+                pass
+            else:
+                if verbose is not None:
+                    if show_val_progress:
+                        if idx < len(data) - 1:
+                            self.__progbar.update(idx + 1, measurements)
+                    else:
+                        # Update the progress bar
+                        self.__progbar.update(idx + 1, measurements)
             
         # Measurements
         measurements = metric_storage.measurements
