@@ -626,22 +626,19 @@ class Sequential(__nn__.Module):
             metric_storage.add_metric(predict, label=target, loss=loss.item())
             
             # Measurement live update
-            # measurements = metric_storage.measurements_compiler()
-            # print(measurements)
-            self.__progbar.update(idx + 1, [("loss", loss.item())])
+            measurements = metric_storage.measurements_compiler()
+
 
             # Compute the gradient
             loss.backward()
 
-            # print(measurements)
-
-            # if verbose is not None:
-            #     if show_val_progress:
-            #         if idx < len(data) - 1:
-            #             self.__progbar.update(idx + 1, measurements)
-            #     else:
-            #         # Update the progress bar
-            #         self.__progbar.update(idx + 1, measurements)
+            if verbose is not None:
+                if show_val_progress:
+                    if idx < len(data) - 1:
+                        self.__progbar.update(idx + 1, measurements)
+                else:
+                    # Update the progress bar
+                    self.__progbar.update(idx + 1, measurements)
 
             # update the parameters
             # if "EXTTORCH_TPU" in self.__ENV:
