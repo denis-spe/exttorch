@@ -166,9 +166,6 @@ class Sequential(__nn__.Module):
         from .history import History
         from ._data_handle import DataHandler
         import torch
-        from torch import nn as _nn
-        import torch_xla.core.xla_model as xm
-        import torch_xla.distributed.xla_multiprocessing as xmp
 
         self.stop_training = False
 
@@ -187,13 +184,14 @@ class Sequential(__nn__.Module):
 
         def training(rank, flag):
 
-            self.__device = xm.xla_device()
-            # if "EXTTORCH_TPU" in self.__ENV
-            # else (
-            #     "cuda"
-            #     if torch.cuda.is_available()
-            #     else "cpu"
-            # ))
+            self.__device = (
+                self.__ENV["EXTTORCH_XM"].xla_device()
+                if "EXTTORCH_TPU" in self.__ENV
+                else (
+                    "cuda"
+                    if torch.cuda.is_available()
+                    else "cpu"
+                ))
 
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
@@ -467,17 +465,17 @@ class Sequential(__nn__.Module):
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
-        # if "EXTTORCH_TPU" in self.__ENV:
-        #     if nprocs == 1:
-        # self.__ENV["EXTTORCH_XMP"].spawn(
-        #     training, args=(None,),
-        #     nprocs=nprocs,
-        #     start_method=start_method)
-        #     else:
-        #         pass
-        # else:
-        # training(None, None)
-        xmp.spawn(training, args=(None,), nprocs=nprocs, start_method=start_method)
+        if "EXTTORCH_TPU" in self.__ENV:
+            if nprocs == 1:
+                self.__ENV["EXTTORCH_XMP"].spawn(
+                    training, args=(None,),
+                    nprocs=nprocs,
+                    start_method=start_method)
+            else:
+                pass
+        else:
+            training(None, None)
+            
         return history
 
     def predict_proba(self, X):
@@ -565,7 +563,6 @@ class Sequential(__nn__.Module):
         from ._metrics_handles import LossStorage, MetricStorage
         from ._metrics_handles import change_metric_first_position
         from ._data_handle import DataHandler
-        import torch_xla.core.xla_model as xm
 
         if self.optimizer is None or self.loss is None:
             raise TypeError(
@@ -603,7 +600,6 @@ class Sequential(__nn__.Module):
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
         
-        loss_list = []
 
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
@@ -641,13 +637,12 @@ class Sequential(__nn__.Module):
                     self.__progbar.update(idx + 1, measurements)
 
             # update the parameters
-            # if "EXTTORCH_TPU" in self.__ENV:
-            # self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-            self.optimizer.step()
-            xm.mark_step()
-            # else:
-            #     self.optimizer.step()
-        print(torch.tensor(loss_list).mean())
+            if "EXTTORCH_TPU" in self.__ENV:
+                self.optimizer.step()
+                self.__ENV["EXTTORCH_XM"].mark_step()
+            else:
+                self.optimizer.step()
+            
         # Measurements
         measurements = metric_storage.measurements
 
