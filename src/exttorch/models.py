@@ -560,8 +560,8 @@ class Sequential(__nn__.Module):
         import torch
         from IPython.display import clear_output
 
-        # if verbose:
-        #     from keras.utils import Progbar  # type: ignore
+        if verbose:
+            from keras.utils import Progbar  # type: ignore
         from ._metrics_handles import LossStorage, MetricStorage
         from ._metrics_handles import change_metric_first_position
         from ._data_handle import DataHandler
