@@ -431,7 +431,7 @@ class Sequential(__nn__.Module):
                     random_seed=random_seed,
                     verbose=verbose,
                     nprocs=nprocs,
-                    warmup_steps=5,
+                    warmup_steps=True,
                     **dataloader_kwargs,
                 )
 
@@ -472,6 +472,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
         training()
+        
         return history
 
     def predict_proba(self, X):
@@ -524,7 +525,7 @@ class Sequential(__nn__.Module):
         verbose: str | int | None = 1,
         nprocs: int = 1,
         show_val_progress: bool = False,
-        warmup_steps: int = 5,
+        warmup_steps: bool = False,
         **kwargs,
     ) -> dict:
         """
@@ -613,12 +614,13 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, target)
+            
+            if warmup_steps == False:
+                # Add the prediction, labels(target) and loss to metric storage
+                metric_storage.add_metric(predict, label=target, loss=loss.item())
 
-            # Add the prediction, labels(target) and loss to metric storage
-            metric_storage.add_metric(predict, label=target, loss=loss.item())
-
-            # Measurement live update
-            measurements = metric_storage.measurements_compiler()
+                # Measurement live update
+                measurements = metric_storage.measurements_compiler()
 
             # Compute the gradient
             loss.backward()
@@ -630,9 +632,7 @@ class Sequential(__nn__.Module):
             else:
                 self.optimizer.step()
 
-            if idx < warmup_steps:
-                pass
-            elif verbose is not None and idx % 2 == 0:
+            if verbose is not None and idx % 2 == 0 and warmup_steps == False:
                 if show_val_progress:
                     if idx < len(data) - 1:
                         self.__progbar.update(idx + 1, measurements)
