@@ -596,9 +596,9 @@ class Sequential(__nn__.Module):
         # # Get the data size
         self.__train_data_size = len(data)
 
-        # if verbose is not None:
-        #     # Instantiate the progress bar
-        #     self.__progbar = Progbar(len(data), verbose=verbose)
+        if verbose is not None:
+            # Instantiate the progress bar
+            self.__progbar = Progbar(len(data), verbose=verbose)
 
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
@@ -621,14 +621,14 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, target)
-            
 
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(predict, label=target, loss=loss.item())
             
             # Measurement live update
-            measurements = metric_storage.measurements_compiler()
-            print(measurements)
+            # measurements = metric_storage.measurements_compiler()
+            # print(measurements)
+            self.__progbar.update(idx + 1, [("loss", loss.item())])
 
             # Compute the gradient
             loss.backward()
