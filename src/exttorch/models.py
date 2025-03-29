@@ -414,6 +414,18 @@ class Sequential(__nn__.Module):
 
                 print(end="\n")
                 
+                # Initializer the data
+                data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **dataloader_kwargs,
+                ).data_preprocessing(nprocs)
+                
                 train_metric = self.__train(
                         data,
                         y=None,
@@ -433,18 +445,6 @@ class Sequential(__nn__.Module):
                     if verbose != 0 and verbose is not None:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
-
-                    # Initializer the data
-                    data = DataHandler(
-                        X,
-                        y,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        device=self.__device,
-                        **dataloader_kwargs,
-                    ).data_preprocessing(nprocs)
 
                     # Train the full dataset
                     train_metric = self.__train(
