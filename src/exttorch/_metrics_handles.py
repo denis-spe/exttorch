@@ -207,7 +207,8 @@ class MetricStorage:
         else:
             predications = torch.tensor(self.__predicts, device=self.__device).reshape(-1, 1)
             probability = torch.tensor([self.__probabilities], device=self.__device)
-            labels = torch.tensor(self.__labels, device=self.__device).reshape(-1, 1)
+            # print(self.__labels)
+            labels = torch.tensor(self.__labels, device=self.__device)
             loss = round(torch.tensor(self.__loss, device=self.__device).mean().item(), 4)
             
             over_all_metrics.append((self.__loss_name, loss))

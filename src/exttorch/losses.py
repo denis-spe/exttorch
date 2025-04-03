@@ -23,7 +23,7 @@ def __change_str_to_loss(loss: str):
             return NLLLoss()
         case "CrossEntropyLoss" | "cross_entropy" | "crossentropy":
             return CrossEntropyLoss()
-        case "BCELoss" | "bce" | "binary_cross_entropy":
+        case "BCELoss" | "bce" | "binary_crossentropy":
             return BCELoss()
         case "BCEWithLogitsLoss" | "bce_with_logits" | "binary_cross_entropy_with_logits":
             return BCEWithLogitsLoss()

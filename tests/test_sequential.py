@@ -14,12 +14,18 @@ from exttorch.optimizers import Adam
 from exttorch.losses import CrossEntropyLoss, NLLLoss
 import pandas as pd
 from exttorch._data_handle import DataHandler
+from sklearn.preprocessing import MinMaxScaler
 
 
 class TestSequential(ut.TestCase):
     def setUp(self):
         self.ir_x, self.ir_y = load_iris(return_X_y=True)
-        self.d_x, self.d_y = load_digits(return_X_y=True)
+        d_x, self.d_y = load_digits(return_X_y=True)
+        
+        scaler = MinMaxScaler()
+        d_x = d_x.reshape(d_x.shape[0], -1)
+        d_x = scaler.fit_transform(d_x)
+        self.d_x = d_x.reshape(-1, 8, 8)
 
     def test_sequential_using_iris_dataset(self):
         """
@@ -106,17 +112,20 @@ class TestSequential(ut.TestCase):
         """
         digit_model = Sequential([])
 
-        digit_model.add(nn.ReLU())
+        digit_model.add(nn.Flatten())
         digit_model.add(nn.Linear(64, 64))
         digit_model.add(nn.ReLU())
-        digit_model.add(nn.Linear(64, 10))
+        digit_model.add(nn.Linear(64, 1029))
+        digit_model.add(nn.ReLU())
+        digit_model.add(nn.Linear(1029, 10))
+        digit_model.add(nn.Softmax(dim=1))
 
         digit_model.compile(
             optimizer=Adam(),
             loss=CrossEntropyLoss(),
             metrics=["accuracy"],
         )
-
+        
         history = digit_model.fit(self.d_x, self.d_y)
 
     def test_train_model_on_dataFrame(self):

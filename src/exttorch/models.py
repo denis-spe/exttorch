@@ -205,6 +205,23 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
+                
+                # Initializer the data
+                data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **dataloader_kwargs,
+                )
+
+                # Get the train and validation sample
+                train_sample, val_sample = data.data_preprocessing(
+                    nprocs, val_size=validation_split
+                )
 
                 for epoch in range(epochs):
 
@@ -214,23 +231,6 @@ class Sequential(__nn__.Module):
                     if verbose != 0 and verbose is not None:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
-
-                    # Initializer the data
-                    data = DataHandler(
-                        X,
-                        y,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        device=self.__device,
-                        **dataloader_kwargs,
-                    )
-
-                    # Get the train and validation sample
-                    train_sample, val_sample = data.data_preprocessing(
-                        nprocs, val_size=validation_split
-                    )
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -300,6 +300,46 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
+                
+                # Initializer the data
+                train_data = DataHandler(
+                    X,
+                    y,
+                    batch_size=batch_size,
+                    val_batch_size=val_batch_size,
+                    shuffle=shuffle,
+                    random_seed=random_seed,
+                    device=self.__device,
+                    **dataloader_kwargs,
+                ).data_preprocessing(nprocs)
+                
+                if (
+                    isinstance(validation_data, list)
+                    or isinstance(validation_data, tuple)
+                ) and len(validation_data) == 2:
+                    # Initializer the data
+                    val_sample = DataHandler(
+                        validation_data[0],
+                        validation_data[1],
+                        batch_size=batch_size,
+                        val_batch_size=val_batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        device=self.__device,
+                        **dataloader_kwargs,
+                    ).data_preprocessing(nprocs)
+                else:
+                    # Initializer the data
+                    val_sample = DataHandler(
+                        validation_data,
+                        y=None,
+                        batch_size=batch_size,
+                        val_batch_size=val_batch_size,
+                        shuffle=shuffle,
+                        random_seed=random_seed,
+                        device=self.__device,
+                        **dataloader_kwargs,
+                    ).data_preprocessing(nprocs)
 
                 for epoch in range(epochs):
                     # Handle the callbacks on epoch begin
@@ -309,17 +349,7 @@ class Sequential(__nn__.Module):
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
 
-                    # Initializer the data
-                    train_data = DataHandler(
-                        X,
-                        y,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        device=self.__device,
-                        **dataloader_kwargs,
-                    ).data_preprocessing(nprocs)
+                    
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -333,34 +363,6 @@ class Sequential(__nn__.Module):
                         show_val_progress=True,
                         **dataloader_kwargs,
                     )
-
-                    if (
-                        isinstance(validation_data, list)
-                        or isinstance(validation_data, tuple)
-                    ) and len(validation_data) == 2:
-                        # Initializer the data
-                        val_sample = DataHandler(
-                            validation_data[0],
-                            validation_data[1],
-                            batch_size=batch_size,
-                            val_batch_size=val_batch_size,
-                            shuffle=shuffle,
-                            random_seed=random_seed,
-                            device=self.__device,
-                            **dataloader_kwargs,
-                        ).data_preprocessing(nprocs)
-                    else:
-                        # Initializer the data
-                        val_sample = DataHandler(
-                            validation_data,
-                            y=None,
-                            batch_size=batch_size,
-                            val_batch_size=val_batch_size,
-                            shuffle=shuffle,
-                            random_seed=random_seed,
-                            device=self.__device,
-                            **dataloader_kwargs,
-                        ).data_preprocessing(nprocs)
 
                     # Add the train metric to the history
                     history.add_history(train_metric)
@@ -422,18 +424,6 @@ class Sequential(__nn__.Module):
                     device=self.__device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
-
-                self.__train(
-                    data,
-                    y=None,
-                    batch_size=batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    verbose=verbose,
-                    nprocs=nprocs,
-                    warmup_steps=True,
-                    **dataloader_kwargs,
-                )
 
                 for epoch in range(1, epochs + 1):
                     # Handle the callbacks on epoch begin
@@ -508,9 +498,10 @@ class Sequential(__nn__.Module):
         from torch.nn import functional as f
 
         loss_class_names = ["BCELoss", "BCEWithLogitsLoss"]
-
+        target = target.long()
+        
         return (
-            f.one_hot(target, num_classes=2).double()
+            f.one_hot(target, num_classes=2).float()
             if type(self.loss).__name__ in loss_class_names
             else target
         )
@@ -602,7 +593,7 @@ class Sequential(__nn__.Module):
         for idx, (feature, label) in enumerate(data):
 
             feature, label = feature.to(self.__device), label.to(self.__device)
-
+            
             # Zero the gradient.
             self.optimizer.zero_grad()
 
@@ -615,12 +606,11 @@ class Sequential(__nn__.Module):
             # Compute the loss
             loss = self.loss(predict, target)
             
-            if warmup_steps == False:
-                # Add the prediction, labels(target) and loss to metric storage
-                metric_storage.add_metric(predict, label=target, loss=loss.item())
+            # Add the prediction, labels(target) and loss to metric storage
+            metric_storage.add_metric(predict, label=label, loss=loss.item())
 
-                # Measurement live update
-                measurements = metric_storage.measurements_compiler()
+            # Measurement live update
+            measurements = metric_storage.measurements_compiler()
 
             # Compute the gradient
             loss.backward()
@@ -632,14 +622,14 @@ class Sequential(__nn__.Module):
             else:
                 self.optimizer.step()
 
-            if verbose is not None and idx % 2 == 0 and warmup_steps == False:
+            if verbose is not None:
                 if show_val_progress:
                     if idx < len(data) - 1:
                         self.__progbar.update(idx + 1, measurements)
                 else:
                     # Update the progress bar
                     self.__progbar.update(idx + 1, measurements)
-
+                    
         # Measurements
         measurements = metric_storage.measurements
 
@@ -752,7 +742,7 @@ class Sequential(__nn__.Module):
                     loss = self.loss(predict, target)
 
                 # Add the prediction, labels(target) and loss to metric storage
-                metric_storage.add_metric(predict, label=target, loss=loss.item())
+                metric_storage.add_metric(predict, label=label, loss=loss.item())
 
                 # Measurement live update
                 live_measurements = metric_storage.measurements_compiler()
