@@ -119,10 +119,11 @@ class Sequential(__nn__.Module):
         val_batch_size: int | None = None,
         validation_split: float = None,
         validation_data=None,
-        verbose: str | int | None = 1,
+        verbose: str | None = "verbose",
         callbacks: __List__[__Callback__] = None,
         nprocs: int = 1,
-        start_method="fork",
+        progressbar_width: int = 20,
+        progressbar_dff_color: bool = False,
         **dataloader_kwargs,
     ):
         """
@@ -150,16 +151,26 @@ class Sequential(__nn__.Module):
                 train size.
             validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset]) None by default,
                 Data for validating model performance
-            verbose : (str | int) 1 by default,
+            verbose : (str | None) verbose by default,
                 Handles the model progress bar.
+                If verbose is None, no progress bar is shown.
+                Option :
+                    - verbose: Displays the progress bar.
+                    - silent: No progress bar is shown.
+                    - silent_verbose: Displays the current batch, bar and elapsed time.
+                    - silent_verbose_suffix: Displays the current batch and metrics.
+                    - silent_epoch: Displays the current batch, bar, elapsed time and metrics but not epochs.
+                    - silent_epoch_suffix: Displays the current batch and metrics but not epochs.
             callbacks: (Optional[List[Callback]])
                 Model list of callbacks.
             nprocs: (int)
                 The number of processes/devices for the replication.
                 At the moment, if specified, can be either 1 or the maximum number of devices.
-            start_method: (str) "fork" by default
-                The method to start the process.
-            kwargs: (Optional[Dict])
+            progressbar_width: (int)
+                The width of the progress bar.
+            progressbar_dff_color: (bool)
+                If True, the progress bar will be displayed in a different color.
+            dataloader_kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
         # Import libraries
@@ -177,7 +188,12 @@ class Sequential(__nn__.Module):
                 show_val_metrics = False
                 
             # Instantiate the progress bar
-            self.__progressbar = ProgressBar(show_val_metrics=show_val_metrics)
+            self.__progressbar = ProgressBar(
+                show_val_metrics=show_val_metrics, 
+                verbose=verbose, 
+                bar_width=progressbar_width,
+                show_diff_color=progressbar_dff_color
+                )
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -238,7 +254,7 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose != 0 and verbose is not None:
+                    if verbose and 'epoch' not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
 
@@ -344,7 +360,7 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose != 0 and verbose is not None:
+                    if verbose and 'epoch' not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
 
@@ -422,7 +438,7 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose != 0 and verbose is not None:
+                    if verbose and 'epoch' not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch}/{epochs}")
 

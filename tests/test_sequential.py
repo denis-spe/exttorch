@@ -53,7 +53,8 @@ class TestSequential(ut.TestCase):
             self.ir_y, 
             epochs=2,
             # batch_size=1,
-            # validation_data = (self.ir_x, self.ir_y)
+            validation_data = (self.ir_x, self.ir_y),
+            verbose="silent_verbose",
             )
         print(history.history)
 
@@ -100,7 +101,7 @@ class TestSequential(ut.TestCase):
             metrics=["accuracy"],
         )
 
-        history = digit_model.fit(self.d_x, self.d_y, validation_split=0.5, verbose=1)
+        history = digit_model.fit(self.d_x, self.d_y, validation_split=0.5, progressbar_dff_color=True)
         
         # digit_model.evaluate(self.d_x, self.d_y, verbose=1)
 
