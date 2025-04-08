@@ -33,28 +33,29 @@ class TestSequential(ut.TestCase):
         """
         self.iris_model = Sequential(
             [
-                nn.Linear(4, 32),
+                nn.Linear(4, 1029),
                 nn.ReLU(),
-                nn.Linear(32, 32),
+                nn.Linear(1029, 512),
                 nn.ReLU(),
-                nn.Linear(32, 3),
-                nn.LogSoftmax(dim=1)
+                nn.Linear(512, 3),
+                nn.Softmax(dim=1),
             ]
         )
 
         self.iris_model.compile(
             optimizer=Adam(),
-            loss=NLLLoss(),
+            loss=CrossEntropyLoss(),
             metrics=[Accuracy()],
         )
 
         history = self.iris_model.fit(
             self.ir_x, 
             self.ir_y, 
-            epochs=1,
-            batch_size=1,
-            validation_data = (self.ir_x, self.ir_y)
+            epochs=2,
+            # batch_size=1,
+            # validation_data = (self.ir_x, self.ir_y)
             )
+        print(history.history)
 
         # self.assertIsInstance(history.history, dict)
 
@@ -79,7 +80,7 @@ class TestSequential(ut.TestCase):
             # metrics=[Accuracy()],
         )
 
-        model.fit(train_dataloader, validation_data=train_dataloader)
+        model.fit(train_dataloader, validation_data=train_dataloader, epochs=5)
 
     def test_sequential_using_digits_dataset(self):
         digit_model = Sequential(

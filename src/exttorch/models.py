@@ -68,7 +68,7 @@ class Sequential(__nn__.Module):
         self.layers = layers if layers else []
         self.metrics = None
         self.__callbacks = None
-        self.__progbar = None
+        self.__progressbar = None
         self.stop_training = False
         self.__ENV = __ENV__
 
@@ -165,9 +165,19 @@ class Sequential(__nn__.Module):
         # Import libraries
         from .history import History
         from ._data_handle import DataHandler
+        from .utils import ProgressBar
         import torch
 
         self.stop_training = False
+        
+        if verbose is not None:
+            if (validation_data and len(validation_data) > 0) or validation_split is not None:
+                show_val_metrics = True
+            else:
+                show_val_metrics = False
+                
+            # Instantiate the progress bar
+            self.__progressbar = ProgressBar(show_val_metrics=show_val_metrics)
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -241,7 +251,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         verbose=verbose,
                         nprocs=nprocs,
-                        show_val_progress=True,
+                        show_val_metrics=True,
                         **dataloader_kwargs,
                     )
 
@@ -261,17 +271,6 @@ class Sequential(__nn__.Module):
                         **dataloader_kwargs,
                     )
 
-                    # Make a copy from train_metric dictionary.
-                    metrics = train_metric.copy()
-
-                    # Update the metrics by adding val_metric.
-                    metrics.update(val_metric)
-
-                    if verbose != 0 and verbose is not None:
-                        # Show the progress bar on each epoch
-                        self.__progbar.update(
-                            self.__train_data_size, val_metric.items(), finalize=True
-                        )
 
                     # Add the validation metric to the history
                     history.add_history(val_metric)
@@ -360,7 +359,7 @@ class Sequential(__nn__.Module):
                         random_seed=random_seed,
                         verbose=verbose,
                         nprocs=nprocs,
-                        show_val_progress=True,
+                        show_val_metrics=True,
                         **dataloader_kwargs,
                     )
 
@@ -379,12 +378,6 @@ class Sequential(__nn__.Module):
                         nprocs=nprocs,
                         **dataloader_kwargs,
                     )
-
-                    if verbose != 0 and verbose is not None:
-                        # Show the progress bar on each epoch
-                        self.__progbar.update(
-                            self.__train_data_size, val_metric.items(), finalize=True
-                        )
 
                     # Add the validation metric to the history
                     history.add_history(val_metric)
@@ -463,6 +456,9 @@ class Sequential(__nn__.Module):
 
         training()
         
+        # Set the show validation metrics to False
+        self.__progressbar.show_val_metrics = False
+        
         return history
 
     def predict_proba(self, X):
@@ -515,7 +511,7 @@ class Sequential(__nn__.Module):
         random_seed=None,
         verbose: str | int | None = 1,
         nprocs: int = 1,
-        show_val_progress: bool = False,
+        show_val_metrics: bool = False,
         warmup_steps: bool = False,
         **kwargs,
     ) -> dict:
@@ -544,12 +540,9 @@ class Sequential(__nn__.Module):
                 Data for validating model performance
         """
         # Import libraries
-        import torch
         from IPython.display import clear_output
 
-        if verbose:
-            from keras.utils import Progbar  # type: ignore
-        from ._metrics_handles import LossStorage, MetricStorage
+        from ._metrics_handles import MetricStorage
         from ._metrics_handles import change_metric_first_position
         from ._data_handle import DataHandler
 
@@ -581,10 +574,9 @@ class Sequential(__nn__.Module):
 
         # # Get the data size
         self.__train_data_size = len(data)
-
-        if verbose is not None:
-            # Instantiate the progress bar
-            self.__progbar = Progbar(len(data), verbose=verbose)
+        
+        # # Set the progress bar total
+        self.__progressbar.total = len(data)
 
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
@@ -610,7 +602,7 @@ class Sequential(__nn__.Module):
             metric_storage.add_metric(predict, label=label, loss=loss.item())
 
             # Measurement live update
-            measurements = metric_storage.measurements_compiler()
+            metric_storage.measurements_compiler()
 
             # Compute the gradient
             loss.backward()
@@ -621,14 +613,9 @@ class Sequential(__nn__.Module):
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
-
-            if verbose is not None:
-                if show_val_progress:
-                    if idx < len(data) - 1:
-                        self.__progbar.update(idx + 1, measurements)
-                else:
-                    # Update the progress bar
-                    self.__progbar.update(idx + 1, measurements)
+            
+            # Update the progress bar
+            self.__progressbar.update(idx + 1, metric_storage.measurements.items())
                     
         # Measurements
         measurements = metric_storage.measurements
@@ -727,15 +714,6 @@ class Sequential(__nn__.Module):
                 # Check if using BCELoss optimizer
                 target = self.__handle_one_hot(label)
 
-                # # Change size of torch.size([1]) to torch.size([1, 1])
-                # target = (
-                #     target.view(1, 1)
-                #     if (
-                #         target.dim() == 1
-                #         and target.dtype in [torch.float32, torch.float64]
-                #     )
-                #     else target
-                # )
 
                 if self.loss is not None:
                     # Compute the loss
@@ -747,13 +725,11 @@ class Sequential(__nn__.Module):
                 # Measurement live update
                 live_measurements = metric_storage.measurements_compiler()
 
-                if verbose is not None:
-                    if 0.0 not in list(dict(live_measurements).values()):
-                        # Update the progress bar
-                        progbar.update(idx + 1, live_measurements)
-
                 if "EXTTORCH_TPU" in self.__ENV:
                     self.__ENV["EXTTORCH_XM"].mark_step()
+                    
+        if self.__progressbar.show_val_metrics:
+            self.__progressbar.last_update(metric_storage.measurements.items())
 
         # Final measurements
         measurements = metric_storage.measurements
