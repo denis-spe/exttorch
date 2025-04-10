@@ -6,14 +6,26 @@ import time
 import unittest as ut
 from exttorch.utils import ProgressBar
 
+
 class TestProgressBar(ut.TestCase):
-    
-    def test_progress_bar(self):
+    def test_progressbar(self):
         """
-        Test the progress bar
+        Test the progress bar functionality
         """
-        pb = ProgressBar(bar_width=10, show_val_metrics=False)
-        for i in range(1000):
-            pb.total = 1000
-            pb.update(i + 1, metric={"loss": i, "accuracy": i}.items())
-            time.sleep(0.2)
+        # Initialize the ProgressBar
+        progress_bar = ProgressBar(
+            bar_width=20,
+            show_val_metrics=False,
+            verbose="verbose",
+            show_diff_color=True,
+            style="square",
+        )
+
+        # Set the total number of iterations
+        total_iterations = 100
+        progress_bar.total = total_iterations
+
+        # Simulate the progress
+        for i in range(total_iterations):
+            time.sleep(0.1)
+            progress_bar.update(i + 1, [("loss", i / 0.3223), ("accuracy", i / 0.3220)])

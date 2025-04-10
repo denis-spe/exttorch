@@ -71,6 +71,12 @@ class Sequential(__nn__.Module):
         self.__progressbar = None
         self.stop_training = False
         self.__ENV = __ENV__
+        self.__progressbar_color = None
+        self.__progressbar_empty_color = None
+        self.__progressbar_width = None
+        self.__progressbar_dff_color = None
+        self.__progressbar_style = None
+        self.__progressbar_show_check_mark = None
 
     def get_weights(self):
         return self.__model.state_dict()
@@ -124,6 +130,10 @@ class Sequential(__nn__.Module):
         nprocs: int = 1,
         progressbar_width: int = 20,
         progressbar_dff_color: bool = False,
+        progressbar_style: str = "default",
+        progressbar_show_check_mark: bool = True,
+        progressbar_color: str = "\033[92m",
+        progressbar_empty_color: str = "\033[90m",
         **dataloader_kwargs,
     ):
         """
@@ -166,10 +176,23 @@ class Sequential(__nn__.Module):
             nprocs: (int)
                 The number of processes/devices for the replication.
                 At the moment, if specified, can be either 1 or the maximum number of devices.
+            random_seed: (int)
+                Random seed for reproducibility.
             progressbar_width: (int)
                 The width of the progress bar.
             progressbar_dff_color: (bool)
                 If True, the progress bar will be displayed in a different color.
+            progressbar_style: (str) `default` by default
+                The style of the progress bar. option:
+                    - default: Default style.
+                    - square: Square style.
+                    - circle: Circle style.
+            progressbar_show_check_mark: (bool)
+                If True, a check mark will be shown at the end of the progress bar.
+            progressbar_color: (str)
+                The color of the progress bar.
+            progressbar_empty_color: (str)
+                The color of the empty part of the progress bar.
             dataloader_kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
@@ -180,20 +203,33 @@ class Sequential(__nn__.Module):
         import torch
 
         self.stop_training = False
-        
+
         if verbose is not None:
-            if (validation_data and len(validation_data) > 0) or validation_split is not None:
+            if (
+                validation_data and len(validation_data) > 0
+            ) or validation_split is not None:
                 show_val_metrics = True
             else:
                 show_val_metrics = False
-                
+
             # Instantiate the progress bar
             self.__progressbar = ProgressBar(
-                show_val_metrics=show_val_metrics, 
-                verbose=verbose, 
+                show_val_metrics=show_val_metrics,
+                verbose=verbose,
                 bar_width=progressbar_width,
-                show_diff_color=progressbar_dff_color
-                )
+                show_diff_color=progressbar_dff_color,
+                style=progressbar_style,
+                show_check_mark=progressbar_show_check_mark,
+                progress_color=progressbar_color,
+                empty_color=progressbar_empty_color,
+            )
+
+            self.__progressbar_width = progressbar_width
+            self.__progressbar_dff_color = progressbar_dff_color
+            self.__progressbar_style = progressbar_style
+            self.__progressbar_show_check_mark = progressbar_show_check_mark
+            self.__progressbar_color = progressbar_color
+            self.__progressbar_empty_color = progressbar_empty_color
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -231,7 +267,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
-                
+
                 # Initializer the data
                 data = DataHandler(
                     X,
@@ -254,7 +290,7 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and 'epoch' not in verbose:
+                    if verbose and "epoch" not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
 
@@ -287,7 +323,6 @@ class Sequential(__nn__.Module):
                         **dataloader_kwargs,
                     )
 
-
                     # Add the validation metric to the history
                     history.add_history(val_metric)
 
@@ -315,7 +350,7 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_begin")
 
                 print(end="\n")
-                
+
                 # Initializer the data
                 train_data = DataHandler(
                     X,
@@ -327,7 +362,7 @@ class Sequential(__nn__.Module):
                     device=self.__device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
-                
+
                 if (
                     isinstance(validation_data, list)
                     or isinstance(validation_data, tuple)
@@ -360,11 +395,9 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and 'epoch' not in verbose:
+                    if verbose and "epoch" not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch + 1}/{epochs}")
-
-                    
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -438,7 +471,7 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and 'epoch' not in verbose:
+                    if verbose and "epoch" not in verbose:
                         # Print the epochs
                         print(f"Epoch {epoch}/{epochs}")
 
@@ -471,10 +504,10 @@ class Sequential(__nn__.Module):
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
         training()
-        
+
         # Set the show validation metrics to False
         self.__progressbar.show_val_metrics = False
-        
+
         return history
 
     def predict_proba(self, X):
@@ -511,7 +544,7 @@ class Sequential(__nn__.Module):
 
         loss_class_names = ["BCELoss", "BCEWithLogitsLoss"]
         target = target.long()
-        
+
         return (
             f.one_hot(target, num_classes=2).float()
             if type(self.loss).__name__ in loss_class_names
@@ -590,7 +623,7 @@ class Sequential(__nn__.Module):
 
         # # Get the data size
         self.__train_data_size = len(data)
-        
+
         # # Set the progress bar total
         self.__progressbar.total = len(data)
 
@@ -601,7 +634,7 @@ class Sequential(__nn__.Module):
         for idx, (feature, label) in enumerate(data):
 
             feature, label = feature.to(self.__device), label.to(self.__device)
-            
+
             # Zero the gradient.
             self.optimizer.zero_grad()
 
@@ -613,7 +646,7 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, target)
-            
+
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(predict, label=label, loss=loss.item())
 
@@ -629,10 +662,10 @@ class Sequential(__nn__.Module):
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
-            
+
             # Update the progress bar
             self.__progressbar.update(idx + 1, metric_storage.measurements.items())
-                    
+
         # Measurements
         measurements = metric_storage.measurements
 
@@ -649,9 +682,9 @@ class Sequential(__nn__.Module):
         val_batch_size: int | None = None,
         shuffle: bool = False,
         random_seed: int | None = None,
-        verbose: int | None = 1,
+        verbose: str | None = "verbose",
         nprocs: int = 1,
-        **kwargs,
+        **dataloader_kwargs,
     ):
         """
         Evaluate the model.
@@ -670,20 +703,42 @@ class Sequential(__nn__.Module):
                 Batch size for training data.
             val_batch_size : (Optional[int])
                 Batch size for validation data.
-            verbose : (int | None)
-                default 1, Displays the progress bar if 1 or None not to
-                display progress bar.
+            verbose : (str | None) verbose by default,
+                Handles the model progress bar.
+                If verbose is None, no progress bar is shown.
+                Option :
+                    - verbose: Displays the progress bar.
+                    - silent: No progress bar is shown.
+                    - silent_verbose: Displays the current batch, bar and elapsed time.
+                    - silent_verbose_suffix: Displays the current batch and metrics.
+                    - silent_epoch: Displays the current batch, bar, elapsed time and metrics but not epochs.
+                    - silent_epoch_suffix: Displays the current batch and metrics but not epochs.
+
+            nprocs: (int)
+                The number of processes/devices for the replication.
+                At the moment, if specified, can be either 1 or the maximum number of devices.
+            dataloader_kwargs: (Optional[Dict])
+                Additional arguments for DataLoader.
         """
         # Import libraries
         import torch
-        from ._metrics_handles import LossStorage, MetricStorage
-
-        if verbose:
-            from keras.utils import Progbar  # type: ignore
-        from ._metrics_handles import change_metric_first_position
+        from ._metrics_handles import MetricStorage
         from ._data_handle import DataHandler
+        from .utils import ProgressBar
 
         metric_storage = None
+
+        # Instantiate the progress bar
+        eval_progressbar = ProgressBar(
+            show_val_metrics=False,
+            verbose=verbose,
+            bar_width=self.__progressbar_width,
+            show_diff_color=self.__progressbar_dff_color,
+            style=self.__progressbar_style,
+            show_check_mark=self.__progressbar_show_check_mark,
+            progress_color=self.__progressbar_color,
+            empty_color=self.__progressbar_empty_color,
+        )
 
         # Create the list for metric
         metric_storage = MetricStorage(
@@ -702,17 +757,11 @@ class Sequential(__nn__.Module):
             shuffle=shuffle,
             random_seed=random_seed,
             device=self.__device,
-            **kwargs,
+            **dataloader_kwargs,
         ).data_preprocessing(nprocs=nprocs)
 
-        # # Declare the progbar
-        # progbar = None
-
-        steps = 0
-
-        if verbose:
-            # Instantiate the progress bar
-            progbar = Progbar(len(data), verbose=verbose)
+        # Set the progress bar total
+        eval_progressbar.total = len(data)
 
         # Handle on validation begin
         self.__handle_callbacks("on_validation_begin")
@@ -730,7 +779,6 @@ class Sequential(__nn__.Module):
                 # Check if using BCELoss optimizer
                 target = self.__handle_one_hot(label)
 
-
                 if self.loss is not None:
                     # Compute the loss
                     loss = self.loss(predict, target)
@@ -739,11 +787,17 @@ class Sequential(__nn__.Module):
                 metric_storage.add_metric(predict, label=label, loss=loss.item())
 
                 # Measurement live update
-                live_measurements = metric_storage.measurements_compiler()
+                metric_storage.measurements_compiler()
 
                 if "EXTTORCH_TPU" in self.__ENV:
                     self.__ENV["EXTTORCH_XM"].mark_step()
-                    
+
+                if not self.__progressbar.show_val_metrics and verbose is not None:
+                    # Update the progress bar
+                    eval_progressbar.update(
+                        idx + 1, metric_storage.measurements.items()
+                    )
+
         if self.__progressbar.show_val_metrics:
             self.__progressbar.last_update(metric_storage.measurements.items())
 
