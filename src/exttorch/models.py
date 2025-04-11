@@ -71,6 +71,8 @@ class Sequential(__nn__.Module):
         self.__progressbar = None
         self.stop_training = False
         self.__ENV = __ENV__
+        self.__device = None
+        self.__verbose = None
         self.__progressbar_color = None
         self.__progressbar_empty_color = None
         self.__progressbar_width = None
@@ -204,32 +206,32 @@ class Sequential(__nn__.Module):
 
         self.stop_training = False
 
-        if verbose is not None:
-            if (
-                validation_data and len(validation_data) > 0
-            ) or validation_split is not None:
-                show_val_metrics = True
-            else:
-                show_val_metrics = False
+        if (
+            validation_data and len(validation_data) > 0
+        ) or validation_split is not None:
+            show_val_metrics = True
+        else:
+            show_val_metrics = False
 
-            # Instantiate the progress bar
-            self.__progressbar = ProgressBar(
-                show_val_metrics=show_val_metrics,
-                verbose=verbose,
-                bar_width=progressbar_width,
-                show_diff_color=progressbar_dff_color,
-                style=progressbar_style,
-                show_check_mark=progressbar_show_check_mark,
-                progress_color=progressbar_color,
-                empty_color=progressbar_empty_color,
-            )
+        # Instantiate the progress bar
+        self.__progressbar = ProgressBar(
+            show_val_metrics=show_val_metrics,
+            verbose=verbose,
+            bar_width=progressbar_width,
+            show_diff_color=progressbar_dff_color,
+            style=progressbar_style,
+            show_check_mark=progressbar_show_check_mark,
+            progress_color=progressbar_color,
+            empty_color=progressbar_empty_color,
+        )
 
-            self.__progressbar_width = progressbar_width
-            self.__progressbar_dff_color = progressbar_dff_color
-            self.__progressbar_style = progressbar_style
-            self.__progressbar_show_check_mark = progressbar_show_check_mark
-            self.__progressbar_color = progressbar_color
-            self.__progressbar_empty_color = progressbar_empty_color
+        self.__verbose = verbose
+        self.__progressbar_width = progressbar_width
+        self.__progressbar_dff_color = progressbar_dff_color
+        self.__progressbar_style = progressbar_style
+        self.__progressbar_show_check_mark = progressbar_show_check_mark
+        self.__progressbar_color = progressbar_color
+        self.__progressbar_empty_color = progressbar_empty_color
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -510,24 +512,57 @@ class Sequential(__nn__.Module):
 
         return history
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, verbose: str | None = "inherited"):
         import torch
+        import numpy as np
+        from .utils import ProgressBar
+        from torch.nn import functional as f
 
         x = (X.double() if type(X) == torch.Tensor else torch.tensor(X).double()).to(
             self.__device
         )
-        # Make prediction and get probabilities
-        proba = self.__model(x)
-        return proba
+        
+        # Instantiate the progress bar
+        progressbar = ProgressBar(
+            show_val_metrics=False,
+            verbose=self.__verbose if verbose == "inherited" else verbose,
+            bar_width=self.__progressbar_width,
+            show_diff_color=self.__progressbar_dff_color,
+            style=self.__progressbar_style,
+            show_check_mark=self.__progressbar_show_check_mark,
+            progress_color=self.__progressbar_color,
+            empty_color=self.__progressbar_empty_color,
+            show_suffix=False
+        )
+        # Set the progress bar total
+        progressbar.total = len(x)
+        
+        # Empty list for probability
+        probability = []
+        
+        with torch.no_grad():
+            for i, data in enumerate(x):
+                
+                # Make prediction and get probabilities
+                proba = self.__model(data.view(1, -1).float())
+                
+                # Append the probabilities to the list
+                probability.append(proba.numpy().reshape(1, -1).tolist()[0])
+                
+                # Update the progress bar
+                progressbar.update(i + 1, [()])
+                
+        prob = f.softmax(torch.tensor(probability), dim=1)
+        return prob
 
     def predict(self, X):
-        from ._data_handle import SinglePredictionsFormat
+        from ._metrics_handles import SinglePredictionsFormat
 
         # Get the probabilities of x
         proba = self.predict_proba(X)
 
         # Initializer the SinglePredictionsFormat object.
-        single_format_prediction = SinglePredictionsFormat(proba)
+        single_format_prediction = SinglePredictionsFormat(proba, self.__device)
 
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
@@ -682,7 +717,7 @@ class Sequential(__nn__.Module):
         val_batch_size: int | None = None,
         shuffle: bool = False,
         random_seed: int | None = None,
-        verbose: str | None = "verbose",
+        verbose: str | None = "inherited",
         nprocs: int = 1,
         **dataloader_kwargs,
     ):
@@ -731,7 +766,7 @@ class Sequential(__nn__.Module):
         # Instantiate the progress bar
         eval_progressbar = ProgressBar(
             show_val_metrics=False,
-            verbose=verbose,
+            verbose=self.__verbose if verbose == "inherited" else verbose,
             bar_width=self.__progressbar_width,
             show_diff_color=self.__progressbar_dff_color,
             style=self.__progressbar_style,

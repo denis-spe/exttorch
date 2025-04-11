@@ -15,6 +15,7 @@ class ProgressBar:
         progress_color="\033[92m",
         style="default",
         show_check_mark=True,
+        show_suffix=True,
     ):
         self._total = 0
         self.length = bar_width
@@ -30,6 +31,7 @@ class ProgressBar:
         self.verbose = verbose
         self.check_mark = show_check_mark
         self.show_diff_color = show_diff_color
+        self.show_suffix = show_suffix
 
     @property
     def total(self):
@@ -85,43 +87,7 @@ class ProgressBar:
             raise ValueError(
                 "Invalid verbose option. Choose from ['verbose', 'silent', 'silent_verbose', 'silent_verbose_suffix', 'silent_epoch', 'silent_epoch_suffix']"
             )
-
-    def update(self, current, metric=None):
-
-        if metric is not None:
-            self.suffix = " - ".join([f"{key}: {value:.4f}" for key, value in metric])
-            self.suffix = f" - {self.suffix}"
-
-        # Calculate elapsed time
-        self.current_time = time.time()
-        elapsed_time = int(self.current_time - self.start_time)
-        step_time = (
-            self.current_time - self.last_update_time
-        ) * 1000  # Time per step in ms
-
-        # Format time per step
-        step_time_formatted = f"{int(step_time)}ms/step"
-        self.last_update_time = self.current_time
-
-        self.current = current
-        filled_length = int(self.length * self.current // self.total)
-
-        percent = self.current / self.total * 100
-
-        if self.show_diff_color:
-            if percent < 25:
-                color = "\033[31m"  # Dark Red
-            elif percent < 50:
-                color = "\033[91m"  # Light Red
-            elif percent < 70:
-                color = "\033[32m"  # Dark Green
-            elif percent <= 100:
-                color = "\033[92m"  # Light Green
-        else:
-            color = self.progress_color
-
-        # Set the color based on the percentage
-        self.progress_color = color
+    def __bar(self, filled_length, percent):
         match self.style:
             case "default":
                 bar = (
@@ -201,6 +167,49 @@ class ProgressBar:
                 raise ValueError(
                     "Invalid style option. Choose from ['default', '--', '==', '-=', 'airplane', 'circle', 'square', 'triangle', 'diamond', 'star', 'heart', 'cross']"
                 )
+        return bar
+
+    def update(self, current, metric=None):
+
+        if metric is not None and self.show_suffix:
+            self.suffix = " - ".join([f"{key}: {value:.4f}" for key, value in metric])
+            self.suffix = f" - {self.suffix}"
+        else:
+            self.suffix = ""
+
+        # Calculate elapsed time
+        self.current_time = time.time()
+        elapsed_time = int(self.current_time - self.start_time)
+        step_time = (
+            self.current_time - self.last_update_time
+        ) * 1000  # Time per step in ms
+
+        # Format time per step
+        step_time_formatted = f"{int(step_time)}ms/step"
+        self.last_update_time = self.current_time
+
+        self.current = current
+        filled_length = int(self.length * self.current // self.total)
+
+        percent = self.current / self.total * 100
+
+        if self.show_diff_color:
+            if percent < 25:
+                color = "\033[31m"  # Dark Red
+            elif percent < 50:
+                color = "\033[91m"  # Light Red
+            elif percent < 70:
+                color = "\033[32m"  # Dark Green
+            elif percent <= 100:
+                color = "\033[92m"  # Light Green
+        else:
+            color = self.progress_color
+
+        # Set the color based on the percentage
+        self.progress_color = color
+        
+        # Different styles for the progress bar
+        bar = self.__bar(filled_length, percent)
 
         # Print the progress bar
         self.__progress_bar(
@@ -236,13 +245,15 @@ class ProgressBar:
 
         # Format time per step
         step_time_formatted = f"{int(step_time)}ms/step"
-
+        
+        # Calculate filled length
         filled_length = int(self.length * self.current // self.total)
-        bar = (
-            f"{self.progress_color}━{self.reset_color}" * filled_length
-            + f"{self.progress_empty_color}━{self.reset_color}"
-            * (self.length - filled_length)
-        )
+        
+        # Calculate percent
+        percent = self.current / self.total * 100
+        
+        # Different styles for the progress bar
+        bar = self.__bar(filled_length, percent)
 
         # Print the progress bar
         self.__progress_bar(

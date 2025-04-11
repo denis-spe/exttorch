@@ -33,9 +33,15 @@ class TestSequential(ut.TestCase):
         """
         self.iris_model = Sequential(
             [
-                nn.Linear(4, 1029),
+                nn.Linear(4, 128),
                 nn.ReLU(),
-                nn.Linear(1029, 512),
+                nn.Linear(128, 128),
+                nn.ReLU(),
+                nn.Linear(128, 128),
+                nn.ReLU(),
+                nn.Linear(128, 128),
+                nn.ReLU(),
+                nn.Linear(128, 512),
                 nn.ReLU(),
                 nn.Linear(512, 3),
                 nn.Softmax(dim=1),
@@ -54,9 +60,11 @@ class TestSequential(ut.TestCase):
             epochs=2,
             # batch_size=1,
             validation_data = (self.ir_x, self.ir_y),
-            # verbose="silent_verbose",
+            verbose="verbose",
+            progressbar_style="heart"
             )
-        print(history.history)
+        
+        print(self.iris_model.predict(self.ir_x))
 
         # self.assertIsInstance(history.history, dict)
 
