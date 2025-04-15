@@ -78,7 +78,7 @@ class ZeroOneLoss(Metric):
         return zero_one_loss(y, prediction)
 
 class F1Score(Metric):
-    def __init__(self, name=None, average='binary', num_classes: int = 2):
+    def __init__(self, name=None, average='binary', num_classes: int = 3, zero_division='warn'):
         """
         Computes the F1 score for binary or multi-class classification.
         Args:
@@ -108,6 +108,9 @@ class F1Score(Metric):
         Returns:
         float: F1 score.
         """
+        if len(torch.unique(targets)) > 2:
+            raise ValueError("F1 score was called with binary average but targets are multiclass")
+            
         recall_val = Recall()(preds, targets)
         precision_val = Precision()(preds, targets)
         
@@ -131,12 +134,20 @@ class F1Score(Metric):
         Returns:
         float: F1 score.
         """
+        if len(targets) > 30 and len(torch.unique(targets)) == 2:
+            raise ValueError("F1 score was called with multiclass average but targets are binary")
+        
         # Compute precision and recall for each class
         recall_vals = Recall(average=average, num_classes=num_classes)(preds, targets)
         precision_vals = Precision(average=average, num_classes=num_classes)(preds, targets)
         
+        # Avoid division by zero
+        division_part = (precision_vals + recall_vals)
+        if division_part == 0:
+            return 0.0
+        
         # Compute F1 score for each class
-        f1_scores = 2 * (precision_vals * recall_vals) / (precision_vals + recall_vals)
+        f1_scores = 2 * (precision_vals * recall_vals) / division_part
         
         if average == 'macro':
             return round(f1_scores, 4)
@@ -146,7 +157,7 @@ class F1Score(Metric):
             class_support = [(targets == i).sum().float() for i in range(num_classes)]
             total_support = sum(class_support)
             weighted_f1 = sum(f1_scores * torch.tensor(class_support) / total_support)
-            return weighted_f1.item()
+            return round(weighted_f1.item(), 4)
         else:
             raise ValueError("`average` must be 'macro' or 'weighted'")
 
@@ -165,7 +176,6 @@ class F1Score(Metric):
                 return self.__f1_score_multiclass(y_pred, y_true, self.__num_classes, average='weighted')
             case _:
                 raise ValueError("`average` must be 'macro' or 'weighted'")
-
         
 class MatthewsCorrcoef(Metric):
     def __init__(self, name = None, **kwargs):
@@ -180,7 +190,7 @@ class MatthewsCorrcoef(Metric):
         return matthews_corrcoef(y, prediction, **self.__kwargs)
 
 class Recall(Metric):
-    def __init__(self, name = None, average: str = "binary", num_classes: int = 2):
+    def __init__(self, name = None, average: str = "binary", num_classes: int = 3):
         """
         Compute recall for binary or multi-class classification.
         Args:
@@ -209,7 +219,11 @@ class Recall(Metric):
         
         Returns:
             float: Recall score.
-        """        
+        """
+        
+        if len(torch.unique(targets)) > 2:
+            raise ValueError("Recall was called with binary average but targets are multiclass")
+                
         tp = (preds * targets).sum().item()  # True Positives
         fn = ((1 - preds) * targets).sum().item()  # False Negatives
         
@@ -230,6 +244,9 @@ class Recall(Metric):
         """
         recall_scores = []
         
+        if len(targets) > 30 and len(torch.unique(targets)) == 2:
+            raise ValueError("Recall was called with multiclass average but targets are binary")
+        
         for class_idx in range(num_classes):
             tp = ((preds == class_idx) & (targets == class_idx)).sum().item()
             fn = ((preds != class_idx) & (targets == class_idx)).sum().item()
@@ -248,7 +265,11 @@ class Recall(Metric):
             case "binary":
                 return self.__recall(y_pred, y_true)
             case "macro":
+                return self.__multiclass_recall(y_pred, y_true, self.__num_classes)                
+            case "weighted":
                 return self.__multiclass_recall(y_pred, y_true, self.__num_classes)
+            case _:
+                raise ValueError("`average` must be 'macro' or 'weighted'")
 
 class Jaccard(Metric):
     def __init__(self, name = None, **kwargs):
@@ -293,6 +314,9 @@ class Precision(Metric):
         Returns:
         float: Macro-averaged precision score.
         """
+        if len(y_true) > 30 and len(torch.unique(y_true)) == 2:
+            raise ValueError("Precision was called with multiclass average but targets are binary")
+        
         precision_per_class = []
         
         for c in range(num_classes):
@@ -316,7 +340,10 @@ class Precision(Metric):
         Returns:
         float: Precision score.
         """
-    
+        
+        if len(torch.unique(targets)) > 2:
+            raise ValueError("Precision was called with binary average but targets are multiclass")
+        
         # True Positives (TP): Predicted 1, Actual 1
         TP = ((preds == 1) & (targets == 1)).sum().float()
 
@@ -338,6 +365,10 @@ class Precision(Metric):
                 return self.__precision(y_pred, y_true)
             case "macro":
                 return self.__precision_multiclass(y_pred, y_true, self.__num_classes)
+            case "weighted":
+                return self.__precision_multiclass(y_pred, y_true, self.__num_classes)
+            case _:
+                raise ValueError("`average` must be 'macro' or 'weighted'")
 
 class TopKAccuracy(Metric):
     def __init__(self, name = None, **kwargs):

@@ -100,6 +100,12 @@ class TestMetrics(ut.TestCase):
         y_pred = torch.tensor([0, 2, 1, 0, 0, 1, 2, 0])
         f1_val = f1(y_pred, y_true)
         self.assertEqual(f1_val, 0.2222)
+        
+        f1 = F1Score(average="weighted", num_classes=3)
+        y_true = torch.tensor([0, 1, 2, 0, 1, 2])
+        y_pred = torch.tensor([0, 2, 1, 0, 0, 1])
+        f1_val = f1(y_pred, y_true)
+        self.assertEqual(f1_val, 0.2666)
     
     
         

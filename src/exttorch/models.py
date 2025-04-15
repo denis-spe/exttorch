@@ -10,6 +10,7 @@ from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_opt
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
+from sklearn.base import BaseEstimator as __BaseEstimator, TransformerMixin as __TransformerMixin
 from exttorch._env import _ENV as __ENV__
 
 
@@ -893,6 +894,35 @@ class Sequential(__nn__.Module):
         self.loss = loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
 
+class Wrapper(__BaseEstimator, __TransformerMixin):
+    """
+    Wrapper class for exttorch models to make them compatible with sklearn
+    """
+
+    def __init__(
+        self, model: Sequential, 
+        loss: __Loss__, 
+        optimizer: __Optimizer__, 
+        metrics=None, 
+        **fit_kwargs
+    ):
+        self.model = model
+        self.fit_kwargs = fit_kwargs
+        self.loss = loss
+        self.optimizer = optimizer
+        self.metrics = metrics
+        self.history = None
+        
+    def fit(self, X, y=None):
+        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.metrics)
+        self.history = self.model.fit(X, y, **self.fit_kwargs)
+        return self
+
+    def predict(self, X):
+        return self.model.predict(X)
+
+    def score(self, X, y=None):
+        return self.model.evaluate(X, y)
 
 if __name__ == "__main__":
     import doctest

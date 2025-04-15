@@ -18,6 +18,7 @@ from exttorch.metrics import (
     Auc,
     ZeroOneLoss,
     TopKAccuracy,
+    F1Score
 )
 
 
@@ -268,6 +269,7 @@ def str_val_to_metric(metric_list: list):
     for new_metric_name in metric_list:
         if type(new_metric_name) == str:
             match new_metric_name:
+                
                 case "acc" | "Acc" | "accuracy" | "Accuracy":
                     new_metric_list.append(Accuracy(new_metric_name))
                 case "mse" | "MSE" | "MeanSquaredError":
@@ -290,6 +292,8 @@ def str_val_to_metric(metric_list: list):
                     new_metric_list.append(ZeroOneLoss(new_metric_name))
                 case "TopKAccuracy" | "TKA" | "tka":
                     new_metric_list.append(TopKAccuracy(new_metric_name))
+                case "F1Score" | "f1" | "f1score" | "F1":
+                    new_metric_list.append(F1Score(new_metric_name))
                 case _:
                     raise ValueError(f"Unknown metric name `{new_metric_name}`")
         else:
