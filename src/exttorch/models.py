@@ -10,6 +10,7 @@ from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_opt
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
+from sklearn.utils.validation import check_is_fitted as __check_is_fitted__
 from sklearn.base import BaseEstimator as __BaseEstimator, TransformerMixin as __TransformerMixin
 from exttorch._env import _ENV as __ENV__
 
@@ -556,14 +557,15 @@ class Sequential(__nn__.Module):
         prob = f.softmax(torch.tensor(probability), dim=1)
         return prob
 
-    def predict(self, X):
+    def predict(self, X, verbose: str | None = "inherited"):
         from ._metrics_handles import SinglePredictionsFormat
 
         # Get the probabilities of x
-        proba = self.predict_proba(X)
+        proba = self.predict_proba(X, verbose=verbose)
 
         # Initializer the SinglePredictionsFormat object.
-        single_format_prediction = SinglePredictionsFormat(proba, self.__device)
+        single_format_prediction = SinglePredictionsFormat(
+            proba, self.__device, loss_name=type(self.loss).__name__)
 
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
@@ -575,17 +577,12 @@ class Sequential(__nn__.Module):
             else formatted_prediction
         )
 
-    def __handle_one_hot(self, target):
-        from torch.nn import functional as f
-
-        loss_class_names = ["BCELoss", "BCEWithLogitsLoss"]
-        target = target.long()
-
-        return (
-            f.one_hot(target, num_classes=2).float()
-            if type(self.loss).__name__ in loss_class_names
-            else target
-        )
+    def __handle_label(self, target):        
+        if self.loss.__class__.__name__ == "CrossEntropyLoss":
+            return target.long()
+        elif self.loss.__class__.__name__ == "NLLLoss":
+            return target.long().flatten()
+        return target.view(-1, 1)
 
     def __train(
         self,
@@ -640,7 +637,10 @@ class Sequential(__nn__.Module):
 
         # Create the list for metric
         metric_storage = MetricStorage(
-            self.__device, self.metrics, batch_size=batch_size
+            self.__device, 
+            self.metrics, 
+            batch_size=batch_size,
+            loss_name=type(self.loss).__name__,
         )
 
         # Indicate the model to train
@@ -669,22 +669,26 @@ class Sequential(__nn__.Module):
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
 
-            feature, label = feature.to(self.__device), label.to(self.__device)
+            feature, label = feature.to(self.__device).float(), label.to(self.__device).float()
 
             # Zero the gradient.
             self.optimizer.zero_grad()
 
             # Make prediction
-            predict = self.__model(feature.float())
+            predict = self.__model(feature)
 
-            # Check if using BCELoss optimizer
-            target = self.__handle_one_hot(label)
-
+            # Changes data type or data shape
+            label = self.__handle_label(label)
+            
             # Compute the loss
-            loss = self.loss(predict, target)
+            loss = self.loss(predict, label)
 
             # Add the prediction, labels(target) and loss to metric storage
-            metric_storage.add_metric(predict, label=label, loss=loss.item())
+            metric_storage.add_metric(
+                predict, 
+                label=label,
+                loss=loss.item()
+                )
 
             # Measurement live update
             metric_storage.measurements_compiler()
@@ -778,7 +782,10 @@ class Sequential(__nn__.Module):
 
         # Create the list for metric
         metric_storage = MetricStorage(
-            self.__device, metrics=self.metrics, batch_size=batch_size, train=False
+            self.__device, 
+            metrics=self.metrics, 
+            batch_size=batch_size, train=False,
+            loss_name=type(self.loss).__name__
         )
 
         # Indicate the model to evaluate
@@ -807,20 +814,22 @@ class Sequential(__nn__.Module):
             for idx, (feature, label) in enumerate(data):
 
                 # Set the device for X and y
-                feature, label = (feature.to(self.__device), label.to(self.__device))
+                feature, label = feature.to(self.__device).float(), label.to(self.__device).float()
 
                 # Make prediction
-                predict = self.__model(feature.float())
+                predict = self.__model(feature)
 
                 # Check if using BCELoss optimizer
-                target = self.__handle_one_hot(label)
+                label = self.__handle_label(label)
 
                 if self.loss is not None:
                     # Compute the loss
-                    loss = self.loss(predict, target)
+                    loss = self.loss(predict, label)
 
                 # Add the prediction, labels(target) and loss to metric storage
-                metric_storage.add_metric(predict, label=label, loss=loss.item())
+                metric_storage.add_metric(
+                    predict, label=label,
+                    loss=loss.item())
 
                 # Measurement live update
                 metric_storage.measurements_compiler()
@@ -906,6 +915,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         metrics=None, 
         **fit_kwargs
     ):
+        super().__init__()
         self.model = model
         self.fit_kwargs = fit_kwargs
         self.loss = loss
@@ -913,18 +923,16 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         self.metrics = metrics
         self.history = None
         
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, **kwargs):
         self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.metrics)
-        self.history = self.model.fit(X, y, **self.fit_kwargs)
+        self.history = self.model.fit(X, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs)
+        self.is_fitted_ = True
         return self
 
-    def predict(self, X):
-        return self.model.predict(X)
+    def predict(self, X, verbose: str | None = None):
+        __check_is_fitted__(self, 'is_fitted_')
+        return self.model.predict(X, verbose=verbose)
 
-    def score(self, X, y=None):
-        return self.model.evaluate(X, y)
-
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()
+    def score(self, X, y=None, verbose: str | None = None):
+        __check_is_fitted__(self, 'is_fitted_')
+        return self.model.evaluate(X, y, verbose=verbose)

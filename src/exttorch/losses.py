@@ -21,7 +21,7 @@ def __change_str_to_loss(loss: str):
             return L1Loss()
         case "NLLLoss" | "nll" | "negative_log_likelihood" | "nll_loss":
             return NLLLoss()
-        case "CrossEntropyLoss" | "cross_entropy" | "crossentropy":
+        case "CrossEntropyLoss" | "cross_entropy" | "crossentropy" | "categorical_crossentropy":
             return CrossEntropyLoss()
         case "BCELoss" | "bce" | "binary_crossentropy":
             return BCELoss()

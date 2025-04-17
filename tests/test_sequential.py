@@ -44,7 +44,6 @@ class TestSequential(ut.TestCase):
                 nn.Linear(128, 512),
                 nn.ReLU(),
                 nn.Linear(512, 3),
-                nn.Softmax(dim=1),
             ]
         )
 

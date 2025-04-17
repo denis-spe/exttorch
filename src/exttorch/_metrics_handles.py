@@ -83,9 +83,10 @@ class LossStorage:
 
 
 class SinglePredictionsFormat:
-    def __init__(self, prediction, device):
+    def __init__(self, prediction, device, loss_name):
         self.__prediction = prediction
         self.__device = device
+        self.___main_loss_name = loss_name
         self.__size = (
             prediction.size()
             if isinstance(prediction, torch.Tensor)
@@ -93,10 +94,13 @@ class SinglePredictionsFormat:
         )
 
     def __single_format(self, prediction):
-        if self.__size[1] > 1:
-            # That's a category prediction
+        if self.___main_loss_name in ["BCELoss", "BCEWithLogitsLoss"]:
+            # It's a binary classification
+            return torch.round(prediction).int()
+        elif self.___main_loss_name in ["CrossEntropyLoss", "NLLLoss"]:
+            # It's a multi-class classification
             return torch.argmax(prediction)
-                
+        
         # else it's a continuous prediction
         return prediction
 
@@ -116,7 +120,7 @@ class SinglePredictionsFormat:
 
 
 class MetricStorage:
-    def __init__(self, device: str, metrics: list, batch_size: int, train: bool = True):
+    def __init__(self, device: str, metrics: list, batch_size: int, loss_name: str=None,  train: bool = True):
         
         self.__device = device
         self.__metrics = metrics
@@ -133,6 +137,7 @@ class MetricStorage:
         self.__labels: List[torch.Tensor] = []
         self.__loss = []
         self.__batch_size = batch_size
+        self.__main_loss_name = loss_name
         self.__metric_name_proba = ["Auc", "TopKAccuracy", "auc", "tka", "TKA"]
 
     def __y_prediction_or_proba(self, metric, predict, formatted_prediction):
@@ -152,7 +157,7 @@ class MetricStorage:
     ) -> None:
 
         # Initializer the SinglePredictionsFormat object.
-        single_format_prediction = SinglePredictionsFormat(predict, self.__device)
+        single_format_prediction = SinglePredictionsFormat(predict, self.__device, self.__main_loss_name)
 
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
@@ -305,4 +310,4 @@ def str_val_to_metric(metric_list: list):
 def handle_probability(proba: torch.Tensor):
     if proba.shape[1] > 2:
         return f.softmax(proba, dim=-1)[:, 1]
-    return proba[:, 1]
+    return proba[:, 1] if proba.shape[1] == 2 else proba

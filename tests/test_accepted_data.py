@@ -4,7 +4,7 @@
 from contexts import *
 import torch
 from torch import nn
-from sklearn.datasets import make_classification
+from sklearn.datasets import make_classification, make_regression
 from unittest import TestCase
 from exttorch.models import Sequential
 
@@ -45,4 +45,39 @@ class TestAcceptedData(TestCase):
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         model.fit(self.torch_data_generator, epochs=2)
         
-    
+    def test_regression_dataset(self):
+        
+        X, y = make_regression(n_samples=250, n_features=20, noise=0.1)
+        
+        model = Sequential()
+        model.add(nn.Linear(20, 10))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(10, 1))
+        
+        model.compile(optimizer='adam', loss='mse')
+        model.fit(X, y, epochs=4, batch_size=32, validation_split=0.2)
+        
+    def test_binary_classification_dataset(self):
+        
+        X, y = make_classification(n_samples=200, n_features=20, n_informative=2, n_classes=2)
+        
+        model = Sequential()
+        model.add(nn.Linear(20, 10))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(10, 1))
+        model.add(nn.Sigmoid())
+        
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)
+        
+    def test_multiclass_classification_dataset(self):
+        
+        X, y = make_classification(n_samples=250, n_features=20, n_informative=4, n_classes=3)
+        
+        model = Sequential()
+        model.add(nn.Linear(20, 10))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(10, 3))
+                
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)

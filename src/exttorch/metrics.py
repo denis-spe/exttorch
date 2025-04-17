@@ -134,8 +134,6 @@ class F1Score(Metric):
         Returns:
         float: F1 score.
         """
-        if len(targets) > 30 and len(torch.unique(targets)) == 2:
-            raise ValueError("F1 score was called with multiclass average but targets are binary")
         
         # Compute precision and recall for each class
         recall_vals = Recall(average=average, num_classes=num_classes)(preds, targets)
@@ -244,9 +242,6 @@ class Recall(Metric):
         """
         recall_scores = []
         
-        if len(targets) > 30 and len(torch.unique(targets)) == 2:
-            raise ValueError("Recall was called with multiclass average but targets are binary")
-        
         for class_idx in range(num_classes):
             tp = ((preds == class_idx) & (targets == class_idx)).sum().item()
             fn = ((preds != class_idx) & (targets == class_idx)).sum().item()
@@ -314,8 +309,6 @@ class Precision(Metric):
         Returns:
         float: Macro-averaged precision score.
         """
-        if len(y_true) > 30 and len(torch.unique(y_true)) == 2:
-            raise ValueError("Precision was called with multiclass average but targets are binary")
         
         precision_per_class = []
         
@@ -340,7 +333,6 @@ class Precision(Metric):
         Returns:
         float: Precision score.
         """
-        
         if len(torch.unique(targets)) > 2:
             raise ValueError("Precision was called with binary average but targets are multiclass")
         

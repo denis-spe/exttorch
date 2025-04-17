@@ -196,6 +196,7 @@ class TestMetrics(ut.TestCase):
                 nn.Linear(32, 32),
                 nn.ReLU(),
                 nn.Linear(32, 3),
+                nn.LogSoftmax(dim=1),
             ]
         )
 
