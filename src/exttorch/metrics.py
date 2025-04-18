@@ -45,7 +45,7 @@ class Accuracy(Metric):
         y : torch.Tensor
             True values
         """
-        return round((prediction == y).float().mean().item(), 4)
+        return (prediction == y).float().mean().round(decimals=4)
 
 class ZeroOneLoss(Metric):
     """
@@ -118,7 +118,7 @@ class F1Score(Metric):
             return 0.0
         
         f1 = 2 * (precision_val * recall_val) / (precision_val + recall_val)
-        return round(f1, 4)
+        return f1.round(decimals=4)
     
     def __f1_score_multiclass(self, preds, targets, num_classes, average='macro'):
         """
@@ -148,14 +148,14 @@ class F1Score(Metric):
         f1_scores = 2 * (precision_vals * recall_vals) / division_part
         
         if average == 'macro':
-            return round(f1_scores, 4)
+            return f1_scores.round(decimals=4)
         
         elif average == 'weighted':
             # Weighted by class frequency (support)
             class_support = [(targets == i).sum().float() for i in range(num_classes)]
             total_support = sum(class_support)
             weighted_f1 = sum(f1_scores * torch.tensor(class_support) / total_support)
-            return round(weighted_f1.item(), 4)
+            return weighted_f1.round(decimals=4)
         else:
             raise ValueError("`average` must be 'macro' or 'weighted'")
 
@@ -222,11 +222,11 @@ class Recall(Metric):
         if len(torch.unique(targets)) > 2:
             raise ValueError("Recall was called with binary average but targets are multiclass")
                 
-        tp = (preds * targets).sum().item()  # True Positives
-        fn = ((1 - preds) * targets).sum().item()  # False Negatives
+        tp = (preds * targets).sum()  # True Positives
+        fn = ((1 - preds) * targets).sum() # False Negatives
         
-        recall_score = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        return round(recall_score, 4)
+        recall_score = (tp / (tp + fn)).round(decimals=4) if (tp + fn) > 0 else 0.0
+        return recall_score
     
     def __multiclass_recall(self, preds, targets, num_classes):
         """
@@ -243,13 +243,13 @@ class Recall(Metric):
         recall_scores = []
         
         for class_idx in range(num_classes):
-            tp = ((preds == class_idx) & (targets == class_idx)).sum().item()
-            fn = ((preds != class_idx) & (targets == class_idx)).sum().item()
+            tp = ((preds == class_idx) & (targets == class_idx)).sum()
+            fn = ((preds != class_idx) & (targets == class_idx)).sum()
             
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
             recall_scores.append(recall)
         
-        return round(sum(recall_scores) / num_classes, 4)  # Macro-average recall
+        return (sum(recall_scores) / num_classes).round(decimals=4)  # Macro-average recall
 
     def __call__(self, prediction, y):
         # Ensure tensors are float
@@ -319,7 +319,7 @@ class Precision(Metric):
             class_precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor(0.0)
             precision_per_class.append(class_precision)
 
-        return round(torch.mean(torch.tensor(precision_per_class)).item(), 4)
+        return torch.mean(torch.tensor(precision_per_class)).round(decimals=4)
     
     def __precision(self, preds, targets):
         """
@@ -345,7 +345,7 @@ class Precision(Metric):
         # Avoid division by zero
         precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor(0.0)
 
-        return round(precision.item(), 4)
+        return precision.round(decimals=4)
 
     def __call__(self, prediction, y):
         # Ensure tensors are float
@@ -415,7 +415,7 @@ class Auc(Metric):
         auc = torch.trapz(tpr, fpr)
         
         # Clip the AUC value to be within the range [0, 1]
-        auc_value = abs(round(auc.item(), 4))
+        auc_value = abs(auc.round(decimals=4))
         auc_value = max(0.0, min(auc_value, 1.0))
 
         return auc_value
@@ -465,9 +465,9 @@ class MeanSquaredError(Metric):
         mse = torch.nn.functional.mse_loss(prediction.float(), y.float())
         match self.__strategy:
             case "root":
-                return round(torch.sqrt(mse).item(), 4)
+                return torch.sqrt(mse).round(decimals=4)
             case "mean":
-                return round(mse.item(), 4)
+                return mse.round(decimals=4)
             case "root_log":
                 # Add 1 to prevent log(0) and ensure non-negative values
                 log_true = torch.log1p(y.float())
@@ -478,7 +478,7 @@ class MeanSquaredError(Metric):
                 
                 # Mean and square root
                 root_mean_squared_log_e_val = torch.sqrt(torch.mean(log_error))
-                return round(root_mean_squared_log_e_val.item(), 4)
+                return root_mean_squared_log_e_val.round(decimals=4)
             case "mean_log":
                 # Add 1 to prevent log(0) and ensure non-negative values
                 log_true = torch.log1p(y.float())
@@ -490,7 +490,7 @@ class MeanSquaredError(Metric):
                 # Mean with log
                 mean_log = torch.mean(log_error)
                 
-                return round(mean_log.item(), 4)
+                return mean_log.round(decimals=4)
             case _:
                 raise ValueError("Invalid strategy")
 
@@ -509,7 +509,7 @@ class MeanAbsoluteError(Metric):
 
     def __call__(self, prediction, y):
         mae = torch.nn.functional.l1_loss(prediction.float(), y.float())
-        return round(mae.item(), 4)
+        return mae.round(decimals=4)
 
 class R2(Metric):
     def __init__(self, name = None):
@@ -531,4 +531,4 @@ class R2(Metric):
         ss_tot = torch.sum((y_true - torch.mean(y_true)) ** 2)  # Total sum of squares
         
         r2 = 1 - (ss_res / ss_tot)
-        return round(r2.item(), 4)
+        return r2.round(decimals=4)

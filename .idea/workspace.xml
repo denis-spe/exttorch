@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/_metrics_handles.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/_metrics_handles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_accepted_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_accepted_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_sklearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sklearn.py" afterDir="false" />
-    </list>
+    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

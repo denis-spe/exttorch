@@ -549,7 +549,7 @@ class Sequential(__nn__.Module):
                 proba = self.__model(data.view(1, -1).float())
                 
                 # Append the probabilities to the list
-                probability.append(proba.numpy().reshape(1, -1).tolist()[0])
+                probability.append(proba.detach().reshape(1, -1).tolist()[0])
                 
                 # Update the progress bar
                 progressbar.update(i + 1, [()])
@@ -570,7 +570,7 @@ class Sequential(__nn__.Module):
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
 
-        formatted_prediction = formatted_prediction.numpy().T
+        formatted_prediction = formatted_prediction.detach().T
         return (
             formatted_prediction[0]
             if len(formatted_prediction) == 1
@@ -687,7 +687,7 @@ class Sequential(__nn__.Module):
             metric_storage.add_metric(
                 predict, 
                 label=label,
-                loss=loss.item()
+                loss=loss.detach()
                 )
 
             # Measurement live update
@@ -829,7 +829,7 @@ class Sequential(__nn__.Module):
                 # Add the prediction, labels(target) and loss to metric storage
                 metric_storage.add_metric(
                     predict, label=label,
-                    loss=loss.item())
+                    loss=loss.detach())
 
                 # Measurement live update
                 metric_storage.measurements_compiler()

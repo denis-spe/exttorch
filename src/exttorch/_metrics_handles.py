@@ -22,21 +22,6 @@ from exttorch.metrics import (
 )
 
 
-class Logs:
-    def __init__(self) -> None:
-        self.step = 0
-        self.logs = {}
-
-    def create_step(self):
-        # Create the key in the logs
-        self.logs[f"step_{self.step}"] = {
-            "model": None,
-            "feature": [],
-            "label": [],
-            "loss": [],
-        }
-
-
 @dataclass
 class MetricComputation:
     metric: Callable
@@ -48,38 +33,6 @@ class MetricComputation:
             self.predictions, 
             self.labels,
             )
-
-
-class LossStorage:
-    """
-    Class for storing losses
-    """
-
-    def __init__(self, device):
-        self.__loss = []
-        self.__device = device
-
-
-    @property
-    def loss(self) -> torch.Tensor:
-        """
-        Returns the average loss
-        """
-        return torch.round(
-            torch.tensor(self.__loss, device=self.__device).mean(), 
-            decimals=4
-            ).item()
-
-    @loss.setter
-    def loss(self, loss) -> None:
-        """
-        Sets the loss
-        Parameters
-        ----------
-        loss : float
-            Loss value
-        """
-        self.__loss.append(loss)
 
 
 class SinglePredictionsFormat:
@@ -175,7 +128,7 @@ class MetricStorage:
             predications = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__predicts))
             probability = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__probabilities))
             labels = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__labels))
-            loss = round(torch.tensor(self.__loss, device=self.__device).mean().item(), 4)
+            loss = torch.tensor(self.__loss, device=self.__device).mean().round(decimals=4)
             
             over_all_metrics.append((self.__loss_name, loss))
             self.__metric_dict[self.__loss_name].append(loss)
@@ -200,7 +153,7 @@ class MetricStorage:
                     _inner_metrics[key].append(metric_comp)
             
             _inner_metrics = {
-                key: round(torch.tensor(value, device=self.__device).mean().item(), 4)
+                key: torch.tensor(value, device=self.__device).mean().round(decimals=4)
                 for key, value in _inner_metrics.items()
             }
             lst = list(_inner_metrics.items())
@@ -215,7 +168,7 @@ class MetricStorage:
             probability = torch.tensor([self.__probabilities], device=self.__device)
             # print(self.__labels)
             labels = torch.tensor(self.__labels, device=self.__device)
-            loss = round(torch.tensor(self.__loss, device=self.__device).mean().item(), 4)
+            loss = torch.tensor(self.__loss, device=self.__device).mean().round(decimals=4)
             
             over_all_metrics.append((self.__loss_name, loss))
             self.__metric_dict[self.__loss_name].append(loss)
@@ -250,7 +203,7 @@ class MetricStorage:
         
         # # Alter metric_dict values (list) to mean
         altered_list_to_mean_dict = {
-            k: round(torch.tensor(v).mean().item(), 4) 
+            k: torch.tensor(v).mean().round(decimals=4) 
             for k, v in self.__metric_dict.items()
         }
         

@@ -29,7 +29,7 @@ class TestAcceptedData(TestCase):
         model = Sequential()
         model.add(nn.Linear(20, 10))
         model.add(nn.ReLU())
-        model.add(nn.Linear(10, 2))
+        model.add(nn.Linear(10, 1))
         model.add(nn.Sigmoid())
         
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
@@ -39,7 +39,7 @@ class TestAcceptedData(TestCase):
         model = Sequential()
         model.add(nn.Linear(20, 10))
         model.add(nn.ReLU())
-        model.add(nn.Linear(10, 2))
+        model.add(nn.Linear(10, 1))
         model.add(nn.Sigmoid())
         
         model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
