@@ -691,17 +691,19 @@ class Sequential(__nn__.Module):
             # Compute the loss
             loss = self.loss(predict, label)
             
-            self.__progressbar.update(idx + 1, [("loss", loss.detach())])
+            # self.__progressbar.update(idx + 1, [("loss", loss.detach())])
 
             # Add the prediction, labels(target) and loss to metric storage
-            # metric_storage.add_metric(
-            #     predict, 
-            #     label=label,
-            #     loss=loss.detach()
-            #     )
+            metric_storage.add_metric(
+                predict, 
+                label=label,
+                loss=loss.detach()
+                )
             
             # Measurement live update
-            # metric_storage.measurements_compiler()
+            metric_storage.measurements_compiler()
+            # Update the progress bar
+            self.__progressbar.update(idx + 1, metric_storage.measurements.items())
 
             # Compute the gradient
             loss.backward()
@@ -712,9 +714,6 @@ class Sequential(__nn__.Module):
                 self.__xm.mark_step()
             else:
                 self.optimizer.step()
-
-            # Update the progress bar
-            # self.__progressbar.update(idx + 1, metric_storage.measurements.items())
 
         # Measurements
         measurements = metric_storage.measurements

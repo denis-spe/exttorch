@@ -203,7 +203,7 @@ class MetricStorage:
         
         # # Alter metric_dict values (list) to mean
         altered_list_to_mean_dict = {
-            k: torch.tensor(v).mean().round(decimals=4) 
+            k: torch.tensor(v, device=self.__device).mean().round(decimals=4) 
             for k, v in self.__metric_dict.items()
         }
         
