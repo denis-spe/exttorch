@@ -690,23 +690,21 @@ class Sequential(__nn__.Module):
                 loss=loss.detach()
                 )
             
-            if idx % 10 == 0:
-                # Measurement live update
-                metric_storage.measurements_compiler()
+            # Measurement live update
+            metric_storage.measurements_compiler()
 
             # Compute the gradient
             loss.backward()
 
             # update the parameters
-            if "EXTTORCH_TPU" in self.__ENV and idx % 10 == 0:
+            if "EXTTORCH_TPU" in self.__ENV:
                 self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
                 self.__ENV["EXTTORCH_XM"].mark_step()
             else:
                 self.optimizer.step()
 
-            if idx % 10 == 0:
-                # Update the progress bar
-                self.__progressbar.update(idx + 1, metric_storage.measurements.items())
+            # Update the progress bar
+            self.__progressbar.update(idx + 1, metric_storage.measurements.items())
 
         # Measurements
         measurements = metric_storage.measurements
