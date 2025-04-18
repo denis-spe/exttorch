@@ -270,7 +270,8 @@ class Sequential(__nn__.Module):
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
             # Initialize the model
-            self.__model = __nn__.Sequential(*self.layers).to(self.__device).float()
+            self.__model = __nn__.Sequential(*self.layers)
+            self.__model = self.__model.to(self.__device)
 
             # Instantiate the Loss and optimizer
             self.loss = self.loss_obj()
@@ -680,7 +681,7 @@ class Sequential(__nn__.Module):
             self.optimizer.zero_grad()
 
             # Make prediction
-            predict = self.__model(feature)
+            predict = self.__model(feature).float()
 
             # Changes data type or data shape
             label = self.__handle_label(label)
