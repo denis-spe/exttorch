@@ -128,7 +128,7 @@ class MetricStorage:
             predications = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__predicts))
             probability = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__probabilities))
             labels = list(map(lambda x: x.to(self.__device).reshape(-1, 1), self.__labels))
-            loss = torch.tensor(self.__loss, device=self.__device).mean().round(decimals=4)
+            loss = torch.tensor(self.__loss).to(self.__device).mean().round(decimals=4)
             
             over_all_metrics.append((self.__loss_name, loss))
             self.__metric_dict[self.__loss_name].append(loss)
@@ -167,8 +167,8 @@ class MetricStorage:
             predications = torch.tensor(self.__predicts, device=self.__device).reshape(-1, 1)
             probability = torch.tensor([self.__probabilities], device=self.__device)
             # print(self.__labels)
-            labels = torch.tensor(self.__labels, device=self.__device)
-            loss = torch.tensor(self.__loss, device=self.__device).mean().round(decimals=4)
+            labels = torch.tensor(self.__labels).to(self.__device)
+            loss = torch.tensor(self.__loss).to(self.__device).mean().round(decimals=4)
             
             over_all_metrics.append((self.__loss_name, loss))
             self.__metric_dict[self.__loss_name].append(loss)
