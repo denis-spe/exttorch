@@ -12,11 +12,10 @@ from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
 from sklearn.utils.validation import check_is_fitted as __check_is_fitted__
 from sklearn.base import BaseEstimator as __BaseEstimator, TransformerMixin as __TransformerMixin
-from exttorch._env import _ENV as __ENV__
 
 
 class Sequential(__nn__.Module):
-    def __init__(self, layers: list = None) -> None:
+    def __init__(self, layers: list = None, device: str = "cpu") -> None:
         """
         This represents model algorithm for training and predicting data
 
@@ -64,15 +63,33 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
+                
+        match device:
+            case "TPU"|"tpu":
+                import torch_xla.core.xla_model as xm # type: ignore
+                self.__xm = xm
+                self.__device = xm.xla_device()
+            case "GPU"|"gpu"|"cuda":
+                import torch
+                if torch.cuda.is_available():
+                    self.__device = torch.device("cuda")
+                else:
+                    raise ValueError("GPU is not available")
+            case "CPU"|"cpu":
+                import torch
+                self.__device = torch.device("cpu")
+            case _:
+                self.__xm = None
 
         self.loss = None
+        self.loss_obj = None
         self.optimizer = None
+        self.optimizer_obj = None
         self.layers = layers if layers else []
         self.metrics = None
         self.__callbacks = None
         self.__progressbar = None
         self.stop_training = False
-        self.__ENV = __ENV__
         self.__device = None
         self.__verbose = None
         self.__progressbar_color = None
@@ -250,20 +267,14 @@ class Sequential(__nn__.Module):
 
         def training():
 
-            self.__device = (
-                self.__ENV["EXTTORCH_XM"].xla_device()
-                if "EXTTORCH_TPU" in self.__ENV
-                else ("cuda" if torch.cuda.is_available() else "cpu")
-            )
-
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
             # Initialize the model
             self.__model = __nn__.Sequential(*self.layers).to(self.__device).float()
 
             # Instantiate the Loss and optimizer
-            self.loss = self.loss()
-            self.optimizer = self.optimizer(self.__model.parameters())
+            self.loss = self.loss_obj()
+            self.optimizer = self.optimizer_obj(self.__model.parameters())
 
             if validation_split is not None and validation_data is None:
 
@@ -341,9 +352,6 @@ class Sequential(__nn__.Module):
 
                     if self.stop_training:
                         break
-
-                    if "EXTTORCH_TPU" in self.__ENV:
-                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
 
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
@@ -446,9 +454,6 @@ class Sequential(__nn__.Module):
 
                     if self.stop_training:
                         break
-
-                    if "EXTTORCH_TPU" in self.__ENV:
-                        self.__ENV["EXTTORCH_XM"].rendezvous("epoch_sync")
 
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
@@ -697,9 +702,9 @@ class Sequential(__nn__.Module):
             loss.backward()
 
             # update the parameters
-            if "EXTTORCH_TPU" in self.__ENV:
-                self.__ENV["EXTTORCH_XM"].optimizer_step(self.optimizer)
-                self.__ENV["EXTTORCH_XM"].mark_step()
+            if self.__xm is not None:
+                self.__xm.optimizer_step(self.optimizer)
+                self.__xm.mark_step()
             else:
                 self.optimizer.step()
 
@@ -834,8 +839,8 @@ class Sequential(__nn__.Module):
                 # Measurement live update
                 metric_storage.measurements_compiler()
 
-                if "EXTTORCH_TPU" in self.__ENV:
-                    self.__ENV["EXTTORCH_XM"].mark_step()
+                if self.__xm is not None:
+                    self.__xm.mark_step()
 
                 if not self.__progressbar.show_val_metrics and verbose is not None:
                     # Update the progress bar
@@ -895,12 +900,12 @@ class Sequential(__nn__.Module):
         # Import libraries
         from ._metrics_handles import str_val_to_metric
 
-        self.optimizer = (
+        self.optimizer_obj = (
             optimizer
             if isinstance(optimizer, __Optimizer__)
             else __change_str_to_optimizer__(optimizer)
         )
-        self.loss = loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
+        self.loss_obj = loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
 
 class Wrapper(__BaseEstimator, __TransformerMixin):
