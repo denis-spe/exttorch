@@ -68,7 +68,6 @@ class Sequential(__nn__.Module):
             case "TPU"|"tpu":
                 import torch_xla.core.xla_model as xm # type: ignore
                 self.__xm = xm
-                self.__device = xm.xla_device()
             case "GPU"|"gpu"|"cuda":
                 import torch
                 if torch.cuda.is_available():
@@ -271,11 +270,14 @@ class Sequential(__nn__.Module):
 
             # Initialize the model
             self.__model = __nn__.Sequential(*self.layers)
-            self.__model = self.__model.to(self.__device)
+            
+            if self.__xm is not None:
+                self.__device = self.__xm.xla_device()
 
             # Instantiate the Loss and optimizer
             self.loss = self.loss_obj()
             self.optimizer = self.optimizer_obj(self.__model.parameters())
+            self.__model = self.__model.to(self.__device)
 
             if validation_split is not None and validation_data is None:
 
