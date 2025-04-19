@@ -685,7 +685,6 @@ class Sequential(__nn__.Module):
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
 
-        loop_start_time = time.time()
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
 
@@ -705,21 +704,20 @@ class Sequential(__nn__.Module):
 
             # Compute the loss
             loss = self.loss(predict, label)
+            
+            if idx % 2 == 0:
+                # Add the prediction, labels(target) and loss to metric storage
+                metric_storage.add_metric(
+                    predict.detach().cpu().numpy(),
+                    label=label.detach().cpu().numpy(),
+                    loss=loss.detach().cpu().numpy(),
+                )
 
-            start_time = time.time()
-            # Add the prediction, labels(target) and loss to metric storage
-            metric_storage.add_metric(
-                predict.detach().cpu().numpy(),
-                label=label.detach().cpu().numpy(),
-                loss=loss.detach().cpu().numpy(),
-            )
-
-            # Measurement live update
-            metric_storage.measurements_compiler()
+                # Measurement live update
+                metric_storage.measurements_compiler()
+                
             # Update the progress bar
             self.__progressbar.update(idx + 1, metric_storage.measurements.items())
-            end_start = time.time() - start_time
-            print(f"Time taken for batch {idx + 1} is {end_start:.2f} seconds")
 
             # Compute the gradient
             loss.backward()
