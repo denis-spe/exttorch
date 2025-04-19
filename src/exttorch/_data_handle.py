@@ -29,11 +29,11 @@ class DataHandler:
         from exttorch._env import _ENV
 
         if isinstance(x, pd.DataFrame):
-            self.__x = x.detach()
+            self.__x = x
         else:
             self.__x = x
         if isinstance(y, pd.Series) and y is not None:
-            self.__y = y.detach().reshape(-1)
+            self.__y = y.reshape(-1)
         else:
             self.__y = y.reshape(-1) if y is not None else None
         self.__batch_size = batch_size
@@ -95,8 +95,8 @@ class DataHandler:
             return DataLoader(
                 __Dataset_obj,
                 batch_size=self.__batch_size,
-                generator=self.__generator,
-                **self.__kwargs,
+                # generator=self.__generator,
+                # **self.__kwargs,
             )
 
         elif isinstance(self.__x, Subset):
