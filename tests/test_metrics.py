@@ -2,6 +2,7 @@
 
 # Import libraries
 import torch
+import numpy as np
 from contexts import exttorch
 import unittest as ut
 from torch import nn
@@ -42,11 +43,14 @@ class TestMetrics(ut.TestCase):
         Test the accuracy metric
         """
         accuracy = Accuracy()
-        acc = accuracy(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        acc = accuracy(
+            np.array([1, 0, 1]), 
+            np.array([1, 1, 1])
+            )
         self.assertEqual(acc, 0.6667)
         
-        y_true = torch.tensor([0, 1, 2, 0, 1, 2, 1, 1])
-        y_pred = torch.tensor([0, 2, 1, 0, 0, 1, 2, 0])
+        y_true = np.array([0, 1, 2, 0, 1, 2, 1, 1])
+        y_pred = np.array([0, 2, 1, 0, 0, 1, 2, 0])
         acc = accuracy(y_pred, y_true)
         self.assertEqual(acc, 0.25)
         
@@ -56,20 +60,20 @@ class TestMetrics(ut.TestCase):
         Test the recall metric
         """
         recall = Recall(average="binary")
-        rec = recall(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        rec = recall(np.array([1, 0, 1]), np.array([1, 1, 1]))
         self.assertEqual(rec, 0.6667)
         
         recall = Recall(average="macro", num_classes=3)
-        y_true = torch.tensor([0, 1, 2, 0, 1, 2, 1, 1])
-        y_pred = torch.tensor([0, 2, 1, 0, 0, 1, 2, 0])
+        y_true = np.array([0, 1, 2, 0, 1, 2, 1, 1])
+        y_pred = np.array([0, 2, 1, 0, 0, 1, 2, 0])
         rec = recall(y_pred, y_true)
         self.assertEqual(rec, 0.3333)
         
         test_case = recall_score(self.cancer_y, self.cancer_pred)
     
         recall = Recall()
-        y_true = torch.tensor(self.cancer_y)
-        y_pred = torch.tensor(self.cancer_pred)
+        y_true = self.cancer_y
+        y_pred = self.cancer_pred
         recall_val = recall(y_pred, y_true)
         self.assertEqual(recall_val, round(test_case, 4))
         
@@ -78,12 +82,12 @@ class TestMetrics(ut.TestCase):
         Test the precision metric
         """
         precision = Precision(average="binary")
-        prec = precision(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        prec = precision(np.array([1, 0, 1]), np.array([1, 1, 1]))
         self.assertEqual(prec, 1.0)
         
         precision = Precision(average="macro", num_classes=3)
-        y_true = torch.tensor([0, 1, 2, 0, 1, 2, 1, 1])
-        y_pred = torch.tensor([0, 2, 1, 0, 0, 1, 2, 0])
+        y_true = np.array([0, 1, 2, 0, 1, 2, 1, 1])
+        y_pred = np.array([0, 2, 1, 0, 0, 1, 2, 0])
         prec = precision(y_pred, y_true)
         self.assertEqual(prec, 0.1667)
         
@@ -92,18 +96,18 @@ class TestMetrics(ut.TestCase):
         Test the f1 score metric
         """
         f1 = F1Score(average="binary")
-        f1_val = f1(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        f1_val = f1(np.array([1, 0, 1]), np.array([1, 1, 1]))
         self.assertEqual(f1_val, 0.8)
         
         f1 = F1Score(average="macro", num_classes=3)
-        y_true = torch.tensor([0, 1, 2, 0, 1, 2, 1, 1])
-        y_pred = torch.tensor([0, 2, 1, 0, 0, 1, 2, 0])
+        y_true = np.array([0, 1, 2, 0, 1, 2, 1, 1])
+        y_pred = np.array([0, 2, 1, 0, 0, 1, 2, 0])
         f1_val = f1(y_pred, y_true)
         self.assertEqual(f1_val, 0.2222)
         
         f1 = F1Score(average="weighted", num_classes=3)
-        y_true = torch.tensor([0, 1, 2, 0, 1, 2])
-        y_pred = torch.tensor([0, 2, 1, 0, 0, 1])
+        y_true = np.array([0, 1, 2, 0, 1, 2])
+        y_pred = np.array([0, 2, 1, 0, 0, 1])
         f1_val = f1(y_pred, y_true)
         self.assertEqual(f1_val, 0.2666)
     
@@ -114,34 +118,34 @@ class TestMetrics(ut.TestCase):
         Test the mean squared error metric
         """
         mse = MeanSquaredError()
-        mse_val = mse(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        mse_val = mse(np.array([1, 0, 1]), np.array([1, 1, 1]))
         self.assertEqual(mse_val, 0.3333)
         
-        y_true = torch.tensor([3, -0.5, 2, 7])
-        y_pred = torch.tensor([2.5, 0.0, 2, 8])
+        y_true = np.array([3, -0.5, 2, 7])
+        y_pred = np.array([2.5, 0.0, 2, 8])
         mse_val = mse(y_pred, y_true)
         self.assertEqual(mse_val, 0.375)
         
         log_mse = MeanSquaredError(strategy="mean_log")
-        y_true = torch.tensor([3, 5, 2.5, 7])
-        y_pred = torch.tensor([2.5, 5, 4, 8])
+        y_true = np.array([3, 5, 2.5, 7])
+        y_pred = np.array([2.5, 5, 4, 8])
         mse_val = log_mse(y_pred, y_true)
         self.assertEqual(mse_val, 0.0397)
         
         root_mse = MeanSquaredError(strategy="root")
-        y_true = torch.tensor([3, -0.5, 2, 7])
-        y_pred = torch.tensor([2.5, 0.0, 2, 8])
+        y_true = np.array([3, -0.5, 2, 7])
+        y_pred = np.array([2.5, 0.0, 2, 8])
         mse_val = root_mse(y_pred, y_true)
         self.assertEqual(mse_val, 0.6124)
         
         root_log_mse = MeanSquaredError(strategy="root_log")
-        y_true = torch.tensor([3, -0.5, 2, 7])
-        y_pred = torch.tensor([2.5, 0.0, 2, 8])
+        y_true = np.array([3, -0.5, 2, 7])
+        y_pred = np.array([2.5, 0.0, 2, 8])
         mse_val = root_log_mse(y_pred, y_true)
         self.assertEqual(mse_val,  0.3578)
         
-        y_true = torch.tensor([3, 5, 2.5, 7])
-        y_pred = torch.tensor([2.5, 5, 4, 8])
+        y_true = np.array([3, 5, 2.5, 7])
+        y_pred = np.array([2.5, 5, 4, 8])
         mse_val = root_log_mse(y_pred, y_true)
         self.assertEqual(mse_val, 0.1993)
         
@@ -151,11 +155,11 @@ class TestMetrics(ut.TestCase):
         Test the mean absolute error metric
         """
         mae = MeanAbsoluteError()
-        mae_val = mae(torch.tensor([1, 0, 1]), torch.tensor([1, 1, 1]))
+        mae_val = mae(np.array([1, 0, 1]), np.array([1, 1, 1]))
         self.assertEqual(mae_val, 0.3333)
         
-        y_true = torch.tensor([3, -0.5, 2, 7])
-        y_pred = torch.tensor([2.5, 0.0, 2, 8])
+        y_true = np.array([3, -0.5, 2, 7])
+        y_pred = np.array([2.5, 0.0, 2, 8])
         mae_val = mae(y_pred, y_true)
         self.assertEqual(mae_val, 0.5)
         
@@ -164,8 +168,8 @@ class TestMetrics(ut.TestCase):
         Test the r2 metric
         """
         r2 = R2()
-        y_true = torch.tensor([3, -0.5, 2, 7])
-        y_pred = torch.tensor([2.5, 0.0, 2, 8])
+        y_true = np.array([3, -0.5, 2, 7])
+        y_pred = np.array([2.5, 0.0, 2, 8])
         r2_val = r2(y_pred, y_true)
         self.assertEqual(r2_val, 0.9486)
         
@@ -176,8 +180,8 @@ class TestMetrics(ut.TestCase):
         test_case = roc_auc_score(self.cancer_y, self.clf.predict_proba(self.cancer_x)[:, 1])
         
         auc = Auc()
-        y_true = torch.tensor(self.cancer_y)
-        y_pred = torch.tensor(self.clf.predict_proba(self.cancer_x)[:, 1])
+        y_true = self.cancer_y
+        y_pred = self.clf.predict_proba(self.cancer_x)[:, 1]
         auc_val = auc(y_pred, y_true)
         self.assertEqual(auc_val, round(test_case, 4))
         

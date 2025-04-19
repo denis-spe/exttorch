@@ -62,12 +62,22 @@ class TestAcceptedData(TestCase):
         X, y = make_classification(n_samples=200, n_features=20, n_informative=2, n_classes=2)
         
         model = Sequential()
-        model.add(nn.Linear(20, 10))
+        model.add(nn.Linear(20, 256))
         model.add(nn.ReLU())
-        model.add(nn.Linear(10, 1))
+        model.add(nn.Linear(256, 512))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(512, 1029))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(1029, 1029))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(1029, 1))
         model.add(nn.Sigmoid())
         
-        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        model.compile(
+            optimizer='adam', 
+            loss='binary_crossentropy', 
+            metrics=['accuracy', 'precision', 'recall', 'auc']
+            )
         model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)
         
     def test_multiclass_classification_dataset(self):
@@ -79,5 +89,5 @@ class TestAcceptedData(TestCase):
         model.add(nn.ReLU())
         model.add(nn.Linear(10, 3))
                 
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', 'auc'])
         model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)

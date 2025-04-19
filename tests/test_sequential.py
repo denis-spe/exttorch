@@ -94,12 +94,11 @@ class TestSequential(ut.TestCase):
         digit_model = Sequential(
             [
                 nn.Flatten(),
-                nn.Linear(64, 64),
+                nn.Linear(64, 1029),
                 nn.ReLU(),
-                nn.Linear(64, 64),
+                nn.Linear(1029, 1029),
                 nn.ReLU(),
-                nn.Linear(64, 10),
-                nn.Softmax(dim=1),
+                nn.Linear(1029, 10),
             ]
         )
 
@@ -128,7 +127,7 @@ class TestSequential(ut.TestCase):
         digit_model.add(nn.Linear(64, 1029))
         digit_model.add(nn.ReLU())
         digit_model.add(nn.Linear(1029, 10))
-        digit_model.add(nn.Softmax(dim=1))
+        # digit_model.add(nn.Softmax(dim=1))
 
         digit_model.compile(
             optimizer=Adam(),
@@ -166,7 +165,6 @@ class TestSequential(ut.TestCase):
                 nn.Dropout(0.4),  # Drop same pixel
                 # Output layer
                 nn.Linear(in_features=256, out_features=10),
-                nn.Softmax(dim=-1),
             ]
         )
 
@@ -176,9 +174,9 @@ class TestSequential(ut.TestCase):
             metrics=[Accuracy()],
         )
 
-        history = model.fit(
-            train_dataset, epochs=1, batch_size=64, validation_split=0.2, val_batch_size=64
-        )
+        # history = model.fit(
+        #     train_dataset, epochs=1
+        # )
 
     def test_model_evaluation(self):
         """

@@ -2,6 +2,8 @@
 
 # Import libraries
 from abc import ABCMeta as __abc__, abstractmethod as __abs__
+import numpy as np
+from sklearn.metrics import roc_auc_score
 import torch
 
 class Metric(metaclass=__abc__):
@@ -45,7 +47,7 @@ class Accuracy(Metric):
         y : torch.Tensor
             True values
         """
-        return (prediction == y).float().mean().round(decimals=4)
+        return (prediction == y).astype(float).mean().round(decimals=4)
 
 class ZeroOneLoss(Metric):
     """
@@ -108,7 +110,7 @@ class F1Score(Metric):
         Returns:
         float: F1 score.
         """
-        if len(torch.unique(targets)) > 2:
+        if len(np.unique(targets)) > 2:
             raise ValueError("F1 score was called with binary average but targets are multiclass")
             
         recall_val = Recall()(preds, targets)
@@ -152,18 +154,18 @@ class F1Score(Metric):
         
         elif average == 'weighted':
             # Weighted by class frequency (support)
-            class_support = [(targets == i).sum().float() for i in range(num_classes)]
+            class_support = [(targets == i).sum().astype(float) for i in range(num_classes)]
             total_support = sum(class_support)
-            weighted_f1 = sum(f1_scores * torch.tensor(class_support) / total_support)
+            weighted_f1 = sum(f1_scores * np.array(class_support) / total_support)
             return weighted_f1.round(decimals=4)
         else:
             raise ValueError("`average` must be 'macro' or 'weighted'")
 
 
-    def __call__(self, prediction: torch.Tensor, y: torch.Tensor):
+    def __call__(self, prediction: np.ndarray, y: np.ndarray):
         # Ensure tensors are float
-        y_true = y.float()
-        y_pred = prediction.float()
+        y_true = y.astype(float)
+        y_pred = prediction.astype(float)
         
         match self.__average:
             case "binary":
@@ -219,7 +221,7 @@ class Recall(Metric):
             float: Recall score.
         """
         
-        if len(torch.unique(targets)) > 2:
+        if len(np.unique(targets)) > 2:
             raise ValueError("Recall was called with binary average but targets are multiclass")
                 
         tp = (preds * targets).sum()  # True Positives
@@ -251,10 +253,10 @@ class Recall(Metric):
         
         return (sum(recall_scores) / num_classes).round(decimals=4)  # Macro-average recall
 
-    def __call__(self, prediction, y):
+    def __call__(self, prediction: np.ndarray, y: np.ndarray):
         # Ensure tensors are float
-        y_true = y.float()
-        y_pred = prediction.float()
+        y_true = y.astype(float)
+        y_pred = prediction.astype(float)
 
         match self.__average:
             case "binary":
@@ -310,16 +312,16 @@ class Precision(Metric):
         float: Macro-averaged precision score.
         """
         
-        precision_per_class = []
+        precision_per_class = np.array([])
         
         for c in range(num_classes):
-            TP = ((y_pred == c) & (y_true == c)).sum().float()
-            FP = ((y_pred == c) & (y_true != c)).sum().float()
+            TP = ((y_pred == c) & (y_true == c)).sum().astype(float)
+            FP = ((y_pred == c) & (y_true != c)).sum().astype(float)
             
-            class_precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor(0.0)
-            precision_per_class.append(class_precision)
+            class_precision = TP / (TP + FP) if (TP + FP) > 0 else np.array([0.0])
+            precision_per_class = np.append(precision_per_class, class_precision)
 
-        return torch.mean(torch.tensor(precision_per_class)).round(decimals=4)
+        return precision_per_class.mean().round(decimals=4)
     
     def __precision(self, preds, targets):
         """
@@ -333,24 +335,24 @@ class Precision(Metric):
         Returns:
         float: Precision score.
         """
-        if len(torch.unique(targets)) > 2:
+        if len(np.unique(targets)) > 2:
             raise ValueError("Precision was called with binary average but targets are multiclass")
         
         # True Positives (TP): Predicted 1, Actual 1
-        TP = ((preds == 1) & (targets == 1)).sum().float()
+        TP = ((preds == 1) & (targets == 1)).sum().astype(float)
 
         # False Positives (FP): Predicted 1, Actual 0
-        FP = ((preds == 1) & (targets == 0)).sum().float()
+        FP = ((preds == 1) & (targets == 0)).sum().astype(float)
     
         # Avoid division by zero
-        precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor(0.0)
+        precision = TP / (TP + FP) if (TP + FP) > 0 else np.array([0.0])
 
         return precision.round(decimals=4)
 
-    def __call__(self, prediction, y):
+    def __call__(self, prediction: np.ndarray, y: np.ndarray):
         # Ensure tensors are float
-        y_true = y.float()
-        y_pred = prediction.float()
+        y_true = y.astype(float)
+        y_pred = prediction.astype(float)
 
         match self.__average:
             case "binary":
@@ -390,35 +392,45 @@ class Auc(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, prediction: torch.Tensor, y: torch.Tensor):
-        # Ensure tensors are float
-        y_true = y.float()
-        y_pred = prediction.float()
-
-        # Sort predictions in descending order
-        sorted_indices = torch.argsort(y_pred, descending=True)
-        y_true_sorted = y_true[sorted_indices]
-
-        # Count positive and negative samples
-        num_positives = torch.sum(y_true)
-        num_negatives = y_true.shape[0] - num_positives
-
-        # Compute the cumulative sum of true labels (ranking-based method)
-        tps = torch.cumsum(y_true_sorted, dim=0)
-        fps = torch.cumsum(1 - y_true_sorted, dim=0)
-
-        # Compute the true positive rate (TPR) and false positive rate (FPR)
-        tpr = tps / num_positives
-        fpr = fps / num_negatives
-
-        # Compute the AUC using the trapezoidal rule
-        auc = torch.trapz(tpr, fpr)
+    def __call__(self, probability: np.ndarray, y: np.ndarray):
+        # 1) Ensure float
+        y_true = y.astype(float)
+        y_pred = probability.astype(float)
         
-        # Clip the AUC value to be within the range [0, 1]
-        auc_value = abs(auc.round(decimals=4))
-        auc_value = max(0.0, min(auc_value, 1.0))
+        y_true   = np.asarray(y_true,   dtype=float).ravel()  # shape (N,)
+        y_pred  = np.asarray(y_pred,  dtype=float).ravel()  # shape (N,)
+                
+        # 2) Sort in descending order
+        idx = np.argsort(y_pred)[::-1]
+        y_true_sorted = y_true[idx]
 
-        return auc_value
+        # 3) Count positives/negatives
+        P = y_true.sum()
+        N = y_true.shape[0] - P
+        
+        # If either class is missing, return 0.0 (or np.nan, as you prefer)
+        if P == 0 or N == 0:
+            return 0.0
+
+        # 4) Cumulative true/false positives
+        tps = np.cumsum(y_true_sorted)
+        fps = np.cumsum(1 - y_true_sorted)
+
+        # 5) TPR and FPR
+        tpr = tps / P
+        fpr = fps / N
+
+        # 6) Pad with (0,0) and (1,1) for a complete ROC curve
+        tpr = np.concatenate([[0.], tpr, [1.]])
+        fpr = np.concatenate([[0.], fpr, [1.]])
+
+        # 7) Compute AUC
+        auc = np.trapz(tpr, fpr)
+
+        # 8) Clip & round
+        auc = float(np.clip(auc, 0.0, 1.0).round(4))
+        return auc
+
 
 class MeanSquaredError(Metric):
     def __init__(self, name = None,  strategy: str = "mean"):
@@ -460,9 +472,14 @@ class MeanSquaredError(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, prediction: torch.Tensor, y: torch.Tensor):
+    def __call__(self, prediction: np.ndarray, y: np.ndarray):
         
-        mse = torch.nn.functional.mse_loss(prediction.float(), y.float())
+        # Convert to tensor and ensure tensors are float
+        prediction = torch.tensor(prediction, dtype=torch.float) 
+        y =  torch.tensor(y, dtype=torch.float)
+        
+        mse = torch.nn.functional.mse_loss(prediction, y)
+        
         match self.__strategy:
             case "root":
                 return torch.sqrt(mse).round(decimals=4)
@@ -507,8 +524,12 @@ class MeanAbsoluteError(Metric):
     def __str__(self) -> str:
         return self.name
 
-    def __call__(self, prediction, y):
-        mae = torch.nn.functional.l1_loss(prediction.float(), y.float())
+    def __call__(self, prediction: np.ndarray, y: np.ndarray):
+        # Convert to tensor and ensure tensors are float
+        prediction = torch.tensor(prediction, dtype=torch.float) 
+        y =  torch.tensor(y, dtype=torch.float)
+        
+        mae = torch.nn.functional.l1_loss(prediction, y)
         return mae.round(decimals=4)
 
 class R2(Metric):
@@ -524,11 +545,11 @@ class R2(Metric):
         return self.name
 
     def __call__(self, prediction, y):
-        y_true = y.float()
-        y_pred = prediction.float()
+        y_true = y.astype(float)
+        y_pred = prediction.astype(float)
         
-        ss_res = torch.sum((y_true - y_pred) ** 2)  # Residual sum of squares
-        ss_tot = torch.sum((y_true - torch.mean(y_true)) ** 2)  # Total sum of squares
+        ss_res = ((y_true - y_pred) ** 2).sum()  # Residual sum of squares
+        ss_tot = ((y_true - y_true.mean()) ** 2).sum()  # Total sum of squares
         
         r2 = 1 - (ss_res / ss_tot)
         return r2.round(decimals=4)

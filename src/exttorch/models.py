@@ -11,7 +11,10 @@ from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch.callbacks import Callback as __Callback__
 from sklearn.utils.validation import check_is_fitted as __check_is_fitted__
-from sklearn.base import BaseEstimator as __BaseEstimator, TransformerMixin as __TransformerMixin
+from sklearn.base import (
+    BaseEstimator as __BaseEstimator,
+    TransformerMixin as __TransformerMixin,
+)
 
 
 class Sequential(__nn__.Module):
@@ -63,22 +66,27 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
-                
+
+        self.__xm = None
+
         match device:
-            case "TPU"|"tpu":
-                import torch_xla.core.xla_model as xm # type: ignore
+            case "TPU" | "tpu":
+                import torch_xla.core.xla_model as xm  # type: ignore
+
                 self.__xm = xm
-            case "GPU"|"gpu"|"cuda":
+            case "GPU" | "gpu" | "cuda" | "CUDA":
                 import torch
+
                 if torch.cuda.is_available():
-                    self.__device = torch.device("cuda")
+                    self.__device = torch.device(device)
                 else:
                     raise ValueError("GPU is not available")
-            case "CPU"|"cpu":
+            case "CPU" | "cpu":
                 import torch
+
                 self.__device = torch.device("cpu")
             case _:
-                self.__xm = None
+                raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
 
         self.loss = None
         self.loss_obj = None
@@ -220,7 +228,7 @@ class Sequential(__nn__.Module):
         from .history import History
         from ._data_handle import DataHandler
         from .utils import ProgressBar
-        import torch
+        import torch        
 
         self.stop_training = False
 
@@ -270,7 +278,7 @@ class Sequential(__nn__.Module):
 
             # Initialize the model
             self.__model = __nn__.Sequential(*self.layers)
-            
+
             if self.__xm is not None:
                 self.__device = self.__xm.xla_device()
 
@@ -531,7 +539,7 @@ class Sequential(__nn__.Module):
         x = (X.double() if type(X) == torch.Tensor else torch.tensor(X).double()).to(
             self.__device
         )
-        
+
         # Instantiate the progress bar
         progressbar = ProgressBar(
             show_val_metrics=False,
@@ -542,26 +550,26 @@ class Sequential(__nn__.Module):
             show_check_mark=self.__progressbar_show_check_mark,
             progress_color=self.__progressbar_color,
             empty_color=self.__progressbar_empty_color,
-            show_suffix=False
+            show_suffix=False,
         )
         # Set the progress bar total
         progressbar.total = len(x)
-        
+
         # Empty list for probability
         probability = []
-        
+
         with torch.no_grad():
             for i, data in enumerate(x):
-                
+
                 # Make prediction and get probabilities
                 proba = self.__model(data.view(1, -1).float())
-                
+
                 # Append the probabilities to the list
                 probability.append(proba.detach().reshape(1, -1).tolist()[0])
-                
+
                 # Update the progress bar
                 progressbar.update(i + 1, [()])
-                
+
         prob = f.softmax(torch.tensor(probability), dim=1)
         return prob
 
@@ -573,19 +581,20 @@ class Sequential(__nn__.Module):
 
         # Initializer the SinglePredictionsFormat object.
         single_format_prediction = SinglePredictionsFormat(
-            proba, self.__device, loss_name=type(self.loss).__name__)
+            proba, self.__device, loss_name=type(self.loss).__name__
+        )
 
         # Format the predictions.
         formatted_prediction = single_format_prediction.format_prediction()
-
-        formatted_prediction = formatted_prediction.detach().T
+        formatted_prediction = formatted_prediction.T
+        
         return (
             formatted_prediction[0]
             if len(formatted_prediction) == 1
             else formatted_prediction
         )
 
-    def __handle_label(self, target):        
+    def __handle_label(self, target):
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
             return target.long()
         elif self.loss.__class__.__name__ == "NLLLoss":
@@ -645,8 +654,8 @@ class Sequential(__nn__.Module):
 
         # Create the list for metric
         metric_storage = MetricStorage(
-            self.__device, 
-            self.metrics, 
+            self.__device,
+            self.metrics,
             batch_size=batch_size,
             loss_name=type(self.loss).__name__,
         )
@@ -677,7 +686,10 @@ class Sequential(__nn__.Module):
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
 
-            feature, label = feature.to(self.__device).float(), label.to(self.__device).float()
+            feature, label = (
+                feature.to(self.__device).float(),
+                label.to(self.__device).float(),
+            )
 
             # Zero the gradient.
             self.optimizer.zero_grad()
@@ -687,19 +699,17 @@ class Sequential(__nn__.Module):
 
             # Changes data type or data shape
             label = self.__handle_label(label)
-            
+
             # Compute the loss
             loss = self.loss(predict, label)
-            
-            # self.__progressbar.update(idx + 1, [("loss", loss.detach())])
 
             # Add the prediction, labels(target) and loss to metric storage
             metric_storage.add_metric(
-                predict, 
-                label=label,
-                loss=loss.detach()
-                )
-            
+                predict.detach().cpu().numpy(),
+                label=label.detach().cpu().numpy(),
+                loss=loss.detach().cpu().numpy(),
+            )
+
             # Measurement live update
             metric_storage.measurements_compiler()
             # Update the progress bar
@@ -791,10 +801,11 @@ class Sequential(__nn__.Module):
 
         # Create the list for metric
         metric_storage = MetricStorage(
-            self.__device, 
-            metrics=self.metrics, 
-            batch_size=batch_size, train=False,
-            loss_name=type(self.loss).__name__
+            self.__device,
+            metrics=self.metrics,
+            batch_size=batch_size,
+            train=False,
+            loss_name=type(self.loss).__name__,
         )
 
         # Indicate the model to evaluate
@@ -823,7 +834,10 @@ class Sequential(__nn__.Module):
             for idx, (feature, label) in enumerate(data):
 
                 # Set the device for X and y
-                feature, label = feature.to(self.__device).float(), label.to(self.__device).float()
+                feature, label = (
+                    feature.to(self.__device).float(),
+                    label.to(self.__device).float(),
+                )
 
                 # Make prediction
                 predict = self.__model(feature)
@@ -837,8 +851,10 @@ class Sequential(__nn__.Module):
 
                 # Add the prediction, labels(target) and loss to metric storage
                 metric_storage.add_metric(
-                    predict, label=label,
-                    loss=loss.detach())
+                    predict.detach().cpu().numpy(),
+                    label=label.detach().cpu().numpy(),
+                    loss=loss.detach().cpu().numpy(),
+                )
 
                 # Measurement live update
                 metric_storage.measurements_compiler()
@@ -909,8 +925,11 @@ class Sequential(__nn__.Module):
             if isinstance(optimizer, __Optimizer__)
             else __change_str_to_optimizer__(optimizer)
         )
-        self.loss_obj = loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
+        self.loss_obj = (
+            loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
+        )
         self.metrics = str_val_to_metric(metrics) if metrics is not None else []
+
 
 class Wrapper(__BaseEstimator, __TransformerMixin):
     """
@@ -918,11 +937,12 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
     """
 
     def __init__(
-        self, model: Sequential, 
-        loss: __Loss__, 
-        optimizer: __Optimizer__, 
-        metrics=None, 
-        **fit_kwargs
+        self,
+        model: Sequential,
+        loss: __Loss__,
+        optimizer: __Optimizer__,
+        metrics=None,
+        **fit_kwargs,
     ):
         super().__init__()
         self.model = model
@@ -931,17 +951,21 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         self.optimizer = optimizer
         self.metrics = metrics
         self.history = None
-        
+
     def fit(self, X, y=None, **kwargs):
-        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.metrics)
-        self.history = self.model.fit(X, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs)
+        self.model.compile(
+            loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
+        )
+        self.history = self.model.fit(
+            X, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs
+        )
         self.is_fitted_ = True
         return self
 
     def predict(self, X, verbose: str | None = None):
-        __check_is_fitted__(self, 'is_fitted_')
+        __check_is_fitted__(self, "is_fitted_")
         return self.model.predict(X, verbose=verbose)
 
     def score(self, X, y=None, verbose: str | None = None):
-        __check_is_fitted__(self, 'is_fitted_')
+        __check_is_fitted__(self, "is_fitted_")
         return self.model.evaluate(X, y, verbose=verbose)
