@@ -663,6 +663,8 @@ class Sequential(__nn__.Module):
         # Indicate the model to train
         self.__model.train()
 
+        import time
+        start_time = time.time()
         # Initializer the data
         data = DataHandler(
             X,
@@ -679,10 +681,13 @@ class Sequential(__nn__.Module):
 
         # # Set the progress bar total
         self.__progressbar.total = len(data)
+        end_time = time.time()
+        print(f"Data preprocessing time: {end_time - start_time} seconds")
 
         # # Handle on batch begin callback
         self.__handle_callbacks("on_batch_begin")
 
+        loop_start_time = time.time()
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
 
@@ -724,7 +729,8 @@ class Sequential(__nn__.Module):
                 self.__xm.mark_step()
             else:
                 self.optimizer.step()
-
+        loop_end_time = time.time()
+        print(f"Training loop time: {loop_end_time - loop_start_time} seconds")
         # Measurements
         measurements = metric_storage.measurements
 
