@@ -40,9 +40,10 @@ class DataHandler:
         self.__val_batch_size = val_batch_size
         self.__shuffle = shuffle
         self.__kwargs = kwargs
-        self.__generator = torch.Generator()
+        self.__generator = None
         self.__ENV = _ENV
         if random_seed is not None:
+            self.__generator = torch.Generator()
             self.__generator.manual_seed(random_seed)
 
     def __split_data(self, data: Any, val_size: float):
@@ -95,8 +96,8 @@ class DataHandler:
             return DataLoader(
                 __Dataset_obj,
                 batch_size=self.__batch_size,
-                # generator=self.__generator,
-                # **self.__kwargs,
+                generator=self.__generator,
+                **self.__kwargs,
             )
 
         elif isinstance(self.__x, Subset):
