@@ -66,6 +66,7 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
+        import torch
 
         self.__xm = None
 
@@ -75,15 +76,13 @@ class Sequential(__nn__.Module):
 
                 self.__xm = xm
             case "GPU" | "gpu" | "cuda" | "CUDA":
-                import torch
 
                 if torch.cuda.is_available():
+                    device = device if device.startswith("cuda") else "cuda"
                     self.__device = torch.device(device)
                 else:
                     raise ValueError("GPU is not available")
             case "CPU" | "cpu":
-                import torch
-
                 self.__device = torch.device("cpu")
             case _:
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")

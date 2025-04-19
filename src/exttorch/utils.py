@@ -55,37 +55,31 @@ class ProgressBar:
             print(
                 f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted} {self.suffix}",
                 end="\r",
-                flush=True
             )
         elif self.verbose == "silent":
             print(
                 f"\r{current}/{self.total}{done}{elapsed_time}s {step_time_formatted} {self.suffix}",
                 end="\r",
-                flush=True
             )
         elif self.verbose == "silent_verbose":
             print(
                 f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted}",
                 end="\r",
-                flush=True,
             )
         elif self.verbose == "silent_verbose_suffix":
             print(
                 f"\r{current}/{self.total}{done}{self.suffix}",
                 end="\r",
-                flush=True,
             )
         elif self.verbose == "silent_epoch":
             print(
                 f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted} {self.suffix}",
                 end="\r",
-                flush=True,
             )
         elif self.verbose == "silent_epoch_suffix":
             print(
                 f"\r{current}/{self.total}{done}{self.suffix}",
                 end="\r",
-                flush=True,
             )
         elif self.verbose == None:
             pass
