@@ -1,7 +1,7 @@
 """ Praise Ye The Lord God Almighty """
 
 # Import Libraries
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 class History:
@@ -32,8 +32,6 @@ class History:
         self.__history["loss"] = []
         self.__history["val_loss"] = []
 
-        self.__metrics = metrics
-
     @property
     def history(self) -> Dict:
         """
@@ -41,7 +39,7 @@ class History:
         """
         return {key: value for key, value in self.__history.items() if len(value) > 0}
 
-    def add_history(self, metric: Dict):
+    def add_history(self, metric: Dict[str, float]) -> None:
         # Loop over the key and value from metric
         for key, value in metric.items():
 

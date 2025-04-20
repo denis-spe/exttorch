@@ -7,6 +7,7 @@ from torch import nn
 from sklearn.datasets import make_classification, make_regression
 from unittest import TestCase
 from exttorch.models import Sequential
+from exttorch.metrics import Precision, Recall, F1Score, Auc
 
 def torch_data_generator(batch_size=100):
     while True:
@@ -76,18 +77,36 @@ class TestAcceptedData(TestCase):
         model.compile(
             optimizer='adam', 
             loss='binary_crossentropy', 
-            metrics=['accuracy', 'precision', 'recall', 'auc']
+            metrics=['auc', 'acc', 'precision', 'recall', 'f1_score']
             )
-        model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)
+        model.fit(X, y, epochs=5, batch_size=16)
         
     def test_multiclass_classification_dataset(self):
         
-        X, y = make_classification(n_samples=250, n_features=20, n_informative=4, n_classes=3)
+        n_label = 10
+        n_sample = 300
+        
+        X, y = make_classification(n_samples=n_sample, n_features=20, n_informative=9, n_classes=n_label)
         
         model = Sequential()
-        model.add(nn.Linear(20, 10))
+        model.add(nn.Linear(20, 256))
         model.add(nn.ReLU())
-        model.add(nn.Linear(10, 3))
-                
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', 'auc'])
-        model.fit(X, y, epochs=1, batch_size=32, validation_split=0.2)
+        model.add(nn.Linear(256, 512))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(512, 1029))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(1029, 1029))
+        model.add(nn.ReLU())
+        model.add(nn.Linear(1029, n_label))
+        
+        model.compile(
+            optimizer='adam', 
+            loss='categorical_crossentropy', 
+            metrics=[
+                "acc", 
+                Auc(average='macro', num_classes=n_label), 
+                F1Score(average='macro', num_classes=n_label), 
+                Recall(average='macro', num_classes=n_label), 
+                Precision(average='macro', num_classes=n_label)]
+            )
+        model.fit(X, y, epochs=1, batch_size=15)

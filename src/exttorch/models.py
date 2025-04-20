@@ -1,10 +1,15 @@
 """Praise Ye The Lord Your God"""
 
 # Import libraries
+import torch as __torch__
 from torch import nn as __nn__
 from typing import Any as __Any__
 from typing import List as __List__
 from exttorch.losses import Loss as __Loss__
+from exttorch._data_handle import DataHandler as __DataHandler__
+from exttorch._metrics_handles import MetricStorage as __MetricStorage__
+from exttorch.history import History as __History__ 
+from exttorch.utils import ProgressBar as __ProgressBar__
 from exttorch.losses import __change_str_to_loss as __change_str_to_loss__
 from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_optimizer__
 from exttorch.metrics import Metric as __Metric__
@@ -66,8 +71,6 @@ class Sequential(__nn__.Module):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         super(Sequential, self).__init__()
-        import torch
-
         self.__xm = None
 
         match device:
@@ -77,13 +80,13 @@ class Sequential(__nn__.Module):
                 self.__xm = xm
             case "GPU" | "gpu" | "cuda" | "CUDA":
 
-                if torch.cuda.is_available():
+                if __torch__.cuda.is_available():
                     device = device if device.startswith("cuda") else "cuda"
-                    self.__device = torch.device(device)
+                    self.__device = __torch__.device(device)
                 else:
                     raise ValueError("GPU is not available")
             case "CPU" | "cpu":
-                self.__device = torch.device("cpu")
+                self.__device = __torch__.device("cpu")
             case _:
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
 
@@ -223,11 +226,6 @@ class Sequential(__nn__.Module):
             dataloader_kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
-        # Import libraries
-        from .history import History
-        from ._data_handle import DataHandler
-        from .utils import ProgressBar
-        import torch        
 
         self.stop_training = False
 
@@ -239,7 +237,7 @@ class Sequential(__nn__.Module):
             show_val_metrics = False
 
         # Instantiate the progress bar
-        self.__progressbar = ProgressBar(
+        self.__progressbar = __ProgressBar__(
             show_val_metrics=show_val_metrics,
             verbose=verbose,
             bar_width=progressbar_width,
@@ -262,11 +260,11 @@ class Sequential(__nn__.Module):
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
 
         # Initializer the History object
-        history = History(self.metrics)
+        history = __History__(self.metrics)
 
         if type(random_seed) == int:
             # Set the random seed
-            torch.manual_seed(random_seed)
+            __torch__.manual_seed(random_seed)
 
         if callbacks is not None:
             self.__callbacks = callbacks
@@ -294,7 +292,7 @@ class Sequential(__nn__.Module):
                 print(end="\n")
 
                 # Initializer the data
-                data = DataHandler(
+                data = __DataHandler__(
                     X,
                     y,
                     batch_size=batch_size,
@@ -374,7 +372,7 @@ class Sequential(__nn__.Module):
                 print(end="\n")
 
                 # Initializer the data
-                train_data = DataHandler(
+                train_data = __DataHandler__(
                     X,
                     y,
                     batch_size=batch_size,
@@ -390,7 +388,7 @@ class Sequential(__nn__.Module):
                     or isinstance(validation_data, tuple)
                 ) and len(validation_data) == 2:
                     # Initializer the data
-                    val_sample = DataHandler(
+                    val_sample = __DataHandler__(
                         validation_data[0],
                         validation_data[1],
                         batch_size=batch_size,
@@ -402,7 +400,7 @@ class Sequential(__nn__.Module):
                     ).data_preprocessing(nprocs)
                 else:
                     # Initializer the data
-                    val_sample = DataHandler(
+                    val_sample = __DataHandler__(
                         validation_data,
                         y=None,
                         batch_size=batch_size,
@@ -475,7 +473,7 @@ class Sequential(__nn__.Module):
                 print(end="\n")
 
                 # Initializer the data
-                data = DataHandler(
+                data = __DataHandler__(
                     X,
                     y,
                     batch_size=batch_size,
@@ -599,7 +597,37 @@ class Sequential(__nn__.Module):
         elif self.loss.__class__.__name__ == "NLLLoss":
             return target.long().flatten()
         return target.view(-1, 1)
+    
+    def __metrics_handler(
+        self,
+        metric_storage,
+        predict,
+        label,
+        loss,
+        ):
+        """
+        Handle the metrics for the model.
+        Parameters
+        ----------
+            metric_storage : (MetricStorage)
+                The metric storage object.
+            predict : (torch.Tensor)
+                The prediction of the model.
+            label : (torch.Tensor)
+                The label of the model.
+            loss : (torch.Tensor)
+                The loss of the model.
+        """
+        # Add the prediction, labels(target) and loss to metric storage
+        metric_storage.add_model_results(
+            predict.detach(),
+            label=label.detach(),
+            loss=loss.detach(),
+        )
 
+        # Measurement live update
+        metric_storage.measurement_computation()
+        
     def __train(
         self,
         X,
@@ -637,12 +665,6 @@ class Sequential(__nn__.Module):
             validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset])
                 Data for validating model performance
         """
-        # Import libraries
-        from IPython.display import clear_output
-
-        from ._metrics_handles import MetricStorage
-        from ._metrics_handles import change_metric_first_position
-        from ._data_handle import DataHandler
 
         if self.optimizer is None or self.loss is None:
             raise TypeError(
@@ -652,7 +674,7 @@ class Sequential(__nn__.Module):
         metric_storage = None
 
         # Create the list for metric
-        metric_storage = MetricStorage(
+        metric_storage = __MetricStorage__(
             self.__device,
             self.metrics,
             batch_size=batch_size,
@@ -661,11 +683,9 @@ class Sequential(__nn__.Module):
 
         # Indicate the model to train
         self.__model.train()
-
-        import time
         
         # Initializer the data
-        data = DataHandler(
+        data = __DataHandler__(
             X,
             y,
             batch_size=batch_size,
@@ -697,23 +717,20 @@ class Sequential(__nn__.Module):
 
             # Make prediction
             predict = self.__model(feature).float()
-
+                        
             # Changes data type or data shape
             label = self.__handle_label(label)
 
             # Compute the loss
             loss = self.loss(predict, label)
             
-            if idx % 2 == 0:
-                # Add the prediction, labels(target) and loss to metric storage
-                metric_storage.add_metric(
-                    predict.detach().cpu().numpy(),
-                    label=label.detach().cpu().numpy(),
-                    loss=loss.detach().cpu().numpy(),
-                )
-
-                # Measurement live update
-                metric_storage.measurements_compiler()
+            # Handle the metrics
+            self.__metrics_handler(
+                metric_storage,
+                predict,
+                label,
+                loss,
+            )
                 
             # Update the progress bar
             self.__progressbar.update(idx + 1, metric_storage.measurements.items())
@@ -782,16 +799,11 @@ class Sequential(__nn__.Module):
             dataloader_kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
-        # Import libraries
-        import torch
-        from ._metrics_handles import MetricStorage
-        from ._data_handle import DataHandler
-        from .utils import ProgressBar
 
         metric_storage = None
 
         # Instantiate the progress bar
-        eval_progressbar = ProgressBar(
+        eval_progressbar = __ProgressBar__(
             show_val_metrics=False,
             verbose=self.__verbose if verbose == "inherited" else verbose,
             bar_width=self.__progressbar_width,
@@ -803,9 +815,9 @@ class Sequential(__nn__.Module):
         )
 
         # Create the list for metric
-        metric_storage = MetricStorage(
+        metric_storage = __MetricStorage__(
             self.__device,
-            metrics=self.metrics,
+            metrics_measures=self.metrics,
             batch_size=batch_size,
             train=False,
             loss_name=type(self.loss).__name__,
@@ -815,7 +827,7 @@ class Sequential(__nn__.Module):
         self.__model.eval()
 
         # Initializer the data
-        data = DataHandler(
+        data = __DataHandler__(
             X,
             y,
             batch_size=batch_size,
@@ -832,7 +844,7 @@ class Sequential(__nn__.Module):
         # Handle on validation begin
         self.__handle_callbacks("on_validation_begin")
 
-        with torch.no_grad():
+        with __torch__.no_grad():
             # Loop over the data
             for idx, (feature, label) in enumerate(data):
 
@@ -852,15 +864,13 @@ class Sequential(__nn__.Module):
                     # Compute the loss
                     loss = self.loss(predict, label)
 
-                # Add the prediction, labels(target) and loss to metric storage
-                metric_storage.add_metric(
-                    predict.detach().cpu().numpy(),
-                    label=label.detach().cpu().numpy(),
-                    loss=loss.detach().cpu().numpy(),
+                # Handle the metrics
+                self.__metrics_handler(
+                    metric_storage,
+                    predict,
+                    label,
+                    loss,
                 )
-
-                # Measurement live update
-                metric_storage.measurements_compiler()
 
                 if self.__xm is not None:
                     self.__xm.mark_step()
@@ -920,9 +930,6 @@ class Sequential(__nn__.Module):
                     - Precision: A classification metric for measuring model precision score.
 
         """
-        # Import libraries
-        from ._metrics_handles import str_val_to_metric
-
         self.optimizer_obj = (
             optimizer
             if isinstance(optimizer, __Optimizer__)
@@ -931,7 +938,7 @@ class Sequential(__nn__.Module):
         self.loss_obj = (
             loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
         )
-        self.metrics = str_val_to_metric(metrics) if metrics is not None else []
+        self.metrics = __MetricStorage__.str_val_to_metric(metrics) if metrics is not None else []
 
 
 class Wrapper(__BaseEstimator, __TransformerMixin):
