@@ -2,6 +2,7 @@
     "cSpell.words": [
         "Adamax",
         "ASGD",
+        "atleast",
         "Binarize",
         "Corrcoef",
         "crossentropy",
@@ -13,6 +14,7 @@
         "multiclass",
         "ndarray",
         "ndimension",
+        "ndmin",
         "nesterov",
         "nprocs",
         "prec",

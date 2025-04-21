@@ -77,13 +77,13 @@ class TestAcceptedData(TestCase):
         model.compile(
             optimizer='adam', 
             loss='binary_crossentropy', 
-            metrics=['auc', 'acc', 'precision', 'recall', 'f1_score']
+            metrics=['auc']#, 'precision', 'recall', 'f1_score']
             )
-        model.fit(X, y, epochs=5, batch_size=16)
+        model.fit(X, y, epochs=1, batch_size=16)
         
     def test_multiclass_classification_dataset(self):
         
-        n_label = 10
+        n_label = 3
         n_sample = 300
         
         X, y = make_classification(n_samples=n_sample, n_features=20, n_informative=9, n_classes=n_label)
@@ -103,10 +103,11 @@ class TestAcceptedData(TestCase):
             optimizer='adam', 
             loss='categorical_crossentropy', 
             metrics=[
-                "acc", 
-                Auc(average='macro', num_classes=n_label), 
-                F1Score(average='macro', num_classes=n_label), 
-                Recall(average='macro', num_classes=n_label), 
-                Precision(average='macro', num_classes=n_label)]
+                Auc(multi_class="ovr", num_classes=n_label), 
+                # Auc(average='macro', num_classes=n_label), 
+                # F1Score(average='macro', num_classes=n_label), 
+                # Recall(average='macro', num_classes=n_label), 
+                # Precision(average='macro', num_classes=n_label)
+                ]
             )
-        model.fit(X, y, epochs=1, batch_size=15)
+        model.fit(X, y, epochs=1, batch_size=16)

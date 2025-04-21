@@ -3,10 +3,13 @@
 # Import libraries
 from abc import ABCMeta as __abc__, abstractmethod as __abs__
 import numpy as np
+from sklearn import metrics
+from typing import Literal
+from numpy.typing import ArrayLike
 import torch
 
-def __mean__(value: torch.Tensor, rounded_by = 4):
-    return torch.mean(value, dim=0).round(decimals=rounded_by).view(-1, 1)
+def __mean__(value: np.ndarray, rounded_by = 4):
+    return np.array([np.mean(value).round(decimals=rounded_by)])
 
 class Metric(metaclass=__abc__):
     """
@@ -43,20 +46,12 @@ class Accuracy(Metric):
         """
         return self.name
 
-    def __call__(self, prediction: torch.Tensor, y: torch.Tensor, device: torch.device):
-        """
-        Parameters
-        ----------
-        prediction : torch.Tensor
-            Predicted values
-        y : torch.Tensor
-            True values
-        """
+    def __call__(self, prediction: ArrayLike, y: ArrayLike):
         prediction = prediction.squeeze()
         y = y.squeeze()
         
         # Compare predictions with true values
-        correct = (prediction == y).to(device).float()
+        correct = (prediction == y).astype(float)
         
         return __mean__(correct)
 
@@ -420,110 +415,58 @@ class TopKAccuracy(Metric):
         return top_k_accuracy_score(y, proba, **self.__kwargs)
 
 class Auc(Metric):
-    def __init__(self, name = None, average: str = "binary", num_classes: int = 3):
-        """
-        Compute the area under the ROC curve (AUC).
-        Args:
-            name (str, optional): Name of the metric. Defaults to None.
-            average (str, optional): Type of averaging to use. Defaults to 'binary'.
-                    binary: Only report results for the class specified by `pos_label`.
-                    macro: Calculate metrics for each label, and find their unweighted mean.
-            num_classes (int, optional): Number of classes. Defaults to 2.
-        """
+    def __init__(
+        self, 
+        name = None, 
+        average: Literal['micro', 'macro', 'samples', 'weighted'] | None = "macro",
+        sample_weight: ArrayLike | None = None,
+        max_fpr: float | None = None,
+        multi_class: Literal['raise', 'ovr', 'ovo'] = "raise",
+        labels: ArrayLike | None = None,
+        num_classes: int = 2
+        ):
         self.name: str = 'Auc' if name is None else name
         self.__average: str = average
-        self.__device: torch.device = None
-        self.__num_classes: int = num_classes
+        self.__sample_weight: ArrayLike | None = sample_weight
+        self.__max_fpr: float | None = max_fpr
+        self.__multi_class: str = multi_class
+        self.__labels: ArrayLike | None = labels
+        self.__num_classes = num_classes
 
     def __str__(self) -> str:
         return self.name
     
     def __call__(
         self, 
-        prediction: torch.Tensor, 
-        y: torch.Tensor,
-        device: torch.device = None,
+        prediction: ArrayLike, 
+        y: ArrayLike,
     ):
-        # Ensure tensors are float
-        y_true = y.squeeze().float()
-        y_pred = prediction.squeeze().float()
+        return self.__auc(
+            prediction,
+            y
+        )
         
-        # Set the device.
-        self.__device = device
+    def __auc(self, y_score: ArrayLike, y_true: ArrayLike):
         
+        if len(np.unique(y_true)) < self.__num_classes:
+            return np.array([0.0], dtype=np.float32)
 
-        match self.__average:
-            case "binary":
-                if len(torch.unique(y_true)) > 2:
-                    raise ValueError("AUC was called with binary average but targets are multiclass")
-                return self.__binary_auc(y_true, y_pred)
-            case "macro":
-                return self.__multiclass_auc(y_true, y_pred)
-            case _:
-                raise ValueError("`average` must be 'binary' or 'macro'")
-                
-    
-    def __multiclass_auc(self, y_true, y_score):
-        labels = y_true.long()    # shape (B,)
+        if not np.all(np.isfinite(y_score)):
+            return np.array([0.0], dtype=np.float32)
         
-        if y_score.ndim == 1:
-            y_score = y_score.unsqueeze(0)  # shape becomes (1, C)
-        
-        # If you're doing multiclass, apply softmax:
-        y_score = torch.softmax(y_score, dim=1)
-                            
-        C = self.__num_classes        
-        
-        auc = []
-        for c in range(C):
-            # make a binary label: 1 if class==c, else 0
-            y_bin = (labels == c).view(-1,1).float().to(self.__device)
-            scores_c = y_score[:, c].view(-1,1).float().to(self.__device)
-            auc.append(self.__binary_auc(y_bin, scores_c))
-
-        # stack into (C,1)
-        return __mean__(torch.cat(auc, dim=0).to(self.__device))
-
-    def __binary_auc(self, probability: torch.Tensor, y: torch.Tensor):
-        # 1) Flatten and ensure float
-        y_true = y.view(-1).float()
-        y_score = probability.view(-1).float()
-
-        # 2) Sort in descending order of score
-        sorted_idx = torch.argsort(y_score, descending=True)
-        y_sorted = y_true[sorted_idx]
-
-        # 3) Count positives (P) and negatives (N)
-        P = y_true.sum().item()
-        N = y_true.size(0) - P
-
-        # If only one class present, return 0.0 as tensor
-        device, dtype = y.device, y_score.dtype
-        if P == 0 or N == 0:
-            return torch.tensor([[0.0]], device=device, dtype=dtype)
-
-        # 4) Cumulative true positives and false positives
-        tps = torch.cumsum(y_sorted, dim=0)
-        fps = torch.cumsum(1 - y_sorted, dim=0)
-
-        # 5) TPR and FPR
-        tpr = tps / P
-        fpr = fps / N
-
-        # 6) Pad with (0,0) and (1,1)
-        zero = torch.tensor([0.], device=device, dtype=dtype)
-        one  = torch.tensor([1.], device=device, dtype=dtype)
-        tpr = torch.cat([zero, tpr, one])
-        fpr = torch.cat([zero, fpr, one])
-
-        # 7) Compute AUC via trapezoidal rule
-        auc_val = torch.trapz(tpr, fpr).item()
-
-        # 8) Clip to [0,1] and round to 4 decimals
-        auc_clipped = round(max(0.0, min(1.0, auc_val)), 4)
-
-        # Return as a (1,1) tensor
-        return torch.tensor([[auc_clipped]], device=device, dtype=dtype)
+        # Compute AUC
+        auc = metrics.roc_auc_score(
+            y_true, 
+            y_score,
+            average = self.__average,
+            sample_weight = self.__sample_weight,
+            max_fpr = self.__max_fpr,
+            multi_class = self.__multi_class,
+            labels= self.__labels
+            )
+                        
+        # Return as [[value]] array
+        return auc.round(decimals=4).reshape(-1, 1).squeeze() #np.array(round(auc, 4), dtype=np.float32)
 
 
 class MeanSquaredError(Metric):
