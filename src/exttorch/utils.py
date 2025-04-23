@@ -2,7 +2,17 @@
 
 # Importing necessary modules
 import time
+from IPython.display import HTML, display
 
+def _is_notebook():
+    try:
+        from IPython import get_ipython
+        ip = get_ipython()
+        if ip is None:
+            return False
+        return 'IPKernelApp' in ip.config
+    except:
+        return False
 
 class ProgressBar:
     def __init__(
@@ -21,9 +31,15 @@ class ProgressBar:
         self.length = bar_width
         self.current = 0
         self.start_time = time.time()
-        self.progress_color = progress_color
-        self.progress_empty_color = empty_color  # Dark Gray
-        self.reset_color = "\033[0m"
+        self.progress_color = (
+            progress_color if not _is_notebook()
+            else "<span style='color: lightgreen;'>"
+        )
+        self.progress_empty_color = (
+            empty_color if not _is_notebook()
+            else "<span style='color: darkgray;'>"
+        )
+        self.reset_color = "\033[0m" if not _is_notebook() else "</span>"
         self.show_val_metrics = show_val_metrics
         self.suffix = ""
         self.style = style
@@ -32,6 +48,10 @@ class ProgressBar:
         self.check_mark = show_check_mark
         self.show_diff_color = show_diff_color
         self.show_suffix = show_suffix
+        self.loader_img = "https://i.gifer.com/ZZ5H.gif"
+
+        if _is_notebook():
+            self._handle = display(HTML("<pre></pre>"), display_id=True)
 
     @property
     def total(self):
@@ -43,223 +63,149 @@ class ProgressBar:
             raise ValueError("Total must be a positive integer.")
         self._total = value
 
-    def __progress_bar(self, current, bar, elapsed_time, step_time_formatted, percent):
-        if self.check_mark:
+    def __format_bar(self, current, bar, elapsed_time, step_time, percent):
+        if percent == 100 and self.check_mark:
+            if _is_notebook():
+                done = "<span style='color: lightgreen;'> &check; </span>"
+            else:
+                done = f" {self.progress_color}✔️{self.reset_color} "
+        else:
+            # https://i.gifer.com/ZZ5H.gif
             done = (
-                f" {self.progress_color}✔️{self.reset_color} " if percent == 100 else " "
+                " ⏳ " if not _is_notebook()
+                else f" <img src='{self.loader_img}' height='20' style='vertical-align:middle;'> "
             )
-        else:
-            done = " "
+        suffix = self.suffix if self.show_suffix else ""
+        format_map = {
+            "verbose": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
+            "silent": f"{current}/{self.total}{done}{elapsed_time}s {step_time} {suffix}",
+            "silent_verbose": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time}",
+            "silent_verbose_suffix": f"{current}/{self.total}{done}{suffix}",
+            "silent_epoch": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
+            "silent_epoch_suffix": f"{current}/{self.total}{done}{suffix}",
+            None: f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}"
+        }
+        return format_map.get(self.verbose, "Invalid verbose setting")
 
-        if self.verbose == "verbose":
-            print(
-                f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted} {self.suffix}",
-                end="\r",
-            )
-        elif self.verbose == "silent":
-            print(
-                f"\r{current}/{self.total}{done}{elapsed_time}s {step_time_formatted} {self.suffix}",
-                end="\r",
-            )
-        elif self.verbose == "silent_verbose":
-            print(
-                f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted}",
-                end="\r",
-            )
-        elif self.verbose == "silent_verbose_suffix":
-            print(
-                f"\r{current}/{self.total}{done}{self.suffix}",
-                end="\r",
-            )
-        elif self.verbose == "silent_epoch":
-            print(
-                f"\r{current}/{self.total}{done}{bar} {elapsed_time}s {step_time_formatted} {self.suffix}",
-                end="\r",
-            )
-        elif self.verbose == "silent_epoch_suffix":
-            print(
-                f"\r{current}/{self.total}{done}{self.suffix}",
-                end="\r",
-            )
-        elif self.verbose == None:
-            pass
-        else:
-            raise ValueError(
-                "Invalid verbose option. Choose from ['verbose', 'silent', 'silent_verbose', 'silent_verbose_suffix', 'silent_epoch', 'silent_epoch_suffix']"
-            )
     def __bar(self, filled_length, percent):
-        match self.style:
-            case "default":
-                bar = (
-                    f"{self.progress_color}━{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
+        style_chars = {
+            "default": "━",
+            "--": "-",
+            "==": "=",
+            "-=": "-" if percent <= 50 else "=",
+            "airplane": "➤",
+            "circle": "◯",
+            "square": "■",
+            "triangle": "▲",
+            "diamond": "◆",
+            "star": "★",
+            "heart": "♥",
+            "cross": "✖",
+        }
+        char = style_chars.get(self.style)
+        if not char:
+            raise ValueError("Invalid style option.")
 
-            case "--":
-                bar = (
-                    f"{self.progress_color}-{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "==":
-                bar = (
-                    f"{self.progress_color}={self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "-=":
-                bar = (
-                    f"{self.progress_color}{'-' if percent <= 50 else '='}{self.reset_color}"
-                    * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "airplane":
-                bar = (
-                    f"{self.progress_color}➤{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "circle":
-                bar = (
-                    f"{self.progress_color}◯{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "square":
-                bar = (
-                    f"{self.progress_color}■{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "triangle":
-                bar = (
-                    f"{self.progress_color}▲{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "diamond":
-                bar = (
-                    f"{self.progress_color}◆{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "star":
-                bar = (
-                    f"{self.progress_color}★{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "heart":
-                bar = (
-                    f"{self.progress_color}♥{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case "cross":
-                bar = (
-                    f"{self.progress_color}✖{self.reset_color}" * filled_length
-                    + f"{self.progress_empty_color}━{self.reset_color}"
-                    * (self.length - filled_length)
-                )
-            case _:
-                raise ValueError(
-                    "Invalid style option. Choose from ['default', '--', '==', '-=', 'airplane', 'circle', 'square', 'triangle', 'diamond', 'star', 'heart', 'cross']"
-                )
-        return bar
+        return (
+            f"{self.progress_color}{char}{self.reset_color}" * filled_length +
+            f"{self.progress_empty_color}━{self.reset_color}" * (self.length - filled_length)
+        )
 
     def update(self, current, metric=None):
-
-        if metric is not None and self.show_suffix:
-            self.suffix = " - ".join([f"{key}: {value:.4f}" for key, value in metric])
+        if metric and self.show_suffix:
+            self.suffix = " - ".join([f"{k}: {v:.4f}" for k, v in metric])
             self.suffix = f" - {self.suffix}"
-        else:
-            self.suffix = ""
 
-        # Calculate elapsed time
         self.current_time = time.time()
-        elapsed_time = int(self.current_time - self.start_time)
-        step_time = (
-            self.current_time - self.last_update_time
-        ) * 1000  # Time per step in ms
-
-        # Format time per step
-        step_time_formatted = f"{int(step_time)}ms/step"
+        elapsed = int(self.current_time - self.start_time)
+        step_time = int((self.current_time - self.last_update_time) * 1000)
         self.last_update_time = self.current_time
 
         self.current = current
-        filled_length = int(self.length * self.current // self.total)
-
+        filled = int(self.length * self.current // self.total)
         percent = self.current / self.total * 100
 
-        if self.show_diff_color:
-            if percent < 25:
-                color = "\033[31m"  # Dark Red
-            elif percent < 50:
-                color = "\033[91m"  # Light Red
-            elif percent < 70:
-                color = "\033[32m"  # Dark Green
-            elif percent <= 100:
-                color = "\033[92m"  # Light Green
+        bar = self.__bar(filled, percent)
+        progress = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", percent)
+
+        if _is_notebook():
+            self._handle.update(HTML(f"<pre>{progress}</pre>"))
+            if self.current == self.total and not self.show_val_metrics:
+                self.new_epoch()
         else:
-            color = self.progress_color
+            print(f"\r{progress}", end="", flush=True)
+            if self.show_val_metrics:
+                if self.current - 1 == self.total:
+                    # Rest the start time for the next progress bar
+                    self.new_epoch()
+                    print()
+            else:
+                if self.current == self.total:
+                    # Rest the start time for the next progress bar
+                    self.new_epoch()
+                    print()
 
-        # Set the color based on the percentage
-        self.progress_color = color
-        
-        # Different styles for the progress bar
-        bar = self.__bar(filled_length, percent)
-
-        # Print the progress bar
-        self.__progress_bar(
-            self.current, bar, elapsed_time, step_time_formatted, percent
-        )
-
-        if self.show_val_metrics:
-            if self.current - 1 == self.total:
-                # Rest the start time for the next progress bar
-                self.start_time = time.time()
-                self.last_update_time = self.start_time
-                print()
-        else:
-            if self.current == self.total:
-                # Rest the start time for the next progress bar
-                self.start_time = time.time()
-                print()
 
     def last_update(self, metric=None):
+        if not self.show_val_metrics:
+            raise ValueError("show_val_metrics must be True to use last_update")
 
-        if self.show_val_metrics == False:
-            raise ValueError("show_validation must be True to use last_update")
+        if metric:
+            val_suffix = " - ".join([f"{k}: {v:.4f}" for k, v in metric])
+            self.suffix += f" - {val_suffix}"
 
-        if metric is not None:
-            suffix = " - ".join([f"{key}: {value:.4f}" for key, value in metric])
-            self.suffix = f"{self.suffix} - {suffix}"
-
-        # Calculate elapsed time
-        current_time = time.time()
-        step_time = (current_time - self.last_update_time) * 1000  # ms per step
-        elapsed_time = int(current_time - self.start_time)
-        self.last_update_time = current_time
-
-        # Format time per step
-        step_time_formatted = f"{int(step_time)}ms/step"
-        
-        # Calculate filled length
-        filled_length = int(self.length * self.current // self.total)
-        
-        # Calculate percent
+        elapsed = int(time.time() - self.start_time)
+        step_time = int((time.time() - self.last_update_time) * 1000)
+        filled = int(self.length * self.current // self.total)
         percent = self.current / self.total * 100
-        
-        # Different styles for the progress bar
+
+        bar = self.__bar(filled, percent)
+        final = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", 100)
+
+        if _is_notebook():
+            self._handle.update(HTML(f"<pre>{final}</pre>"))
+            # if self.current == self.total - 1 and not self.show_val_metrics:
+            self.new_epoch()
+        else:
+            print(f"\r{final}", flush=True)
+            print()
+
+    def new_epoch(self):
+        self.current = 0
+        if self.show_val_metrics:
+            self.start_time = time.time()
+            self.last_update_time = self.start_time
+            self.suffix = ""
+
+        if _is_notebook():
+            self._handle = display(HTML("<pre></pre>"), display_id=True)
+
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            self.stop()
+
+
+    def stop(self, error_message=None):
+        if _is_notebook():
+            done = "<span style='color: red;'>✖</span>"
+        else:
+            done = "\033[91m✖\033[0m"  # ANSI red X
+
+        filled_length = int(self.length * self.current // max(self.total, 1))
+        percent = self.current / max(self.total, 1) * 100 if self.total else 0
+
         bar = self.__bar(filled_length, percent)
 
-        # Print the progress bar
-        self.__progress_bar(
-            self.current, bar, elapsed_time, step_time_formatted, percent=100
-        )
+        # Custom message for notebook or terminal
+        message = f"{self.current}/{self.total} {done} {bar} {self.suffix}"
+        if error_message:
+            message += f" - {error_message}"
 
-        # Rest the start time for the next progress bar
-        self.start_time = time.time()
-        print()
+        if _is_notebook():
+            self._handle.update(HTML(f"<pre>{message}</pre>"))
+        else:
+            print(message)

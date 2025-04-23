@@ -79,7 +79,7 @@ class TestAcceptedData(TestCase):
             loss='binary_crossentropy', 
             metrics=['auc']#, 'precision', 'recall', 'f1_score']
             )
-        model.fit(X, y, epochs=1, batch_size=16)
+        model.fit(X, y, epochs=3, batch_size=1, validation_split=0.2)
         
     def test_multiclass_classification_dataset(self):
         

@@ -520,7 +520,8 @@ class Sequential(__nn__.Module):
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
-        training()
+        with self.__progressbar:
+            training()
 
         # Set the show validation metrics to False
         self.__progressbar.show_val_metrics = False
