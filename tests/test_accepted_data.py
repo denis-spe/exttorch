@@ -4,7 +4,7 @@
 from contexts import *
 import torch
 from torch import nn
-from sklearn.datasets import make_classification, make_regression
+from sklearn.datasets import make_classification, make_regression, load_iris
 from unittest import TestCase
 from exttorch.models import Sequential
 from exttorch.metrics import Precision, Recall, F1Score, Auc
@@ -86,10 +86,11 @@ class TestAcceptedData(TestCase):
         n_label = 3
         n_sample = 300
         
-        X, y = make_classification(n_samples=n_sample, n_features=20, n_informative=9, n_classes=n_label)
+        # X, y = make_classification(n_samples=n_sample, n_features=20, n_informative=9, n_classes=n_label)
+        X, y = load_iris(return_X_y=True)
         
         model = Sequential()
-        model.add(nn.Linear(20, 256))
+        model.add(nn.Linear(4, 256))
         model.add(nn.ReLU())
         model.add(nn.Linear(256, 512))
         model.add(nn.ReLU())
@@ -110,4 +111,4 @@ class TestAcceptedData(TestCase):
                 # Precision(average='macro', num_classes=n_label)
                 ]
             )
-        model.fit(X, y, epochs=1, batch_size=16)
+        model.fit(X, y, epochs=1)

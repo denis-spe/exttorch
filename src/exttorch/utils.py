@@ -2,6 +2,8 @@
 
 # Importing necessary modules
 import time
+import base64
+from importlib.resources import files
 from IPython.display import HTML, display
 
 def _is_notebook():
@@ -26,6 +28,7 @@ class ProgressBar:
         style="default",
         show_check_mark=True,
         show_suffix=True,
+        epochs: int | None = None
     ):
         self._total = 0
         self.length = bar_width
@@ -48,7 +51,19 @@ class ProgressBar:
         self.check_mark = show_check_mark
         self.show_diff_color = show_diff_color
         self.show_suffix = show_suffix
-        self.loader_img = "https://i.gifer.com/ZZ5H.gif"
+        self.__pre_epoch = 1
+        self.epochs = epochs
+
+        # Grab the exttorch package root as a Traversable
+        pkg_root = files("exttorch")
+
+        # Navigate into the data-only folder
+        gif_file = pkg_root.joinpath("assets", "spinner.gif")
+
+        # Read the bytes
+        data = gif_file.read_bytes()
+        self.loader_img = base64.b64encode(data).decode()
+
 
         if _is_notebook():
             self._handle = display(HTML("<pre></pre>"), display_id=True)
@@ -63,6 +78,20 @@ class ProgressBar:
             raise ValueError("Total must be a positive integer.")
         self._total = value
 
+    @property
+    def add_epoch(self) -> int:
+        return self.__pre_epoch
+
+    @add_epoch.setter
+    def add_epoch(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise ValueError(f"Except an int but received `{type(value)}`")
+
+        self.__pre_epoch = value + 1 if value != 1 else value
+        
+        if not _is_notebook():
+            print(f"\033[1mEpoch {self.__pre_epoch}/{self.epochs}\033[0m")
+
     def __format_bar(self, current, bar, elapsed_time, step_time, percent):
         if percent == 100 and self.check_mark:
             if _is_notebook():
@@ -73,17 +102,19 @@ class ProgressBar:
             # https://i.gifer.com/ZZ5H.gif
             done = (
                 " ⏳ " if not _is_notebook()
-                else f" <img src='{self.loader_img}' height='20' style='vertical-align:middle;'> "
+                else f" <img src='data:image/gif;base64,{self.loader_img}' height='20' style='vertical-align:middle;'> "
             )
         suffix = self.suffix if self.show_suffix else ""
+        epoch = f"<strong>Epoch {self.__pre_epoch}/{self.epochs}</strong>\n" if _is_notebook() and self.epochs else ""
+
         format_map = {
-            "verbose": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
-            "silent": f"{current}/{self.total}{done}{elapsed_time}s {step_time} {suffix}",
-            "silent_verbose": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time}",
-            "silent_verbose_suffix": f"{current}/{self.total}{done}{suffix}",
-            "silent_epoch": f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
-            "silent_epoch_suffix": f"{current}/{self.total}{done}{suffix}",
-            None: f"{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}"
+            "verbose": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
+            "silent": f"{epoch}{current}/{self.total}{done}{elapsed_time}s {step_time} {suffix}",
+            "silent_verbose": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time}",
+            "silent_verbose_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
+            "silent_epoch": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
+            "silent_epoch_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
+            None: f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}"
         }
         return format_map.get(self.verbose, "Invalid verbose setting")
 
@@ -164,7 +195,6 @@ class ProgressBar:
 
         if _is_notebook():
             self._handle.update(HTML(f"<pre>{final}</pre>"))
-            # if self.current == self.total - 1 and not self.show_val_metrics:
             self.new_epoch()
         else:
             print(f"\r{final}", flush=True)
@@ -180,7 +210,7 @@ class ProgressBar:
         if _is_notebook():
             self._handle = display(HTML("<pre></pre>"), display_id=True)
 
-    
+
     def __enter__(self):
         return self
 
@@ -200,8 +230,10 @@ class ProgressBar:
 
         bar = self.__bar(filled_length, percent)
 
+        epoch = f"Epoch {self.__pre_epoch}/{self.epochs}\n" if _is_notebook() and self.epochs else ""
+
         # Custom message for notebook or terminal
-        message = f"{self.current}/{self.total} {done} {bar} {self.suffix}"
+        message = f"{epoch}{self.current}/{self.total} {done} {bar} {self.suffix}"
         if error_message:
             message += f" - {error_message}"
 

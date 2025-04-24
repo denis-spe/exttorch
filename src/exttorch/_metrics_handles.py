@@ -282,8 +282,10 @@ class MetricStorage:
             probabilities = np.atleast_2d(probabilities)
             labels = np.atleast_2d(labels)
         else:
-            probabilities = probabilities.squeeze(axis=2)
-            labels = labels.squeeze(axis=2)
+            if probabilities.ndim != 2:
+                probabilities = probabilities.squeeze(axis=2)
+            if labels.ndim != 2:
+                labels = labels.squeeze(axis=2)
         
 
         # Loop over the measurements of metrics

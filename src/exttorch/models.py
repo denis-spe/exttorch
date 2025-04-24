@@ -246,6 +246,7 @@ class Sequential(__nn__.Module):
             show_check_mark=progressbar_show_check_mark,
             progress_color=progressbar_color,
             empty_color=progressbar_empty_color,
+            epochs=epochs
         )
 
         self.__verbose = verbose
@@ -313,9 +314,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and "epoch" not in verbose:
-                        # Print the epochs
-                        print(f"Epoch {epoch + 1}/{epochs}")
+                    # Add the epoch to progress bar.
+                    self.__progressbar.add_epoch = epoch
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -415,9 +415,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and "epoch" not in verbose:
-                        # Print the epochs
-                        print(f"Epoch {epoch + 1}/{epochs}")
+                    # Add the epoch to progress bar.
+                    self.__progressbar.add_epoch = epoch
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -488,9 +487,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    if verbose and "epoch" not in verbose:
-                        # Print the epochs
-                        print(f"Epoch {epoch}/{epochs}")
+                    # Add the epoch to progress bar.
+                    self.__progressbar.add_epoch = epoch
 
                     # Train the full dataset
                     train_metric = self.__train(

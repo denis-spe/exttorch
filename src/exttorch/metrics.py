@@ -466,7 +466,7 @@ class Auc(Metric):
             )
                         
         # Return as [[value]] array
-        return auc.round(decimals=4).reshape(-1, 1).squeeze() #np.array(round(auc, 4), dtype=np.float32)
+        return auc.reshape(-1, 1).squeeze().round(decimals=4)
 
 
 class MeanSquaredError(Metric):

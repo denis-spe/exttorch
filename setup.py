@@ -9,5 +9,6 @@ setup(
         'numpy',
         'scikit-learn',
         'pandas',
-    ]
+    ],
+    include_package_data=True
 )
