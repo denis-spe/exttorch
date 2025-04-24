@@ -87,7 +87,7 @@ class ProgressBar:
         if not isinstance(value, int):
             raise ValueError(f"Except an int but received `{type(value)}`")
 
-        self.__pre_epoch = value + 1 if value != 1 else value
+        self.__pre_epoch = value + 1
         
         if not _is_notebook():
             print(f"\033[1mEpoch {self.__pre_epoch}/{self.epochs}\033[0m")

@@ -483,7 +483,7 @@ class Sequential(__nn__.Module):
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
 
-                for epoch in range(1, epochs + 1):
+                for epoch in range(epochs):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
