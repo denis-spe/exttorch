@@ -39,27 +39,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Doctests in .executor": "Run",
-    "Python tests.Doctests in exttorch.executor": "Run",
-    "Python tests.Doctests in src.executor": "Run",
-    "Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor": "Run",
-    "Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor": "Run",
-    "Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor": "Run",
-    "Python tests.Python tests in tests.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Volumes/Storage/DS/DL/exttorch",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Doctests in .executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Doctests in exttorch.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Doctests in src.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in tests.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Volumes/Storage/DS/DL/exttorch&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset">
     <configuration name="Doctests in exttorch" type="tests" factoryName="Doctests" nameIsGenerated="true">
       <module name="exttorch" />
@@ -176,7 +176,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-4f4e415b4190-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.26053.29" />
+        <option value="bundled-python-sdk-348a24fa61fa-5312c7369657-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-251.23774.444" />
       </set>
     </attachedChunks>
   </component>

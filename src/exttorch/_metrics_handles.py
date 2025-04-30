@@ -63,6 +63,7 @@ class MetricStorage:
         self.__probabilities: List[torch.Tensor] = []
         self.__batch_size = batch_size
         self.__main_loss_name = loss_name
+        self.__is_batched = False
         self.__metric_name_proba = ["Auc", "TopKAccuracy", "auc", "tka", "TKA"]
 
     # 1) First step is to add the model results
@@ -93,9 +94,10 @@ class MetricStorage:
         loss = clone(loss).item()
         
         # Store the results
-        if self.__batch_size > 1:
+        if self.__batch_size > 1 or label.shape[0] > 1:
             self.__batch_probabilities = np.atleast_2d(probability)
             self.__batch_labels = np.atleast_2d(label)
+            self.__is_batched = True
         else:
             self.__label.append(label)
             self.__probabilities.append(probability)
@@ -187,7 +189,7 @@ class MetricStorage:
         
         loss = self.__change_list_to_numpy(self.__loss)
 
-        if self.__batch_size > 1:
+        if self.__batch_size > 1 or self.__is_batched:
             labels = self.__batch_labels
             probabilities = self.__batch_probabilities
         else:
@@ -209,8 +211,6 @@ class MetricStorage:
             return np.round(probabilities).astype(int)
         elif self.__main_loss_name in ["CrossEntropyLoss", "NLLLoss"]:
             # It's a multi-class classification
-            dim = 1 if self.__batch_size > 1 else 0
-            # print(probabilities)
             return np.argmax(probabilities, axis=1).reshape(-1, 1)
         # else it's a continuous prediction
         return probabilities
@@ -268,7 +268,7 @@ class MetricStorage:
         """
         # Change the model results to a tensor
         probabilities, labels, loss = self.__change_results_to_tensor()
-        
+                
         # Get the predictions of the model
         predicts = self.__get_predicts(probabilities)
         
@@ -278,12 +278,14 @@ class MetricStorage:
         # Add the loss to the measurements dictionary
         self.__measurements_dict[loss_name].append(loss)
         
-        if self.__batch_size > 1:
+        # Check if the batch size is greater than 1 and the labels are one-hot encoded        
+        if self.__batch_size > 1 or self.__is_batched:
             probabilities = np.atleast_2d(probabilities)
             labels = np.atleast_2d(labels)
         else:
             if probabilities.ndim != 2:
                 probabilities = probabilities.squeeze(axis=2)
+            
             if labels.ndim != 2:
                 labels = labels.squeeze(axis=2)
         

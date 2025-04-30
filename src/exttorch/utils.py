@@ -90,7 +90,8 @@ class ProgressBar:
         self.__pre_epoch = value + 1
         
         if not _is_notebook():
-            print(f"\033[1mEpoch {self.__pre_epoch}/{self.epochs}\033[0m")
+            if self.verbose is not None:
+                print(f"\033[1mEpoch {self.__pre_epoch}/{self.epochs}\033[0m")
 
     def __format_bar(self, current, bar, elapsed_time, step_time, percent):
         if percent == 100 and self.check_mark:
@@ -105,7 +106,10 @@ class ProgressBar:
                 else f" <img src='data:image/gif;base64,{self.loader_img}' height='20' style='vertical-align:middle;'> "
             )
         suffix = self.suffix if self.show_suffix else ""
-        epoch = f"<strong>Epoch {self.__pre_epoch}/{self.epochs}</strong>\n" if _is_notebook() and self.epochs else ""
+        if self.verbose is not None:
+            epoch = f"<strong>Epoch {self.__pre_epoch}/{self.epochs}</strong>\n" if _is_notebook() and self.epochs else ""
+        else:
+            epoch = None
 
         format_map = {
             "verbose": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
@@ -114,11 +118,11 @@ class ProgressBar:
             "silent_verbose_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
             "silent_epoch": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
             "silent_epoch_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
-            None: f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}"
+            None: None
         }
         return format_map.get(self.verbose, "Invalid verbose setting")
 
-    def __bar(self, filled_length, percent):
+    def __bar(self, filled_length, percent): 
         style_chars = {
             "default": "━",
             "--": "-",
@@ -160,11 +164,13 @@ class ProgressBar:
         progress = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", percent)
 
         if _is_notebook():
-            self._handle.update(HTML(f"<pre>{progress}</pre>"))
+            if progress is not None:
+                self._handle.update(HTML(f"<pre>{progress}</pre>"))
             if self.current == self.total and not self.show_val_metrics:
                 self.new_epoch()
         else:
-            print(f"\r{progress}", end="", flush=True)
+            if progress is not None:
+                print(f"\r{progress}", end="", flush=True)
             if self.show_val_metrics:
                 if self.current - 1 == self.total:
                     # Rest the start time for the next progress bar
@@ -194,10 +200,12 @@ class ProgressBar:
         final = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", 100)
 
         if _is_notebook():
-            self._handle.update(HTML(f"<pre>{final}</pre>"))
+            if final is not None:
+                self._handle.update(HTML(f"<pre>{final}</pre>"))
             self.new_epoch()
         else:
-            print(f"\r{final}", flush=True)
+            if final is not None:
+                print(f"\r{final}", end="", flush=True)
             print()
 
     def new_epoch(self):
@@ -237,7 +245,8 @@ class ProgressBar:
         if error_message:
             message += f" - {error_message}"
 
-        if _is_notebook():
+        if _is_notebook() and self.verbose is not None:
             self._handle.update(HTML(f"<pre>{message}</pre>"))
         else:
-            print(message)
+            if self.verbose is not None:
+                print(message)

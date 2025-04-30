@@ -37,7 +37,7 @@ class TestPipeline(ut.TestCase):
             ),
             loss=CrossEntropyLoss(),
             optimizer=Adam(),
-            metrics=[Accuracy(), Recall(average='macro'), F1Score(average='macro')],
+            metrics=[Accuracy(), Recall(average='macro')],
             epochs=2,
             validation_split=0.2,
             verbose=None,

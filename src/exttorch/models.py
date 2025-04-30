@@ -565,30 +565,31 @@ class Sequential(__nn__.Module):
 
                 # Update the progress bar
                 progressbar.update(i + 1, [()])
-
-        prob = f.softmax(torch.tensor(probability), dim=1)
-        return prob
+            
+        if type(self.loss_obj).__name__ == "CrossEntropyLoss":
+            probability = f.softmax(torch.tensor(probability), dim=1).numpy()
+        else:
+            # Convert the probability to numpy array
+            probability = np.array(probability).reshape(-1, 1)
+            
+        return probability
 
     def predict(self, X, verbose: str | None = "inherited"):
-        from ._metrics_handles import SinglePredictionsFormat
 
         # Get the probabilities of x
-        proba = self.predict_proba(X, verbose=verbose)
-
-        # Initializer the SinglePredictionsFormat object.
-        single_format_prediction = SinglePredictionsFormat(
-            proba, self.__device, loss_name=type(self.loss).__name__
-        )
-
-        # Format the predictions.
-        formatted_prediction = single_format_prediction.format_prediction()
-        formatted_prediction = formatted_prediction.T
+        probability = self.predict_proba(X, verbose=verbose)
         
-        return (
-            formatted_prediction[0]
-            if len(formatted_prediction) == 1
-            else formatted_prediction
-        )
+        # Get the class label if using CrossEntropyLoss
+        # or BCELoss or BCEWithLogitsLoss
+        if type(self.loss_obj).__name__ == "CrossEntropyLoss":
+            pred = probability.argmax(axis=1).reshape(-1, 1)
+        elif type(self.loss_obj).__name__ in  ["BCELoss", "BCEWithLogitsLoss"]:
+            pred = probability.round().reshape(-1, 1)
+        else:
+            pred = probability.reshape(-1, 1)
+        return pred
+
+        
 
     def __handle_label(self, target):
         if self.loss.__class__.__name__ == "CrossEntropyLoss":

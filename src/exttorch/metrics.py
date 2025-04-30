@@ -11,6 +11,19 @@ import torch
 def __mean__(value: np.ndarray, rounded_by = 4):
     return np.array([np.mean(value).round(decimals=rounded_by)])
 
+
+def __restrict_if_nunique__(
+    y: np.ndarray,
+    prediction: np.ndarray,
+    num_classes: int = 2,
+):
+    if len(np.unique(y)) < num_classes:
+            return np.array([0.0], dtype=np.float32)
+
+    if not np.all(np.isfinite(prediction)):
+        return np.array([0.0], dtype=np.float32)
+
+
 class Metric(metaclass=__abc__):
     """
     Abstract class for metrics
@@ -86,7 +99,16 @@ class ZeroOneLoss(Metric):
         return zero_one_loss(y, prediction)
 
 class F1Score(Metric):
-    def __init__(self, name=None, average='binary', num_classes: int = 3, zero_division='warn'):
+    def __init__(
+        self, 
+        name=None, 
+        average: Literal['micro', 'macro', 'samples', 'weighted', 'binary'] | None = "binary",
+        sample_weight: ArrayLike | None = None,
+        zero_division: int = 0,
+        pos_label: int = 1,
+        labels: ArrayLike | None = None,
+        num_classes: int = 3
+        ):
         """
         Computes the F1 score for binary or multi-class classification.
         Args:
@@ -100,97 +122,39 @@ class F1Score(Metric):
         self.name: str = 'F1Score' if name is None else name
         self.__average: str = average
         self.__num_classes: int = num_classes
-        self.__device: torch.device = None
+        self.__sample_weight: ArrayLike | None = sample_weight
+        self.__zero_division: int = zero_division
+        self.__pos_label: int = pos_label
+        self.__labels: ArrayLike | None = labels
 
     def __str__(self) -> str:
         return self.name
-    
-    def __f1_score(self, preds, targets):
-        """
-        Compute F1 score for binary classification.
-        
-        Args:
-        preds (torch.Tensor): Model predictions (probabilities or logits).
-        targets (torch.Tensor): Ground truth labels (0 or 1).
-        threshold (float): Threshold to convert probabilities to binary predictions.
-
-        Returns:
-        float: F1 score.
-        """
-        if len(torch.unique(targets)) > 2:
-            raise ValueError("F1 score was called with binary average but targets are multiclass")
-            
-        recall_val = Recall()(preds, targets, self.__device)
-        precision_val = Precision()(preds, targets, self.__device)
-        
-        if precision_val + recall_val == 0:
-            return torch.tensor([[0.0]], device=self.__device)
-        
-        f1 = 2 * (precision_val * recall_val) / (precision_val + recall_val)
-        return f1.round(decimals=4)
-    
-    def __f1_score_multiclass(self, preds, targets, num_classes, average='macro'):
-        """
-        Compute F1 score for multi-class classification.
-        
-        Args:
-        preds (torch.Tensor): Model predictions (probabilities or logits).
-        targets (torch.Tensor): Ground truth labels (0 to num_classes-1).
-        num_classes (int): Number of classes.
-        average (str): How to average the scores: 'macro' or 'weighted'.
-        threshold (float): Threshold to convert probabilities to binary predictions.
-        
-        Returns:
-            -1 by 1 torch.Tensor: F1 score.
-        """
-        
-        # Compute precision and recall for each class
-        recall_vals = Recall(average=average, num_classes=num_classes)(preds, targets, self.__device)
-        precision_vals = Precision(average=average, num_classes=num_classes)(preds, targets, self.__device)
-        
-        # Avoid division by zero
-        division_part = (precision_vals + recall_vals)
-        if division_part == 0:
-            return torch.tensor([[0.0]], device=self.__device)
-        
-        # Compute F1 score for each class
-        f1_scores = 2 * (precision_vals * recall_vals) / division_part
-        
-        if average == 'macro':
-            return f1_scores.round(decimals=4)
-        
-        elif average == 'weighted':
-            # Weighted by class frequency (support)
-            class_support = [(targets == i).sum().astype(float) for i in range(num_classes)]
-            total_support = sum(class_support)
-            weighted_f1 = sum(f1_scores * np.array(class_support) / total_support)
-            return weighted_f1.round(decimals=4)
-        else:
-            raise ValueError("`average` must be 'macro' or 'weighted'")
-
 
     def __call__(
         self,
         prediction: torch.Tensor, 
         y: torch.Tensor,
-        device: torch.device = None,
     ):
-        # Ensure tensors are float
-        y_pred = prediction.squeeze().float()
-        y_true = y.squeeze().float()
+        # Ensure all unique values are present
+        __restrict_if_nunique__(
+            y, 
+            prediction, 
+            num_classes = self.__num_classes
+        )
         
-        # Set the device.
-        self.__device = device
-        
-        match self.__average:
-            case "binary":
-                return self.__f1_score(y_pred, y_true)
-            case "macro":
-                return self.__f1_score_multiclass(y_pred, y_true, self.__num_classes, average='macro')
-            case "weighted":
-                return self.__f1_score_multiclass(y_pred, y_true, self.__num_classes, average='weighted')
-            case _:
-                raise ValueError("`average` must be 'macro' or 'weighted'")
+        # Compute AUC
+        recall = metrics.f1_score(
+            y, 
+            prediction,
+            average = self.__average,
+            sample_weight = self.__sample_weight,
+            labels= self.__labels,
+            zero_division=self.__zero_division,
+            pos_label=self.__pos_label
+            )
+                        
+        # Return as [[value]] array
+        return np.array([[recall]]).round(decimals=4)
         
 class MatthewsCorrcoef(Metric):
     def __init__(self, name = None, **kwargs):
@@ -205,7 +169,16 @@ class MatthewsCorrcoef(Metric):
         return matthews_corrcoef(y, prediction, **self.__kwargs)
 
 class Recall(Metric):
-    def __init__(self, name = None, average: str = "binary", num_classes: int = 3):
+    def __init__(
+        self, 
+        name = None,
+        average: Literal['micro', 'macro', 'samples', 'weighted', 'binary'] | None = "binary",
+        sample_weight: ArrayLike | None = None,
+        zero_division: int = 0,
+        pos_label: int = 1,
+        labels: ArrayLike | None = None,
+        num_classes: int = 3
+        ):
         """
         Compute recall for binary or multi-class classification.
         Args:
@@ -219,83 +192,43 @@ class Recall(Metric):
         self.__average: str = average
         self.__num_classes: int = num_classes
         self.name: str = 'Recall' if name is None else name
-        self.__device: torch.device = None
-
+        self.__sample_weight: ArrayLike | None = sample_weight
+        self.__zero_division: int = zero_division
+        self.__pos_label: int = pos_label
+        self.__labels: ArrayLike | None = labels
+        
     def __str__(self) -> str:
         return self.name
-    
-    def __recall(self, preds, targets):
-        """
-        Compute recall for binary classification.
-        
-        Args:
-            preds (torch.Tensor): Model predictions (logits or probabilities).
-            targets (torch.Tensor): Ground truth labels (0 or 1).
-            threshold (float): Decision threshold for converting probabilities to binary values.
-        
-        Returns:
-            -1 by 1 torch.Tensor: Recall score.
-        """
-        
-        if len(np.unique(targets)) > 2:
-            raise ValueError("Recall was called with binary average but targets are multiclass")
-                
-        tp = (preds * targets).sum()  # True Positives
-        fn = ((1 - preds) * targets).sum() # False Negatives
-        
-        recall_score = (
-            (tp / (tp + fn)).round(decimals=4).view(-1, 1) if (tp + fn) > 0 
-            else torch.tensor([[0.0]], device=self.__device)
-        )
-        return recall_score
-    
-    def __multiclass_recall(self, preds, targets, num_classes):
-        """
-        Compute macro-average recall for multi-class classification.
-        
-        Args:
-            preds (torch.Tensor): Model predictions (logits or probabilities).
-            targets (torch.Tensor): Ground truth labels.
-            num_classes (int): Number of classes.
-        
-        Returns:
-            float: Macro-averaged recall.
-        """
-        recall_scores = []
-        
-        for class_idx in range(num_classes):
-            tp = ((preds == class_idx) & (targets == class_idx)).sum()
-            fn = ((preds != class_idx) & (targets == class_idx)).sum()
-            
-            recall = tp / (tp + fn) if (tp + fn) > 0 else torch.tensor([[0.0]], device=self.__device)
-            recall_scores.append(recall.view(-1, 1))
-        
-        recall_scores = torch.cat(recall_scores, dim=0).to(self.__device)
-        
-        return (recall_scores.sum() / num_classes).round(decimals=4).view(-1, 1)  # Macro-average recall
 
     def __call__(
         self, 
         prediction: torch.Tensor, 
         y: torch.Tensor,
-        device: torch.device
         ):
-        # Ensure tensors are float
-        y_true = y.squeeze().float()
-        y_pred = prediction.squeeze().float()
         
-        # Set the device.
-        self.__device = device
-
-        match self.__average:
-            case "binary":
-                return self.__recall(y_pred, y_true)
-            case "macro":
-                return self.__multiclass_recall(y_pred, y_true, self.__num_classes)                
-            case "weighted":
-                return self.__multiclass_recall(y_pred, y_true, self.__num_classes)
-            case _:
-                raise ValueError("`average` must be 'macro' or 'weighted'")
+        # Ensure all unique values are present
+        __restrict_if_nunique__(
+            y, 
+            prediction, 
+            num_classes = self.__num_classes
+        )
+        
+        # Compute AUC
+        recall = metrics.recall_score(
+            y, 
+            prediction,
+            average = self.__average,
+            sample_weight = self.__sample_weight,
+            labels= self.__labels,
+            zero_division=self.__zero_division,
+            pos_label=self.__pos_label
+            )
+                        
+        # Return as [[value]] array
+        return np.array([[recall]]).round(decimals=4)
+        
+        
+        
 
 class Jaccard(Metric):
     def __init__(self, name = None, **kwargs):
@@ -441,23 +374,17 @@ class Auc(Metric):
         prediction: ArrayLike, 
         y: ArrayLike,
     ):
-        return self.__auc(
-            prediction,
-            y
+        # Ensure all unique values are present
+        __restrict_if_nunique__(
+            y, 
+            prediction, 
+            num_classes = self.__num_classes
         )
-        
-    def __auc(self, y_score: ArrayLike, y_true: ArrayLike):
-        
-        if len(np.unique(y_true)) < self.__num_classes:
-            return np.array([0.0], dtype=np.float32)
-
-        if not np.all(np.isfinite(y_score)):
-            return np.array([0.0], dtype=np.float32)
         
         # Compute AUC
         auc = metrics.roc_auc_score(
-            y_true, 
-            y_score,
+            y, 
+            prediction,
             average = self.__average,
             sample_weight = self.__sample_weight,
             max_fpr = self.__max_fpr,
@@ -467,6 +394,7 @@ class Auc(Metric):
                         
         # Return as [[value]] array
         return auc.reshape(-1, 1).squeeze().round(decimals=4)
+        
 
 
 class MeanSquaredError(Metric):
