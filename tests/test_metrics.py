@@ -47,12 +47,13 @@ class TestMetrics(ut.TestCase):
             np.array([1, 0, 1]), 
             np.array([1, 1, 1])
             )
-        self.assertEqual(acc, 0.6667)
+        print(acc)
+        self.assertEqual(acc, np.array([0.6667]))
         
         y_true = np.array([0, 1, 2, 0, 1, 2, 1, 1])
         y_pred = np.array([0, 2, 1, 0, 0, 1, 2, 0])
         acc = accuracy(y_pred, y_true)
-        self.assertEqual(acc, 0.25)
+        self.assertEqual(acc, np.array([0.25]))
         
         
     def test_recall_metric(self):
@@ -109,7 +110,7 @@ class TestMetrics(ut.TestCase):
         y_true = np.array([0, 1, 2, 0, 1, 2])
         y_pred = np.array([0, 2, 1, 0, 0, 1])
         f1_val = f1(y_pred, y_true)
-        self.assertEqual(f1_val, 0.2666)
+        self.assertEqual(f1_val, np.array([[0.2667]]))
     
     
         
@@ -183,7 +184,8 @@ class TestMetrics(ut.TestCase):
         y_true = self.cancer_y
         y_pred = self.clf.predict_proba(self.cancer_x)[:, 1]
         auc_val = auc(y_pred, y_true)
-        self.assertEqual(auc_val, round(test_case, 4))
+        print(auc_val, test_case)
+        np.testing.assert_almost_equal(auc_val, test_case, decimal=4)
         
     def test_sequential_using_iris_dataset(self):
         """
@@ -207,7 +209,7 @@ class TestMetrics(ut.TestCase):
         self.iris_model.compile(
             optimizer="adam",
             loss="nll",
-            metrics=[Auc()],
+            metrics=[Auc(multi_class="ovr", num_classes=3)],
         )
 
         history = self.iris_model.fit(

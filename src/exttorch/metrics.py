@@ -11,17 +11,35 @@ import torch
 def __mean__(value: np.ndarray, rounded_by = 4):
     return np.array([np.mean(value).round(decimals=rounded_by)])
 
+def __return_value__(value: float | np.ndarray) -> np.ndarray:
+    """
+    Returns the value as a numpy array
+    """
+    if isinstance(value, np.floating):
+        return round(value, 4)
+    elif isinstance(value, float):
+        return np.array([value]).round(decimals=4)
+    else:
+        raise TypeError("Value must be a numpy array or float")
+    
+
 
 def __restrict_if_nunique__(
     y: np.ndarray,
     prediction: np.ndarray,
     num_classes: int = 2,
 ):
-    if len(np.unique(y)) < num_classes:
-            return np.array([0.0], dtype=np.float32)
+    y_unique = np.unique(y)
+    pred_unique = np.unique(prediction)
+    
+    if len(prediction.shape) == 2 and prediction.shape[1] > 1 and prediction.shape[1] != len(y_unique):
+        return True
+    
+    if len(y_unique) < num_classes or len(pred_unique) < num_classes:
+        return True
 
     if not np.all(np.isfinite(prediction)):
-        return np.array([0.0], dtype=np.float32)
+        return True
 
 
 class Metric(metaclass=__abc__):
@@ -40,6 +58,7 @@ class Metric(metaclass=__abc__):
         device: torch.device = None,
         ) -> torch.Tensor:
         ...
+        
         
 class Accuracy(Metric):
     """
@@ -107,7 +126,7 @@ class F1Score(Metric):
         zero_division: int = 0,
         pos_label: int = 1,
         labels: ArrayLike | None = None,
-        num_classes: int = 3
+        num_classes: int = 2
         ):
         """
         Computes the F1 score for binary or multi-class classification.
@@ -143,7 +162,7 @@ class F1Score(Metric):
         )
         
         # Compute AUC
-        recall = metrics.f1_score(
+        f1 = metrics.f1_score(
             y, 
             prediction,
             average = self.__average,
@@ -154,7 +173,7 @@ class F1Score(Metric):
             )
                         
         # Return as [[value]] array
-        return np.array([[recall]]).round(decimals=4)
+        return __return_value__(f1)
         
 class MatthewsCorrcoef(Metric):
     def __init__(self, name = None, **kwargs):
@@ -177,7 +196,7 @@ class Recall(Metric):
         zero_division: int = 0,
         pos_label: int = 1,
         labels: ArrayLike | None = None,
-        num_classes: int = 3
+        num_classes: int = 2
         ):
         """
         Compute recall for binary or multi-class classification.
@@ -225,7 +244,7 @@ class Recall(Metric):
             )
                         
         # Return as [[value]] array
-        return np.array([[recall]]).round(decimals=4)
+        return __return_value__(recall)
         
         
         
@@ -243,7 +262,16 @@ class Jaccard(Metric):
         return jaccard_score(prediction, y, **self.__kwargs)
 
 class Precision(Metric):
-    def __init__(self, name = None,  average: str = "binary", num_classes: int = 2):
+    def __init__(
+        self, 
+        name = None,
+        average: Literal['micro', 'macro', 'samples', 'weighted', 'binary'] | None = "binary",
+        sample_weight: ArrayLike | None = None,
+        zero_division: int = 0,
+        pos_label: int = 1,
+        labels: ArrayLike | None = None,
+        num_classes: int = 2
+        ):
         """
         Compute precision for binary or multi-class classification.
         Args:
@@ -256,80 +284,36 @@ class Precision(Metric):
         """
         self.__average = average
         self.__num_classes = num_classes
-        self.__device: torch.device = None
         self.name = 'Precision' if name is None else name
+        self.__sample_weight: ArrayLike | None = sample_weight
+        self.__zero_division: int = zero_division
+        self.__pos_label: int = pos_label
+        self.__labels: ArrayLike | None = labels
 
     def __str__(self) -> str:
         return self.name
-    
-    def __precision_multiclass(self, y_pred, y_true, num_classes) -> torch.Tensor:
-        """
-        Compute macro-averaged precision for multi-class classification.
 
-        Args:
-        y_pred (torch.Tensor): Predicted class indices.
-        y_true (torch.Tensor): Ground truth class indices.
-        num_classes (int): Number of classes.
-
-        Returns:
-            -1 by 1 torch.Tensor: Macro-averaged precision score.
-        """
+    def __call__(self, prediction: torch.Tensor, y: torch.Tensor):
+        # Ensure all unique values are present
+        __restrict_if_nunique__(
+            y, 
+            prediction, 
+            num_classes = self.__num_classes
+        )
         
-        precision_per_class = []
-        
-        for c in range(num_classes):
-            TP = ((y_pred == c) & (y_true == c)).sum().float()
-            FP = ((y_pred == c) & (y_true != c)).sum().float()
-            
-            class_precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor([0.0])
-            precision_per_class.append(class_precision.view(-1, 1))
-            
-        precision_per_class = torch.cat(precision_per_class, dim=0).to(self.__device)
-        return __mean__(precision_per_class)
-    
-    def __precision(self, preds, targets):
-        """
-        Compute precision for binary classification.
-        
-        Args:
-        preds (torch.Tensor): Model predictions (probabilities or logits).
-        targets (torch.Tensor): Ground truth labels (0 or 1).
-        threshold (float): Threshold to convert probabilities to binary predictions.
-
-        Returns:
-        float: Precision score.
-        """
-        if len(torch.unique(targets)) > 2:
-            raise ValueError("Precision was called with binary average but targets are multiclass")
-        
-        # True Positives (TP): Predicted 1, Actual 1
-        TP = ((preds == 1) & (targets == 1)).sum().float()
-
-        # False Positives (FP): Predicted 1, Actual 0
-        FP = ((preds == 1) & (targets == 0)).sum().float()
-    
-        # Avoid division by zero
-        precision = TP / (TP + FP) if (TP + FP) > 0 else torch.tensor([0.0])
-
-        return precision.round(decimals=4).view(-1, 1)  # Reshape to -1 by 1 tensor
-
-    def __call__(self, prediction: torch.Tensor, y: torch.Tensor, device: torch.device):
-        # Ensure tensors are float
-        y_true = y.squeeze().float()
-        y_pred = prediction.squeeze().float()
-        
-        # Set the device.
-        self.__device = device
-
-        match self.__average:
-            case "binary":
-                return self.__precision(y_pred, y_true)
-            case "macro":
-                return self.__precision_multiclass(y_pred, y_true, self.__num_classes)
-            case "weighted":
-                return self.__precision_multiclass(y_pred, y_true, self.__num_classes)
-            case _:
-                raise ValueError("`average` must be 'macro' or 'weighted'")
+        # Compute AUC
+        recall = metrics.precision_score(
+            y, 
+            prediction,
+            average = self.__average,
+            sample_weight = self.__sample_weight,
+            labels= self.__labels,
+            zero_division=self.__zero_division,
+            pos_label=self.__pos_label
+            )
+                        
+        # Return as [[value]] array
+        return __return_value__(recall)
 
 class TopKAccuracy(Metric):
     def __init__(self, name = None, **kwargs):
@@ -375,11 +359,14 @@ class Auc(Metric):
         y: ArrayLike,
     ):
         # Ensure all unique values are present
-        __restrict_if_nunique__(
+        restricted = __restrict_if_nunique__(
             y, 
             prediction, 
             num_classes = self.__num_classes
         )
+        
+        if restricted:
+            return np.array([[0.0]])
         
         # Compute AUC
         auc = metrics.roc_auc_score(
@@ -393,7 +380,7 @@ class Auc(Metric):
             )
                         
         # Return as [[value]] array
-        return auc.reshape(-1, 1).squeeze().round(decimals=4)
+        return __return_value__(auc)
         
 
 

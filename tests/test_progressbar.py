@@ -19,13 +19,17 @@ class TestProgressBar(ut.TestCase):
             verbose="verbose",
             show_diff_color=True,
             style="square",
+            epochs=2
         )
 
         # Set the total number of iterations
         total_iterations = 100
         progress_bar.total = total_iterations
-
-        # Simulate the progress
-        for i in range(total_iterations):
-            time.sleep(0.1)
-            progress_bar.update(i + 1, [("loss", i / 0.3223), ("accuracy", i / 0.3220)])
+        
+        for epoch in range(2):
+            progress_bar.add_epoch = epoch
+            
+            # Simulate the progress
+            for i in range(total_iterations):
+                time.sleep(0.01)
+                progress_bar.update(i + 1, [("loss", i / 0.3223), ("accuracy", i / 0.3220)])
