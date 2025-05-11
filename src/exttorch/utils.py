@@ -1,252 +1,450 @@
 # Holy, holy, holy is the LORD of host, the whole earth is full of his glory.
 
 # Importing necessary modules
+import sys
 import time
-import base64
-from importlib.resources import files
-from IPython.display import HTML, display
+from typing import List, Tuple, Literal
+from dataclasses import dataclass
+import itertools
 
-def _is_notebook():
-    try:
-        from IPython import get_ipython
-        ip = get_ipython()
-        if ip is None:
-            return False
-        return 'IPKernelApp' in ip.config
-    except:
-        return False
+
+@dataclass
+class TimeEstimate:
+    elapsed: int
+    milliseconds: int
+
+
+@dataclass
+class BarStyle:
+    fill_style: str
+    empty_style: str
+
 
 class ProgressBar:
+    """
+    A class represents a progress bar for tracking the progress of a model training, validation and predict.
+    """
+
+    # Constructor
     def __init__(
-        self,
-        bar_width=40,
-        show_val_metrics=False,
-        verbose=None,
-        show_diff_color=False,
-        empty_color="\033[90m",
-        progress_color="\033[92m",
-        style="default",
-        show_check_mark=True,
-        show_suffix=True,
-        epochs: int | None = None
-    ):
-        self._total = 0
-        self.length = bar_width
-        self.current = 0
-        self.start_time = time.time()
-        self.progress_color = (
-            progress_color if not _is_notebook()
-            else "<span style='color: lightgreen;'>"
+        self, 
+        bar_width: int = 40, 
+        epochs: int | None = None,
+        fill_style: Literal["━", "◉", "◆", "●", "█", "▮", "=", "#", "▶", "■", "➤"] = "━",
+        empty_style: Literal["━", "◎", "◇", "○", "░", "▯", "-", "▒", ".", "▷", "□"] = "━",
+        fill_color: str = "\033[92m", # Green
+        empty_color: str = "\033[90m", # Grey
+        percentage_colors: List[str] | None = None,
+        progress_type: Literal[
+            "bar", "pie", "squares", 
+            "cross", "arrows", "clock", "bounce", 
+            "moon", "triangles"] = "bar",
+        verbose: Literal[
+            None, 0, 1, 2, 
+            "full", "hide-epoch", 
+            "hide-batch-size",
+            "hide-metrics",
+            "hide-train-metrics",
+            "hide-val-metrics",
+            "hide-progress-bar",
+            "hide-time-estimation",
+            "percentage",
+            "only_percentage",
+            "only_epochs", 
+            "only_batch_size", 
+            "only_metrics", 
+            "only_train_metrics", 
+            "only_val_metrics", 
+            "only_progress_bar", 
+            "only_time_estimation"
+            ] = "full",
+        ):
+        """
+        Initializes the ProgressBar with total iterations, prefix and length of the bar.
+
+        Args:
+            bar_width (int): Width of the progress bar.
+            epochs (int | None): Number of epochs. If None, no epoch information will be displayed.
+            fill_style (str): Character used to fill the progress bar.
+            empty_style (str): Character used to represent empty space in the progress bar.
+            fill_color (str): Color code for the filled part of the progress bar.
+            empty_color (str): Color code for the empty part of the progress bar.
+            verbose (str | None): Verbosity level for displaying progress information.
+                - None: No verbosity.
+                - 0: Only current iteration and total iterations.
+                - 1: Current iteration and total iterations with progress bar.
+                - 2: Current iteration and total iterations with progress bar, elapsed time and milliseconds.
+                - "full": Full verbosity with all information.
+                - "hide-epoch": Hide epoch information.
+                - "hide-batch-size": Hide batch size information.
+                - "hide-metrics": Hide metrics information.
+                - "hide-train-metrics": Hide training metrics information.
+                - "hide-val-metrics": Hide validation metrics information.
+                - "hide-progress-bar": Hide progress bar.
+                - "hide-time-estimation": Hide time estimation.
+                - "percentage": Show percentage completion.
+                - "only_percentage": Show only percentage completion.
+                - "only_epochs": Show only epoch information.
+                - "only_batch_size": Show only batch size information.
+                - "only_metrics": Show only metrics information.
+                - "only_train_metrics": Show only training metrics information.
+                - "only_val_metrics": Show only validation metrics information.
+                - "only_progress_bar": Show only progress bar.
+                - "only_time_estimation": Show only time estimation.
+        """
+        
+        # Validate parameters
+        self.param_validation(
+            fill_style=fill_style,
+            empty_style=empty_style,
+            fill_color=fill_color,
+            empty_color=empty_color,
+            bar_width=bar_width,
+            verbose=verbose,
+            percentage_colors=percentage_colors,
+            epochs=epochs,
         )
-        self.progress_empty_color = (
-            empty_color if not _is_notebook()
-            else "<span style='color: darkgray;'>"
-        )
-        self.reset_color = "\033[0m" if not _is_notebook() else "</span>"
-        self.show_val_metrics = show_val_metrics
-        self.suffix = ""
-        self.style = style
-        self.last_update_time = self.start_time
-        self.verbose = verbose
-        self.check_mark = show_check_mark
-        self.show_diff_color = show_diff_color
-        self.show_suffix = show_suffix
-        self.__pre_epoch = 1
-        self.epochs = epochs
-
-        # Grab the exttorch package root as a Traversable
-        pkg_root = files("exttorch")
-
-        # Navigate into the data-only folder
-        gif_file = pkg_root.joinpath("assets", "spinner.gif")
-
-        # Read the bytes
-        data = gif_file.read_bytes()
-        self.loader_img = base64.b64encode(data).decode()
-
-
-        if _is_notebook():
-            self._handle = display(HTML("<pre></pre>"), display_id=True)
-
+        
+        # Initialize parameters
+        self.__total = None
+        self.__bar_width = bar_width
+        self.__current_value = 0
+        self.__epochs = epochs
+        self.__start_time = time.time()
+        self.__last_update_start_time = time.time()
+        self.__last_time_estimate = None
+        self.__fill_style = fill_style
+        self.__empty_style = empty_style
+        self.__fill_color = fill_color
+        self.__empty_color = empty_color
+        self.__reset_color = "\033[0m"  # Reset color
+        self.__verbose = verbose
+        self.__percentage_colors = percentage_colors
+        self.__percent = 0
+        self.__progress_type = progress_type
+        self.__pre_epoch = None
+        
+        # Store original sequences
+        self.__bounce_seq = ['▇', '▁','▃','▄','▅','▆','▇','█','▇','▆','▅','▄','▃']
+        self.__square_seq = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        self.__clock_seq = ['◴','◷','◶','◵']
+        self.__arrows_seq = ['←','↖','↑','↗','→','↘','↓','↙']
+        self.__triangles_seq = ['◢','◣','◤','◥']
+        self.__cross_seq = ['✶','✸','✹','✺','✻','✼','✽','✾']
+        self.__moon_seq = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘']
+        self.__pie_seq = ['◐', '◓', '◑', '◒']
+        
+        # Initialize cycles
+        self.__pie = itertools.cycle(self.__pie_seq)
+        self.__square = itertools.cycle(self.__square_seq)
+        self.__bounce = itertools.cycle(self.__bounce_seq)
+        self.__clock = itertools.cycle(self.__clock_seq)
+        self.__arrows = itertools.cycle(self.__arrows_seq)
+        self.__triangles = itertools.cycle(self.__triangles_seq)
+        self.__cross = itertools.cycle(self.__cross_seq)
+        self.__moon = itertools.cycle(self.__moon_seq)
+        
     @property
     def total(self):
-        return self._total
-
+        return self.__total
+    
     @total.setter
-    def total(self, value):
-        if not isinstance(value, int) or value <= 0:
+    def total(self, value: int):
+        if value <= 0:
             raise ValueError("Total must be a positive integer.")
-        self._total = value
-
+        self.__total = value
+    
     @property
-    def add_epoch(self) -> int:
-        return self.__pre_epoch
-
-    @add_epoch.setter
-    def add_epoch(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise ValueError(f"Except an int but received `{type(value)}`")
-
-        self.__pre_epoch = value + 1
+    def __reset_cycles(self):
+        """Reset all animation cycles to their first values"""
+        self.__bounce = itertools.cycle(self.__bounce_seq)
+        self.__square = itertools.cycle(self.__square_seq)
+        self.__clock = itertools.cycle(self.__clock_seq)
+        self.__arrows = itertools.cycle(self.__arrows_seq)
+        self.__triangles = itertools.cycle(self.__triangles_seq)
+        self.__cross = itertools.cycle(self.__cross_seq)
+        self.__moon = itertools.cycle(self.__moon_seq)
+        self.__pie = itertools.cycle(self.__pie_seq)
         
-        if not _is_notebook():
-            if self.verbose is not None:
-                print(f"\033[1mEpoch {self.__pre_epoch}/{self.epochs}\033[0m")
+    def param_validation(
+        self,
+        fill_style: str,
+        empty_style: str,
+        fill_color: str,
+        empty_color: str,
+        bar_width: int,
+        verbose: str | int | None,
+        percentage_colors: List[str] | None = None,
+        epochs: int | None = None,
+        ):
+        """
+        Validates the parameters for the ProgressBar class.
+        """
+        symbols = ["━", "◉", "◆", "●", "█", "▮", "=", "#", "◎", "◇", "○", "░", "▯", "-", "▒", ".",
+                "▶", "▷", "■", "□", "➤"
+                ]
+        if fill_style not in symbols:
+            raise ValueError(f"Invalid fill_style. Choose from {symbols}.")
+        if empty_style not in symbols:
+            raise ValueError(f"Invalid empty_style. Choose from {symbols}.")
+        verbose_lst = [None, 0, 1, 2, "full", "hide-epoch", 
+                    "hide-batch-size", "hide-metrics", 
+                    "hide-train-metrics", "hide-val-metrics", 
+                    "hide-progress-bar", "hide-time-estimation"
+                    "percentage", "only_percentage", "only_epochs", 
+                    "only_batch_size", "only_metrics", 
+                    "only_train_metrics", "only_val_metrics", 
+                    "only_progress_bar", "only_time_estimation"
+                    ]
+        if verbose not in verbose_lst:
+            raise ValueError(f"Invalid verbose. Choose from {verbose_lst}.")
+        if not fill_color.startswith("\033[") or not fill_color.endswith("m"):
+            raise ValueError("Invalid fill_color. Must be a valid ANSI color code.")
+        if not empty_color.startswith("\033[") or not empty_color.endswith("m"):
+            raise ValueError("Invalid empty_color. Must be a valid ANSI color code.")
+        if not isinstance(bar_width, int) or bar_width <= 0:
+            raise ValueError("Invalid bar_width. Must be a positive integer.")
+        if percentage_colors is not None and len(percentage_colors) != 4:
+            raise ValueError("Invalid percentage_colors. Must be a list of 4 color codes.")
+        if epochs is not None and not isinstance(epochs, int) and epochs <= 0:
+            raise ValueError("Invalid epochs. Must be a positive integer.")
 
-    def __format_bar(self, current, bar, elapsed_time, step_time, percent):
-        if percent == 100 and self.check_mark:
-            if _is_notebook():
-                done = "<span style='color: lightgreen;'> &check; </span>"
-            else:
-                done = f" {self.progress_color}✔️{self.reset_color} "
-        else:
-            # https://i.gifer.com/ZZ5H.gif
-            done = (
-                " ⏳ " if not _is_notebook()
-                else f" <img src='data:image/gif;base64,{self.loader_img}' height='20' style='vertical-align:middle;'> "
-            )
-        suffix = self.suffix if self.show_suffix else ""
-        if self.verbose is not None:
-            epoch = f"<strong>Epoch {self.__pre_epoch}/{self.epochs}</strong>\n" if _is_notebook() and self.epochs else ""
-        else:
-            epoch = None
+    def set_epoch(self, epoch: int):
+        """
+        Sets the current epoch.
 
-        format_map = {
-            "verbose": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
-            "silent": f"{epoch}{current}/{self.total}{done}{elapsed_time}s {step_time} {suffix}",
-            "silent_verbose": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time}",
-            "silent_verbose_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
-            "silent_epoch": f"{epoch}{current}/{self.total}{done}{bar} {elapsed_time}s {step_time} {suffix}",
-            "silent_epoch_suffix": f"{epoch}{current}/{self.total}{done}{suffix}",
-            None: None
-        }
-        return format_map.get(self.verbose, "Invalid verbose setting")
+        Args:
+            epoch (int): Current epoch number.
+        """
+        
+        if epoch > self.__epochs:
+            raise ValueError("Epoch exceeds the total number of epochs.")
+        
+        # Track epoch
+        self.__pre_epoch = epoch + 1
 
-    def __bar(self, filled_length, percent): 
-        style_chars = {
-            "default": "━",
-            "--": "-",
-            "==": "=",
-            "-=": "-" if percent <= 50 else "=",
-            "airplane": "➤",
-            "circle": "◯",
-            "square": "■",
-            "triangle": "▲",
-            "diamond": "◆",
-            "star": "★",
-            "heart": "♥",
-            "cross": "✖",
-        }
-        char = style_chars.get(self.style)
-        if not char:
-            raise ValueError("Invalid style option.")
+        if (
+            self.__epochs is not None and self.__verbose != "hide-epoch" 
+            and self.__verbose is not None and not self.__verbose.startswith("only")
+            and self.__verbose != 0
+            ):
+            print(f"\nEpoch {epoch + 1}/{self.__epochs}")
+        elif self.__verbose == "hide-epoch" or (
+            self.__verbose is not None and self.__verbose.startswith("only")):
+            print(f"\n")
 
-        return (
-            f"{self.progress_color}{char}{self.reset_color}" * filled_length +
-            f"{self.progress_empty_color}━{self.reset_color}" * (self.length - filled_length)
+    # Methods
+    def __bar_style(self) -> BarStyle:
+        """
+        Returns the style of the progress bar.
+
+        Returns:
+            str: Style of the progress bar.
+        """
+        color = self.__fill_color
+        
+        if self.__percentage_colors is not None:
+            if self.__percent <= 25:
+                color = self.__percentage_colors[0]
+            elif self.__percent <= 50:
+                color = self.__percentage_colors[1]
+            elif self.__percent <= 75:
+                color = self.__percentage_colors[2]
+            elif self.__percent <= 100:
+                color = self.__percentage_colors[3]
+                    
+        return BarStyle(
+            fill_style=f"{color}{self.__fill_style}{self.__reset_color}",
+            empty_style=f"{self.__empty_color}{self.__empty_style}{self.__reset_color}",
         )
 
-    def update(self, current, metric=None):
-        if metric and self.show_suffix:
-            self.suffix = " - ".join([f"{k}: {v:.4f}" for k, v in metric])
-            self.suffix = f" - {self.suffix}"
+    def __time_estimate(self, value: int, start_time: int) -> TimeEstimate:
+        """
+        Estimates the time remaining for the progress bar.
 
-        self.current_time = time.time()
-        elapsed = int(self.current_time - self.start_time)
-        step_time = int((self.current_time - self.last_update_time) * 1000)
-        self.last_update_time = self.current_time
+        Returns:
+            TimeEstimate: Estimated time remaining in seconds and milliseconds.
+        """
+        now = time.time()
+        elapsed = int(now - start_time)
+        milliseconds = int((elapsed / value) * 1000) if value > 0 else 0
+        return TimeEstimate(elapsed, milliseconds=milliseconds)
+    
+    def __selecting_verbose(
+        self,
+        bar: str,
+        elapsed: str,
+        milliseconds: str,
+        formatted_metrics: str,
+        percent: int,
+        ):
+        hide_train_metrics = formatted_metrics.split(" - ")
+        hide_train_metrics = " - ".join(list(filter(lambda x: "val" not in x, hide_train_metrics)))
+        hide_train_metrics = " - " + hide_train_metrics
+        
+        hide_val_metrics = formatted_metrics.split(" - ")
+        hide_val_metrics = " - ".join(list(filter(lambda x: "val" in x, hide_val_metrics)))
+        if self.__current_value == self.__total:
+            hide_val_metrics = " - " + hide_val_metrics
+        
+        verbose_style = {
+            "full": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "hide-epoch": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "hide-batch-size": f"\r{bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "hide-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}",
+            "hide-train-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{hide_val_metrics}",
+            "hide-val-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{hide_train_metrics}",
+            "hide-progress-bar": f"\r{self.__current_value}/{self.__total} - {elapsed} {milliseconds} - {formatted_metrics}",
+            "hide-time-estimation": f"\r{self.__current_value}/{self.__total} {bar} {formatted_metrics}",
+            "percentage": f"\r{percent}% {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "only_percentage": f"\r{percent}%",
+            "only_metrics": f"\r{formatted_metrics}",
+            "only_train_metrics": f"\r{hide_train_metrics}",
+            "only_val_metrics": f"\r{hide_val_metrics}",
+            "only_progress_bar": f"\r{bar}",
+            "only_time_estimation": f"\r{elapsed} {milliseconds}",
+            "only_batch_size": f"\r{self.__current_value}/{self.__total}",
+            1: f"\r{self.__current_value}/{self.__total}",
+            2: f"\r{self.__current_value}/{self.__total} {bar}",
+            3: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}",
+            4: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+        }
+        return verbose_style.get(self.__verbose)
+    
+    def __progress_symbol(
+        self, 
+        progress_type: str,
+        filled_length: int, 
+        empty_length: int, 
+        bar_style: BarStyle
+        ):
+        match progress_type:
+            case "bar":
+                return f"{bar_style.fill_style}" * filled_length + f"{bar_style.empty_style}" * empty_length
+            case "pie":
+                next_pie = next(self.__pie)
+                return f"{next_pie}"
+            case "squares":
+                next_square = next(self.__square)
+                return f"{next_square}"
+            case "bounce":
+                next_bounce = next(self.__bounce)
+                return f"{next_bounce}"
+            case "clock":
+                next_clock = next(self.__clock)
+                return f"{next_clock}"
+            case "arrows":
+                next_arrows = next(self.__arrows)
+                return f"{next_arrows}"
+            case "triangles":
+                next_triangles = next(self.__triangles)
+                return f"{next_triangles}"
+            case "cross":
+                next_cross = next(self.__cross)
+                return f"{next_cross}"
+            case "moon":
+                next_moon = next(self.__moon)
+                return f"{next_moon}"
+            case _:
+                raise ValueError(f"Invalid progress_type: {progress_type}. Choose from ['bar', 'pie', 'squares', 'bounce', 'clock', 'arrows', 'triangles', 'cross', 'moon'].")
+                
 
-        self.current = current
-        filled = int(self.length * self.current // self.total)
-        percent = self.current / self.total * 100
+    def __progress_contents(
+        self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]]
+    ) -> str:
+        """
+        Returns the progress bar string with metrics.
 
-        bar = self.__bar(filled, percent)
-        progress = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", percent)
-
-        if _is_notebook():
-            if progress is not None:
-                self._handle.update(HTML(f"<pre>{progress}</pre>"))
-            if self.current == self.total and not self.show_val_metrics:
-                self.new_epoch()
-        else:
-            if progress is not None:
-                print(f"\r{progress}", end="", flush=True)
-            if self.show_val_metrics:
-                if self.current - 1 == self.total:
-                    # Rest the start time for the next progress bar
-                    self.new_epoch()
-                    print()
-            else:
-                if self.current == self.total:
-                    # Rest the start time for the next progress bar
-                    self.new_epoch()
-                    print()
+        Args:
+            metrics (List[Tuple[str, float]]): List of tuples containing metric name and value.
 
 
-    def last_update(self, metric=None):
-        if not self.show_val_metrics:
-            raise ValueError("show_val_metrics must be True to use last_update")
+        Returns:
+            str: Formatted string of progress bar.
+        """
+        formatted_metrics = " - ".join(
+            [f"{name}: {value:.4f}" for name, value in metrics]
+        )
 
-        if metric:
-            val_suffix = " - ".join([f"{k}: {v:.4f}" for k, v in metric])
-            self.suffix += f" - {val_suffix}"
+        # Calculate the number of filled and empty slots in the progress bar
+        filled_length = int(self.__bar_width * self.__current_value // self.__total)
+        empty_length = self.__bar_width - filled_length
+        # Bar styles
+        bar_style = self.__bar_style()
+        bar = self.__progress_symbol(
+            progress_type=self.__progress_type,
+            filled_length=filled_length,
+            empty_length=empty_length,
+            bar_style=bar_style,
+        )
+        percent = int((self.__current_value / self.__total) * 100)
+        self.__percent = percent
 
-        elapsed = int(time.time() - self.start_time)
-        step_time = int((time.time() - self.last_update_time) * 1000)
-        filled = int(self.length * self.current // self.total)
-        percent = self.current / self.total * 100
+        elapsed = f"{time_estimate.elapsed}s"
+        milliseconds = f"{time_estimate.milliseconds}ms/step"
 
-        bar = self.__bar(filled, percent)
-        final = self.__format_bar(self.current, bar, elapsed, f"{step_time}ms/step", 100)
+        return self.__selecting_verbose(
+            bar=bar,
+            elapsed=elapsed,
+            milliseconds=milliseconds,
+            formatted_metrics=formatted_metrics,
+            percent=percent,
+        )
 
-        if _is_notebook():
-            if final is not None:
-                self._handle.update(HTML(f"<pre>{final}</pre>"))
-            self.new_epoch()
-        else:
-            if final is not None:
-                print(f"\r{final}", end="", flush=True)
-            print()
+    def __render(self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]]):
+        """
+        Renders the progress bar with metrics.
 
-    def new_epoch(self):
-        self.current = 0
-        if self.show_val_metrics:
-            self.start_time = time.time()
-            self.last_update_time = self.start_time
-            self.suffix = ""
+        Args:
+            metrics (List[Tuple[str, float]]): List of tuples containing metric name and value.
+        """
+        content = self.__progress_contents(time_estimate, metrics)
+        
+        if self.__verbose is not None and self.__verbose !=  "only_epochs" and self.__verbose != 0:
+            sys.stdout.write(content)
+            sys.stdout.flush()
 
-        if _is_notebook():
-            self._handle = display(HTML("<pre></pre>"), display_id=True)
+    def update(self, current_value: int, metrics: List[Tuple[str, float]]):
+        """
+        Updates the progress bar with new metrics.
 
+        Args:
+            metrics (List[Tuple[str, float]]): List of tuples containing metric name and value.
+        """
+        self.__current_value = current_value
 
-    def __enter__(self):
-        return self
+        time_estimate = self.__time_estimate(current_value, self.__start_time)
+        self.__render(time_estimate, metrics)
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            self.stop()
+        if self.__current_value == self.__total:
+            self.__last_time_estimate = time_estimate
+            self.__start_time = time.time()
+            self.__reset_cycles
 
+    def __reset_progress(self):
+        """
+        Resets the progress bar.
+        """
+        self.__start_time = time.time()
+        self.__last_update_start_time = time.time()
+        self.__reset_cycles
 
-    def stop(self, error_message=None):
-        if _is_notebook():
-            done = "<span style='color: red;'>✖</span>"
-        else:
-            done = "\033[91m✖\033[0m"  # ANSI red X
+    def last_update(self, current_value, metrics: List[Tuple[str, float]]):
+        """
+        Finishes the progress bar and resets it.
+        """
+        time_estimate = self.__time_estimate(
+            current_value, self.__last_update_start_time
+        )
+        time_estimate = TimeEstimate(
+            elapsed=self.__last_time_estimate.elapsed + time_estimate.elapsed,
+            milliseconds=self.__last_time_estimate.milliseconds
+            + time_estimate.milliseconds,
+        )
 
-        filled_length = int(self.length * self.current // max(self.total, 1))
-        percent = self.current / max(self.total, 1) * 100 if self.total else 0
-
-        bar = self.__bar(filled_length, percent)
-
-        epoch = f"Epoch {self.__pre_epoch}/{self.epochs}\n" if _is_notebook() and self.epochs else ""
-
-        # Custom message for notebook or terminal
-        message = f"{epoch}{self.current}/{self.total} {done} {bar} {self.suffix}"
-        if error_message:
-            message += f" - {error_message}"
-
-        if _is_notebook() and self.verbose is not None:
-            self._handle.update(HTML(f"<pre>{message}</pre>"))
-        else:
-            if self.verbose is not None:
-                print(message)
+        self.__render(time_estimate, metrics)
+        sys.stdout.flush()
+        self.__reset_progress()
+        
+        if self.__pre_epoch == self.__epochs:
+            print("\n")

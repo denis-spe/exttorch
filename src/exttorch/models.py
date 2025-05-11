@@ -4,7 +4,7 @@
 import torch as __torch__
 from torch import nn as __nn__
 from typing import Any as __Any__
-from typing import List as __List__
+from typing import List as __List__, Literal as __Literal__
 from exttorch.losses import Loss as __Loss__
 from exttorch._data_handle import DataHandler as __DataHandler__
 from exttorch._metrics_handles import MetricStorage as __MetricStorage__
@@ -101,12 +101,7 @@ class Sequential(__nn__.Module):
         self.stop_training = False
         self.__device = None
         self.__verbose = None
-        self.__progressbar_color = None
-        self.__progressbar_empty_color = None
-        self.__progressbar_width = None
-        self.__progressbar_dff_color = None
-        self.__progressbar_style = None
-        self.__progressbar_show_check_mark = None
+        self.__val_data_size = None
 
     def get_weights(self):
         return self.__model.state_dict()
@@ -155,15 +150,16 @@ class Sequential(__nn__.Module):
         val_batch_size: int | None = None,
         validation_split: float = None,
         validation_data=None,
-        verbose: str | None = "verbose",
         callbacks: __List__[__Callback__] = None,
         nprocs: int = 1,
-        progressbar_width: int = 20,
-        progressbar_dff_color: bool = False,
-        progressbar_style: str = "default",
-        progressbar_show_check_mark: bool = True,
-        progressbar_color: str = "\033[92m",
-        progressbar_empty_color: str = "\033[90m",
+        progress_bar_width: int = 40,
+        progress_fill_style: __Literal__['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",
+        progress_empty_style: __Literal__['━', '◎', '◇', '○', '░', '▯', '-', '▒', '.', '▷', '□'] = "━",
+        progress_fill_color: str = "\033[92m",
+        progress_empty_color: str = "\033[90m",
+        progress_percentage_colors: __List__[str] | None = None,
+        progress_progress_type: __Literal__['bar', 'pie', 'squares', 'cross', 'arrows', 'clock', 'bounce', 'moon', 'triangles'] = "bar",
+        verbose: __Literal__[0, 1, 2, 'full', 'hide-epoch', 'hide-batch-size', 'hide-metrics', 'hide-train-metrics', 'hide-val-metrics', 'hide-progress-bar', 'hide-time-estimation', 'percentage', 'only_percentage', 'only_epochs', 'only_batch_size', 'only_metrics', 'only_train_metrics', 'only_val_metrics', 'only_progress_bar', 'only_time_estimation'] | None = "full",
         **dataloader_kwargs,
     ):
         """
@@ -229,33 +225,27 @@ class Sequential(__nn__.Module):
 
         self.stop_training = False
 
-        if (
-            validation_data and len(validation_data) > 0
-        ) or validation_split is not None:
-            show_val_metrics = True
-        else:
-            show_val_metrics = False
-
         # Instantiate the progress bar
         self.__progressbar = __ProgressBar__(
-            show_val_metrics=show_val_metrics,
+            bar_width=progress_bar_width,
+            fill_style=progress_fill_style,
+            empty_style=progress_empty_style,
+            fill_color=progress_fill_color,
+            empty_color=progress_empty_color,
+            percentage_colors=progress_percentage_colors,
+            progress_type=progress_progress_type,
             verbose=verbose,
-            bar_width=progressbar_width,
-            show_diff_color=progressbar_dff_color,
-            style=progressbar_style,
-            show_check_mark=progressbar_show_check_mark,
-            progress_color=progressbar_color,
-            empty_color=progressbar_empty_color,
             epochs=epochs
         )
 
         self.__verbose = verbose
-        self.__progressbar_width = progressbar_width
-        self.__progressbar_dff_color = progressbar_dff_color
-        self.__progressbar_style = progressbar_style
-        self.__progressbar_show_check_mark = progressbar_show_check_mark
-        self.__progressbar_color = progressbar_color
-        self.__progressbar_empty_color = progressbar_empty_color
+        self.__progress_bar_width=progress_bar_width
+        self.__progress_fill_style=progress_fill_style
+        self.__progress_empty_style=progress_empty_style
+        self.__progress_fill_color=progress_fill_color
+        self.__progress_empty_color=progress_empty_color
+        self.__progress_percentage_colors=progress_percentage_colors
+        self.__progress_progress_type=progress_progress_type
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -314,8 +304,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Add the epoch to progress bar.
-                    self.__progressbar.add_epoch = epoch
+                    # Set the epoch to progress bar.
+                    self.__progressbar.set_epoch(epoch)
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -352,6 +342,12 @@ class Sequential(__nn__.Module):
                     # Make a copy
                     metric_copy = train_metric.copy()
                     metric_copy.update(val_metric)
+                    
+                    # Last progress update
+                    self.__progressbar.last_update(
+                        self.__val_data_size, 
+                        metric_copy.items()
+                        )
 
                     # Handle the callbacks on epoch end
                     self.__handle_callbacks(
@@ -415,8 +411,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Add the epoch to progress bar.
-                    self.__progressbar.add_epoch = epoch
+                    # Set the epoch to progress bar.
+                    self.__progressbar.set_epoch(epoch)
 
                     # Train the train sample
                     train_metric = self.__train(
@@ -453,6 +449,12 @@ class Sequential(__nn__.Module):
                     # Make a copy
                     metric_copy = train_metric.copy()
                     metric_copy.update(val_metric)
+                    
+                    # Last progress update
+                    self.__progressbar.last_update(
+                        self.__val_data_size,
+                        metric_copy.items()
+                        )
 
                     # Handle the callbacks on epoch end
                     self.__handle_callbacks(
@@ -487,8 +489,8 @@ class Sequential(__nn__.Module):
                     # Handle the callbacks on epoch begin
                     self.__handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Add the epoch to progress bar.
-                    self.__progressbar.add_epoch = epoch
+                    # Set the epoch to progress bar.
+                    self.__progressbar.set_epoch(epoch)
 
                     # Train the full dataset
                     train_metric = self.__train(
@@ -518,11 +520,8 @@ class Sequential(__nn__.Module):
                 # Handle the callbacks on train end
                 self.__handle_callbacks("on_train_end", logs=history.history)
 
-        with self.__progressbar:
-            training()
+        training()
 
-        # Set the show validation metrics to False
-        self.__progressbar.show_val_metrics = False
 
         return history
 
@@ -538,15 +537,14 @@ class Sequential(__nn__.Module):
 
         # Instantiate the progress bar
         progressbar = ProgressBar(
-            show_val_metrics=False,
-            verbose=self.__verbose if verbose == "inherited" else verbose,
-            bar_width=self.__progressbar_width,
-            show_diff_color=self.__progressbar_dff_color,
-            style=self.__progressbar_style,
-            show_check_mark=self.__progressbar_show_check_mark,
-            progress_color=self.__progressbar_color,
-            empty_color=self.__progressbar_empty_color,
-            show_suffix=False,
+            bar_width=self.__progress_bar_width,
+            fill_style=self.__progress_fill_style,
+            empty_style=self.__progress_empty_style,
+            fill_color=self.__progress_fill_color,
+            empty_color=self.__progress_empty_color,
+            percentage_colors=self.__progress_percentage_colors,
+            progress_type=self.__progress_progress_type,
+            verbose=self.__verbose if verbose == "inherited" else verbose,            
         )
         # Set the progress bar total
         progressbar.total = len(x)
@@ -695,9 +693,6 @@ class Sequential(__nn__.Module):
             **kwargs,
         ).data_preprocessing(nprocs)
 
-        # # Get the data size
-        self.__train_data_size = len(data)
-
         # # Set the progress bar total
         self.__progressbar.total = len(data)
 
@@ -804,14 +799,14 @@ class Sequential(__nn__.Module):
 
         # Instantiate the progress bar
         eval_progressbar = __ProgressBar__(
-            show_val_metrics=False,
+            bar_width=self.__progress_bar_width,
+            fill_style=self.__progress_fill_style,
+            empty_style=self.__progress_empty_style,
+            fill_color=self.__progress_fill_color,
+            empty_color=self.__progress_empty_color,
+            percentage_colors=self.__progress_percentage_colors,
+            progress_type=self.__progress_progress_type,
             verbose=self.__verbose if verbose == "inherited" else verbose,
-            bar_width=self.__progressbar_width,
-            show_diff_color=self.__progressbar_dff_color,
-            style=self.__progressbar_style,
-            show_check_mark=self.__progressbar_show_check_mark,
-            progress_color=self.__progressbar_color,
-            empty_color=self.__progressbar_empty_color,
         )
 
         # Create the list for metric
@@ -840,6 +835,7 @@ class Sequential(__nn__.Module):
 
         # Set the progress bar total
         eval_progressbar.total = len(data)
+        self.__val_data_size = len(data)
 
         # Handle on validation begin
         self.__handle_callbacks("on_validation_begin")
@@ -875,14 +871,11 @@ class Sequential(__nn__.Module):
                 if self.__xm is not None:
                     self.__xm.mark_step()
 
-                if not self.__progressbar.show_val_metrics and verbose is not None:
+                if verbose is not None:
                     # Update the progress bar
                     eval_progressbar.update(
                         idx + 1, metric_storage.measurements.items()
                     )
-
-        if self.__progressbar.show_val_metrics:
-            self.__progressbar.last_update(metric_storage.measurements.items())
 
         # Final measurements
         measurements = metric_storage.measurements

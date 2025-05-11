@@ -11,6 +11,7 @@ import torch
 def __mean__(value: np.ndarray, rounded_by = 4):
     return np.array([np.mean(value).round(decimals=rounded_by)])
 
+
 def __return_value__(value: float | np.ndarray) -> np.ndarray:
     """
     Returns the value as a numpy array
@@ -22,7 +23,6 @@ def __return_value__(value: float | np.ndarray) -> np.ndarray:
     else:
         raise TypeError("Value must be a numpy array or float")
     
-
 
 def __restrict_if_nunique__(
     y: np.ndarray,
@@ -53,10 +53,9 @@ class Metric(metaclass=__abc__):
     @__abs__
     def __call__(
         self, 
-        prediction: torch.Tensor, 
-        y: torch.Tensor,
-        device: torch.device = None,
-        ) -> torch.Tensor:
+        prediction: np.ndarray, 
+        y: np.ndarray,
+        ) -> np.ndarray:
         ...
         
         
