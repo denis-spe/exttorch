@@ -40,7 +40,7 @@ class TestCallbacks(ut.TestCase):
             self.ir_x, self.ir_y,
             validation_data=[self.ir_x, self.ir_y],
             epochs=120,
-            callbacks=[EarlyStopping(patience=2)]
+            callbacks=[EarlyStopping(patience=3, monitor="val_acc")]
             )
         
         self.assertIsInstance(history.history, dict)
