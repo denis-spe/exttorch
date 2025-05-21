@@ -40,7 +40,7 @@ class TestPipeline(ut.TestCase):
             metrics=[Accuracy(), Recall(average='macro')],
             epochs=2,
             validation_split=0.2,
-            verbose=None,
+            verbose="full",
         )
         
         self.pipeline_model = Pipeline([

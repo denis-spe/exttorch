@@ -13,7 +13,7 @@ from exttorch.metrics import Accuracy
 from exttorch.optimizers import Adam
 from exttorch.losses import CrossEntropyLoss, NLLLoss
 import pandas as pd
-from exttorch._data_handle import DataHandler
+from exttorch.__data_handle import DataHandler
 from sklearn.preprocessing import MinMaxScaler
 
 
@@ -59,8 +59,8 @@ class TestSequential(ut.TestCase):
             epochs=2,
             # batch_size=1,
             validation_data = (self.ir_x, self.ir_y),
-            verbose="verbose",
-            progressbar_style="heart"
+            verbose="full",
+            progress_fill_style="="
             )
         
         print(self.iris_model.predict(self.ir_x))

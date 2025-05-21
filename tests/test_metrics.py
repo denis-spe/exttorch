@@ -26,7 +26,7 @@ from exttorch.metrics import (
     )
 
 import pandas as pd
-from exttorch._data_handle import DataHandler
+from exttorch.__data_handle import DataHandler
 
 class TestMetrics(ut.TestCase):
     def setUp(self):

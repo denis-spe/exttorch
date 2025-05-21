@@ -324,7 +324,7 @@ class TopKAccuracy(Metric):
 
     def __call__(self, y, proba):
         # Import libraries
-        from ._metrics_handles import handle_probability
+        from .__metrics_handles import handle_probability
         from sklearn.metrics import top_k_accuracy_score
 
         proba = handle_probability(proba)

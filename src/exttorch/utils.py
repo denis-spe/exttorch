@@ -275,28 +275,34 @@ class ProgressBar:
         bar: str,
         elapsed: str,
         milliseconds: str,
-        formatted_metrics: str,
+        formatted_metrics: str | None,
         percent: int,
         ):
-        hide_train_metrics = formatted_metrics.split(" - ")
-        hide_train_metrics = " - ".join(list(filter(lambda x: "val" not in x, hide_train_metrics)))
-        hide_train_metrics = " - " + hide_train_metrics
+        if formatted_metrics is not None:
+            hide_train_metrics = formatted_metrics.split(" - ")
+            hide_train_metrics = " - ".join(list(filter(lambda x: "val" not in x, hide_train_metrics)))
+            hide_train_metrics = " - " + hide_train_metrics
+            
+            hide_val_metrics = formatted_metrics.split(" - ")
+            hide_val_metrics = " - ".join(list(filter(lambda x: "val" in x, hide_val_metrics)))
+            if self.__current_value == self.__total:
+                hide_val_metrics = " - " + hide_val_metrics
+        else:
+            hide_train_metrics = ""
+            hide_val_metrics = ""
         
-        hide_val_metrics = formatted_metrics.split(" - ")
-        hide_val_metrics = " - ".join(list(filter(lambda x: "val" in x, hide_val_metrics)))
-        if self.__current_value == self.__total:
-            hide_val_metrics = " - " + hide_val_metrics
+        formatted_metrics = f" - {formatted_metrics}" if formatted_metrics is not None else ""
         
         verbose_style = {
-            "full": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
-            "hide-epoch": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
-            "hide-batch-size": f"\r{bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "full": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
+            "hide-epoch": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
+            "hide-batch-size": f"\r{bar} {elapsed} {milliseconds}{formatted_metrics}",
             "hide-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}",
             "hide-train-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{hide_val_metrics}",
             "hide-val-metrics": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{hide_train_metrics}",
-            "hide-progress-bar": f"\r{self.__current_value}/{self.__total} - {elapsed} {milliseconds} - {formatted_metrics}",
+            "hide-progress-bar": f"\r{self.__current_value}/{self.__total} - {elapsed} {milliseconds}{formatted_metrics}",
             "hide-time-estimation": f"\r{self.__current_value}/{self.__total} {bar} {formatted_metrics}",
-            "percentage": f"\r{percent}% {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            "percentage": f"\r{percent}% {bar} {elapsed} {milliseconds}{formatted_metrics}",
             "only_percentage": f"\r{percent}%",
             "only_metrics": f"\r{formatted_metrics}",
             "only_train_metrics": f"\r{hide_train_metrics}",
@@ -307,7 +313,7 @@ class ProgressBar:
             1: f"\r{self.__current_value}/{self.__total}",
             2: f"\r{self.__current_value}/{self.__total} {bar}",
             3: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}",
-            4: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds} - {formatted_metrics}",
+            4: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
         }
         return verbose_style.get(self.__verbose)
     
@@ -350,7 +356,7 @@ class ProgressBar:
                 
 
     def __progress_contents(
-        self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]]
+        self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]] | None
     ) -> str:
         """
         Returns the progress bar string with metrics.
@@ -362,9 +368,12 @@ class ProgressBar:
         Returns:
             str: Formatted string of progress bar.
         """
-        formatted_metrics = " - ".join(
-            [f"{name}: {value:.4f}" for name, value in metrics]
-        )
+        formatted_metrics = None
+        
+        if metrics is not None:
+            formatted_metrics = " - ".join(
+                [f"{name}: {value:.4f}" for name, value in metrics]
+            )
 
         # Calculate the number of filled and empty slots in the progress bar
         filled_length = int(self.__bar_width * self.__current_value // self.__total)
@@ -391,7 +400,7 @@ class ProgressBar:
             percent=percent,
         )
 
-    def __render(self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]]):
+    def __render(self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]] | None):
         """
         Renders the progress bar with metrics.
 
@@ -404,7 +413,7 @@ class ProgressBar:
             sys.stdout.write(content)
             sys.stdout.flush()
 
-    def update(self, current_value: int, metrics: List[Tuple[str, float]]):
+    def update(self, current_value: int, metrics: List[Tuple[str, float]] | None = None):
         """
         Updates the progress bar with new metrics.
 

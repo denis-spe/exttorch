@@ -15,10 +15,9 @@ class TestProgressBar(ut.TestCase):
         # Initialize the ProgressBar
         progress_bar = ProgressBar(
             bar_width=20,
-            show_val_metrics=False,
-            verbose="verbose",
-            show_diff_color=True,
-            style="square",
+            verbose="full",
+            fill_style="➤",
+            empty_style="▷",
             epochs=2
         )
 
