@@ -6,8 +6,8 @@ from torch import nn as __nn__
 from typing import Any as __Any__
 from typing import List as __List__, Literal as __Literal__
 from exttorch.losses import Loss as __Loss__
-from exttorch._data_handle import DataHandler as __DataHandler__
-from exttorch._metrics_handles import MetricStorage as __MetricStorage__
+from exttorch.__data_handle import DataHandler as __DataHandler__
+from exttorch.__metrics_handles import MetricStorage as __MetricStorage__
 from exttorch.history import History as __History__ 
 from exttorch.utils import ProgressBar as __ProgressBar__
 from exttorch.losses import __change_str_to_loss as __change_str_to_loss__
@@ -562,13 +562,15 @@ class Sequential(__nn__.Module):
                 probability.append(proba.detach().reshape(1, -1).tolist()[0])
 
                 # Update the progress bar
-                progressbar.update(i + 1, [()])
+                progressbar.update(i + 1)
             
         if type(self.loss_obj).__name__ == "CrossEntropyLoss":
             probability = f.softmax(torch.tensor(probability), dim=1).numpy()
         else:
             # Convert the probability to numpy array
             probability = np.array(probability).reshape(-1, 1)
+            
+        print("\n")
             
         return probability
 
