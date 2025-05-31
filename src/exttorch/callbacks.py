@@ -5,42 +5,47 @@
 """
 
 # Import libraries
-from typing import Dict as __Dict__
+from exttorch.__types import Logs as __Logs__, Weight as __Weight__
+from exttorch.__model import ModelModule as __ModelModule__
+from typing import Dict as __Dict__, Any as __Any__
+from typing import TYPE_CHECKING as __TYPE_CHECKING__
 import numpy as __np__
 from typing import Literal as __Literal__
-from enum import Enum as __Enum__
+from dataclasses import dataclass
+
 
 class Callback:
     def __init__(self):
-        self.model = None
+        self.model: __ModelModule__ = __ModelModule__()
         
     def on_train_begin(self) -> None:
         ...
     
-    def on_train_end(self, logs: __Dict__) -> None:
+    def on_train_end(self, logs: __Logs__) -> None:
         ...
         
     def on_epoch_begin(self, epoch: int) -> None:
         ...
         
-    def on_epoch_end(self, epoch: int, logs: __Dict__) -> None:
+    def on_epoch_end(self, epoch: int, logs: __Logs__) -> None:
         ...
         
     def on_validation_begin(self) -> None:
         ...
         
-    def on_validation_end(self, logs: __Dict__) -> None:
+    def on_validation_end(self, logs: __Logs__) -> None:
         ...
         
     def on_batch_begin(self) -> None:
         ...
         
-    def on_batch_end(self, logs: __Dict__) -> None:
+    def on_batch_end(self, logs: __Logs__) -> None:
         ...
-        
-class __MetricInitial__(__Enum__):
-    DECREASING = __np__.inf
-    INCREASING = 0
+
+@dataclass  
+class __MetricInitial__:
+    DECREASING: float = __np__.inf
+    INCREASING: float = 0.0
 
 class EarlyStopping(Callback):
     def __init__(
@@ -54,18 +59,18 @@ class EarlyStopping(Callback):
         self.__monitor = monitor
         self.__mode_str = mode
         # best_weights to store the weights at which the minimum loss occurs.
-        self.best_weights = None
+        self.best_weights: __Weight__ = dict()
         
-    def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs: __Logs__ | None = None):
         # The number of epoch it has waited when loss is no longer minimum.
         self.wait = 0
         # The epoch the training stops at.
         self.stopped_epoch = 0
         # Initialize the best as infinity.
-        self.best = self.__metric_state.value
+        self.best: float = self.__metric_state
     
     @property
-    def __metric_state(self) -> __MetricInitial__:
+    def __metric_state(self) -> float:
         monitor = self.__monitor.removeprefix("val_")
         
         match monitor:
@@ -75,29 +80,34 @@ class EarlyStopping(Callback):
             # Decrease in metric
             case monitor if monitor in ["loss"]:
                 return __MetricInitial__.DECREASING
+            case _:
+                raise ValueError(f"Invalid monitor name `{monitor}`")
                 
         
-    def __mode(self, mode: str, current: float) -> __np__.ndarray[bool]:
+    def __mode(self, mode: str, current: float) -> bool:
         if mode == "min":
-            return __np__.less(current, self.best)
+            return  __np__.less(current, self.best)
         elif mode == "max":
             return __np__.greater(current, self.best)
         else:
             raise ValueError(f"Invalid mode {mode}")
         
-    def __check_state(self, current: float) -> __np__.ndarray[bool]:
+    def __check_state(self, current: float) -> bool:
         if self.__mode_str == "auto":
             if self.__metric_state == __MetricInitial__.INCREASING:
                 return self.__mode("max", current=current)
             if self.__metric_state == __MetricInitial__.DECREASING:
                     return self.__mode("min", current=current)
+            else:
+                raise ValueError("Invalid value")
         else:
             return self.__mode(self.__mode_str, current=current)
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: int, logs: __Logs__ | None = None):
+        assert logs != None, "Logs were not provided."
         current = logs.get(self.__monitor)
         
-        if self.__check_state(current):
+        if current is not None and self.__check_state(current):
             self.best = current
             self.wait = 0
             # Record the best weights if current results is better (less).
@@ -110,6 +120,6 @@ class EarlyStopping(Callback):
                 print("\nRestoring model weights from the end of the best epoch.")
                 self.model.set_weights(self.best_weights)
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs: __Logs__ = None):
         if self.stopped_epoch > 0:
             print(f"Epoch {self.stopped_epoch + 1}: early stopping\n")

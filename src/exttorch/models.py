@@ -14,16 +14,17 @@ from exttorch.losses import __change_str_to_loss as __change_str_to_loss__
 from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_optimizer__
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
-from exttorch.callbacks import Callback as __Callback__
 from sklearn.utils.validation import check_is_fitted as __check_is_fitted__
+from exttorch.__types import Layers as __Layers__, Callbacks as __Callbacks__
+from exttorch.__model import ModelModule as __ModelModule__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
     TransformerMixin as __TransformerMixin,
 )
 
 
-class Sequential(__nn__.Module):
-    def __init__(self, layers: list = None, device: str = "cpu") -> None:
+class Sequential(__ModelModule__):
+    def __init__(self, layers: __Layers__ | None = None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
 
@@ -70,87 +71,21 @@ class Sequential(__nn__.Module):
         >>> model.evaluate(x, y, verbose=None) # doctest: +ELLIPSIS
         {'val_loss': ..., 'val_accuracy': ...}
         """
-        super(Sequential, self).__init__()
-        self.__xm = None
-
-        match device:
-            case "TPU" | "tpu":
-                import torch_xla.core.xla_model as xm  # type: ignore
-
-                self.__xm = xm
-            case "GPU" | "gpu" | "cuda" | "CUDA":
-
-                if __torch__.cuda.is_available():
-                    device = device if device.startswith("cuda") else "cuda"
-                    self.__device = __torch__.device(device)
-                else:
-                    raise ValueError("GPU is not available")
-            case "CPU" | "cpu":
-                self.__device = __torch__.device("cpu")
-            case _:
-                raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
-
-        self.loss = None
-        self.loss_obj = None
-        self.optimizer = None
-        self.optimizer_obj = None
-        self.layers = layers if layers else []
-        self.metrics = None
-        self.__callbacks = None
-        self.__progressbar = None
-        self.stop_training = False
-        self.__device = None
-        self.__verbose = None
-        self.__val_data_size = None
-
-    def get_weights(self):
-        return self.__model.state_dict()
-
-    def set_weights(self, weight):
-        self.__model.load_state_dict(weight)
-
-    def add(self, layer: __nn__.Module):
-        self.layers.append(layer)
-
-    def __handle_callbacks(self, callback_method, logs=None, epoch: int = None):
-
-        if self.__callbacks is not None:
-            for callback in self.__callbacks:
-                # Set the model and stop_training to the callback
-                callback.model = self
-
-                # Check if the present callback method
-                match callback_method:
-                    case "on_train_begin":
-                        callback.on_train_begin()
-                    case "on_train_end":
-                        callback.on_train_end(logs)
-                    case "on_validation_begin":
-                        callback.on_validation_begin()
-                    case "on_validation_end":
-                        callback.on_validation_end(logs)
-                    case "on_batch_begin":
-                        callback.on_batch_begin()
-                    case "on_batch_end":
-                        callback.on_batch_end(logs)
-                    case "on_epoch_begin":
-                        callback.on_epoch_begin(epoch)
-                    case "on_epoch_end":
-                        callback.on_epoch_end(epoch, logs)
-
+        super().__init__(layers=layers, device=device) # type: ignore
+        
     def fit(
         self,
         X,
         y=None,
         *,
         epochs: int = 1,
-        random_seed=None,
+        random_seed: int | None = None,
         shuffle: bool = False,
         batch_size: int = 1,
         val_batch_size: int | None = None,
-        validation_split: float = None,
-        validation_data=None,
-        callbacks: __List__[__Callback__] = None,
+        validation_split: float | None = None,
+        validation_data: None = None,
+        callbacks: __Callbacks__ | None = None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
         progress_fill_style: __Literal__['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",

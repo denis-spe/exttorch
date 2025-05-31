@@ -3,6 +3,7 @@
 # Import libraries
 import unittest as ut
 from contexts import exttorch
+from exttorch import callbacks
 from exttorch.callbacks import EarlyStopping
 from exttorch.metrics import Accuracy
 from exttorch.models import Sequential
@@ -44,6 +45,60 @@ class TestCallbacks(ut.TestCase):
             )
         
         self.assertIsInstance(history.history, dict)
+    
+    def test_is_there_check_point(self):
+        self.assertTrue(hasattr(callbacks, "SaveOnCheckpoint"))
+        
+    def test_check_point_instance(self):
+        try:
+            checkpoint = callbacks.SaveOnCheckpoint(
+                ".",
+                monitor="val_loss",
+                verbose=0,
+                save_best_only=False,
+                save_weights_only=False,
+                mode="auto",
+                save_freq="epoch",
+            )
+        except AttributeError:
+            self.fail("Invalid parameters")
+    
+    def test_sequential_using_SaveOnCheckpoint(self):
+        """
+        Test the sequential model using iris dataset
+        """
+        self.iris_model = Sequential(
+            [
+                nn.Linear(4, 32),
+                nn.ReLU(),
+                nn.Linear(32, 32),
+                nn.ReLU(),
+                nn.Linear(32, 3),
+            ]
+        )
+
+        self.iris_model.compile(
+            optimizer="adam",
+            loss="crossentropy",
+            metrics=["acc"],
+        )
+        
+        # checkpoint = callbacks.SaveOnCheckpoint(
+        #         "./tmp/checkpoint.json",
+        #         monitor="val_loss",
+        #         verbose=0,
+        #         save_best_only=False,
+        #         save_weights_only=False,
+        #         mode="auto",
+        #         save_freq="epoch",
+        #     )
+
+        history = self.iris_model.fit(
+            self.ir_x, self.ir_y,
+            validation_data=[self.ir_x, self.ir_y],
+            epochs=120,
+            # callbacks=[checkpoint]
+        )
 
 
 if __name__ == "__main__":

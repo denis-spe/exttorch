@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file" />
+    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/callbacks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_callbacks.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -22,12 +27,12 @@
     &quot;assignee&quot;: &quot;denis-spe&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/denis-spe/exttorch.git&quot;,
-    &quot;accountId&quot;: &quot;7b493038-2f63-4dbc-8c51-d1d53636b4f4&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/denis-spe/exttorch",
+    "accountId": "a04512fe-217a-47af-bebf-fdcc109eaef8"
   }
-}</component>
+}]]></component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -39,27 +44,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python tests.Doctests in .executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Doctests in exttorch.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Doctests in src.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in tests.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Volumes/Storage/DS/DL/exttorch&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Doctests in .executor": "Run",
+    "Python tests.Doctests in exttorch.executor": "Run",
+    "Python tests.Doctests in src.executor": "Run",
+    "Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor": "Run",
+    "Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor": "Run",
+    "Python tests.Python tests in tests.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Volumes/Storage/programming/DS/DL/exttorch",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset">
     <configuration name="Doctests in exttorch" type="tests" factoryName="Doctests" nameIsGenerated="true">
       <module name="exttorch" />
@@ -71,6 +82,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="" />
       <option name="CLASS_NAME" value="" />
       <option name="METHOD_NAME" value="" />
@@ -90,6 +102,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_callbacks.TestCallbacks.test_sequential_using_iris_dataset&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
@@ -105,6 +118,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_sequential.TestSequential.test_model_with_dataloader&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
@@ -120,6 +134,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_sequential.TestSequential.test_sequential_using_iris_dataset&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
@@ -135,6 +150,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;test_sequential.TestSequential.test_train_model_on_dataFrame&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
@@ -150,6 +166,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;$PROJECT_DIR$/tests&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
@@ -176,7 +193,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-348a24fa61fa-5312c7369657-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-251.23774.444" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-PY-251.25410.159" />
+        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
       </set>
     </attachedChunks>
   </component>
@@ -188,6 +206,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1719518902650</updated>
+      <workItem from="1748701573274" duration="1164000" />
     </task>
     <task id="LOCAL-00001" summary="Introduced new parameter (val_batch_size) in Sequential fit method.">
       <option name="closed" value="true" />
@@ -239,6 +258,9 @@
     </task>
     <option name="localTasksCounter" value="7" />
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="update the verbose argument" />
