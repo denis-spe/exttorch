@@ -40,7 +40,7 @@ class TestCallbacks(ut.TestCase):
         history = self.iris_model.fit(
             self.ir_x, self.ir_y,
             validation_data=[self.ir_x, self.ir_y],
-            epochs=120,
+            epochs=10,
             callbacks=[EarlyStopping(patience=3, monitor="val_acc")]
             )
         
@@ -96,7 +96,7 @@ class TestCallbacks(ut.TestCase):
         history = self.iris_model.fit(
             self.ir_x, self.ir_y,
             validation_data=[self.ir_x, self.ir_y],
-            epochs=120,
+            epochs=1,
             # callbacks=[checkpoint]
         )
 

@@ -3,14 +3,12 @@
 # Import libraries.
 import torch as __torch__
 from torch.nn import Module as __Module__
-from typing import Any, List, TYPE_CHECKING
-if TYPE_CHECKING:
-    from exttorch.__types import Layers as __Layers__, Weight as __Weight__, 
-    from exttorch.__types import Logs as __Logs__
-    from exttorch.__types import Callbacks as __Callbacks__
+import typing as __typing__
+from exttorch import __types as __types__
+
 
 class ModelModule(__Module__):
-    def __init__(self, layers: __Layers__ | None = None, device: str = "cpu"):
+    def __init__(self, layers: __typing__.List[__types__.Layer] | None = None, device: str = "cpu"):
         """
         Initializes the ModelModule with the given layers and device.
         Args:
@@ -20,57 +18,57 @@ class ModelModule(__Module__):
             ValueError: If the device is not one of "TPU", "GPU", or "CPU".
             ImportError: If the required libraries for TPU or GPU are not available.
         """
+        from exttorch.callbacks import Callback
         super().__init__() # type: ignore
-        self.__xm = None
+        self._xm = None
 
         match device:
             case "TPU" | "tpu":
                 import torch_xla.core.xla_model as xm  # type: ignore
 
-                self.__xm = xm
+                self._xm = xm
             case "GPU" | "gpu" | "cuda" | "CUDA":
 
                 if __torch__.cuda.is_available():
                     device = device if device.startswith("cuda") else "cuda"
-                    self.__device = __torch__.device(device)
+                    self._device = __torch__.device(device)
                 else:
                     raise ValueError("GPU is not available")
             case "CPU" | "cpu":
-                self.__device = __torch__.device("cpu")
+                self._device = __torch__.device("cpu")
             case _:
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
         
-        from exttorch.callbacks import Callback as _Callback
         self.loss = None
         self.loss_obj = None
         self.optimizer = None
         self.optimizer_obj = None
-        self.layers: __Layers__ = layers if layers else []
+        self.layers = layers if layers else []
         self.metrics = None
-        self.__callbacks: __Callbacks__ | None = None       
+        self.__callbacks: __typing__.List[Callback] | None = None
         self.__progressbar = None
         self.stop_training = False
-        self.__device = None
+        self._device = None
         self.__verbose = None
         self.__val_data_size = None
-        self.__model: ModelModule | None = None
+        self._model: ModelModule = self
 
-    def get_weights(self) -> __Weight__:
-        if self.__model is not None:
-            return self.__model.state_dict()
+    def get_weights(self) -> __types__.Weight:
+        if self._model is not None:
+            return self._model.state_dict()
         else:
             raise TypeError("The model must be fitted before calling the get_weights method")
 
-    def set_weights(self, weight: __Weight__):
-        if self.__model is not None:
-            self.__model.load_state_dict(weight)
+    def set_weights(self, weight: __types__.Weight):
+        if self._model is not None:
+            self._model.load_state_dict(weight)
         else:
             raise TypeError("The model must be fitted before calling the set_weights method")
 
-    def add(self, layer: __Layer__):
+    def add(self, layer: __types__.Layer):
         self.layers.append(layer)
 
-    def _handle_callbacks(self, callback_method: str, logs: __Logs__ = None, epoch: int | None = None):
+    def _handle_callbacks(self, callback_method: str, logs = None, epoch: int | None = None):
 
         if self.__callbacks is not None:
             for callback in self.__callbacks:

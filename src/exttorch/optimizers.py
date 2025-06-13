@@ -2,37 +2,21 @@
 
 # Import libraries
 import torch
+import typing as __tp__
 from abc import ABC, abstractmethod
 
 class Optimizer(ABC):
-    @abstractmethod
     def __str__(self):
-        ...
+        """
+        Returns the name of the optimizer.
+        """
+        return self.__class__.__name__
     @abstractmethod
     def __call__(self, model_parameters: torch.Tensor):
         ...
 
-def __change_str_to_optimizer(optimizer: str):
-    match optimizer:
-        case "Adam" | "adam":
-            return Adam()
-        case "SGD" | "sgd":
-            return SGD()
-        case "RMSprop" | "rmsprop":
-            return RMSprop()
-        case "Adadelta" | "adadelta":
-            return Adadelta()
-        case "Adagrad" | "adagrad":
-            return Adagrad()
-        case "Adamax" | "adamax":
-            return Adamax()
-        case "ASGD" | "asgd":
-            return ASGD()
-        case _:
-            raise ValueError("Invalid optimizer")
-
 class Adam(Optimizer):
-    def __init__(self, lr=0.001, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False, **kwds):
+    def __init__(self, lr: float=0.001, betas:__tp__.Tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0, amsgrad: bool=False, **kwds):
         """
         The adaptive moment estimation (Adam) optimizer algorithm for exttorch model.
         Args:

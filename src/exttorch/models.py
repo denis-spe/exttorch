@@ -3,6 +3,7 @@
 # Import libraries
 import torch as __torch__
 from torch import nn as __nn__
+import typing as __tp__
 from typing import Any as __Any__
 from typing import List as __List__, Literal as __Literal__
 from exttorch.losses import Loss as __Loss__
@@ -10,12 +11,9 @@ from exttorch.__data_handle import DataHandler as __DataHandler__
 from exttorch.__metrics_handles import MetricStorage as __MetricStorage__
 from exttorch.history import History as __History__ 
 from exttorch.utils import ProgressBar as __ProgressBar__
-from exttorch.losses import __change_str_to_loss as __change_str_to_loss__
-from exttorch.optimizers import __change_str_to_optimizer as __change_str_to_optimizer__
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
-from sklearn.utils.validation import check_is_fitted as __check_is_fitted__
-from exttorch.__types import Layers as __Layers__, Callbacks as __Callbacks__
+from exttorch import __types as __types__
 from exttorch.__model import ModelModule as __ModelModule__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
@@ -24,7 +22,7 @@ from sklearn.base import (
 
 
 class Sequential(__ModelModule__):
-    def __init__(self, layers: __Layers__ | None = None, device: str = "cpu"):
+    def __init__(self, layers = None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
 
@@ -85,7 +83,7 @@ class Sequential(__ModelModule__):
         val_batch_size: int | None = None,
         validation_split: float | None = None,
         validation_data: None = None,
-        callbacks: __Callbacks__ | None = None,
+        callbacks = None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
         progress_fill_style: __Literal__['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",
@@ -95,7 +93,7 @@ class Sequential(__ModelModule__):
         progress_percentage_colors: __List__[str] | None = None,
         progress_progress_type: __Literal__['bar', 'pie', 'squares', 'cross', 'arrows', 'clock', 'bounce', 'moon', 'triangles'] = "bar",
         verbose: __Literal__[0, 1, 2, 'full', 'hide-epoch', 'hide-batch-size', 'hide-metrics', 'hide-train-metrics', 'hide-val-metrics', 'hide-progress-bar', 'hide-time-estimation', 'percentage', 'only_percentage', 'only_epochs', 'only_batch_size', 'only_metrics', 'only_train_metrics', 'only_val_metrics', 'only_progress_bar', 'only_time_estimation'] | None = "full",
-        **dataloader_kwargs,
+        **dataloader_kwargs: __Any__,
     ):
         """
         Fit the model to the data.
@@ -200,20 +198,20 @@ class Sequential(__ModelModule__):
             # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
             # Initialize the model
-            self.__model = __nn__.Sequential(*self.layers)
+            self._model = __nn__.Sequential(*self.layers)
 
-            if self.__xm is not None:
-                self.__device = self.__xm.xla_device()
+            # if self.__xm is not None:
+            #     self.__device = self.__xm.xla_device()
 
             # Instantiate the Loss and optimizer
             self.loss = self.loss_obj()
-            self.optimizer = self.optimizer_obj(self.__model.parameters())
-            self.__model = self.__model.to(self.__device)
+            self.optimizer = self.optimizer_obj(self._model.parameters())
+            self._model = self._model.to(self._device)
 
             if validation_split is not None and validation_data is None:
 
                 # Handle the callbacks on train begin
-                self.__handle_callbacks("on_train_begin")
+                self._handle_callbacks("on_train_begin")
 
                 print(end="\n")
 
@@ -225,7 +223,7 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self.__device,
+                    device=self._device,
                     **dataloader_kwargs,
                 )
 
@@ -237,7 +235,7 @@ class Sequential(__ModelModule__):
                 for epoch in range(epochs):
 
                     # Handle the callbacks on epoch begin
-                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
                     # Set the epoch to progress bar.
                     self.__progressbar.set_epoch(epoch)
@@ -285,7 +283,7 @@ class Sequential(__ModelModule__):
                         )
 
                     # Handle the callbacks on epoch end
-                    self.__handle_callbacks(
+                    self._handle_callbacks(
                         "on_epoch_end", logs=metric_copy, epoch=epoch
                     )
 
@@ -293,12 +291,12 @@ class Sequential(__ModelModule__):
                         break
 
                 # Handle the callbacks on train end
-                self.__handle_callbacks("on_train_end", logs=history.history)
+                self._handle_callbacks("on_train_end", logs=history.history)
 
             elif validation_data is not None:
 
                 # Handle the callbacks on train begin
-                self.__handle_callbacks("on_train_begin")
+                self._handle_callbacks("on_train_begin")
 
                 print(end="\n")
 
@@ -310,7 +308,7 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self.__device,
+                    device=self._device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
 
@@ -326,7 +324,7 @@ class Sequential(__ModelModule__):
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        device=self.__device,
+                        device=self._device,
                         **dataloader_kwargs,
                     ).data_preprocessing(nprocs)
                 else:
@@ -338,13 +336,13 @@ class Sequential(__ModelModule__):
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        device=self.__device,
+                        device=self._device,
                         **dataloader_kwargs,
                     ).data_preprocessing(nprocs)
 
                 for epoch in range(epochs):
                     # Handle the callbacks on epoch begin
-                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
                     # Set the epoch to progress bar.
                     self.__progressbar.set_epoch(epoch)
@@ -392,7 +390,7 @@ class Sequential(__ModelModule__):
                         )
 
                     # Handle the callbacks on epoch end
-                    self.__handle_callbacks(
+                    self._handle_callbacks(
                         "on_epoch_end", logs=metric_copy, epoch=epoch
                     )
 
@@ -400,11 +398,11 @@ class Sequential(__ModelModule__):
                         break
 
                 # Handle the callbacks on train end
-                self.__handle_callbacks("on_train_end", logs=history.history)
+                self._handle_callbacks("on_train_end", logs=history.history)
 
             else:
                 # Handle the callbacks on train begin
-                self.__handle_callbacks("on_train_begin")
+                self._handle_callbacks("on_train_begin")
 
                 print(end="\n")
 
@@ -416,13 +414,13 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self.__device,
+                    device=self._device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
 
                 for epoch in range(epochs):
                     # Handle the callbacks on epoch begin
-                    self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
                     # Set the epoch to progress bar.
                     self.__progressbar.set_epoch(epoch)
@@ -445,7 +443,7 @@ class Sequential(__ModelModule__):
                     print(end="\n")
 
                     # Handle the callbacks on epoch end
-                    self.__handle_callbacks(
+                    self._handle_callbacks(
                         "on_epoch_end", epoch=epoch, logs=train_metric
                     )
 
@@ -453,7 +451,7 @@ class Sequential(__ModelModule__):
                         break
 
                 # Handle the callbacks on train end
-                self.__handle_callbacks("on_train_end", logs=history.history)
+                self._handle_callbacks("on_train_end", logs=history.history)
 
         training()
 
@@ -467,7 +465,7 @@ class Sequential(__ModelModule__):
         from torch.nn import functional as f
 
         x = (X.double() if type(X) == torch.Tensor else torch.tensor(X).double()).to(
-            self.__device
+            self._device
         )
 
         # Instantiate the progress bar
@@ -491,7 +489,7 @@ class Sequential(__ModelModule__):
             for i, data in enumerate(x):
 
                 # Make prediction and get probabilities
-                proba = self.__model(data.view(1, -1).float())
+                proba = self._model(data.view(1, -1).float())
 
                 # Append the probabilities to the list
                 probability.append(proba.detach().reshape(1, -1).tolist()[0])
@@ -610,14 +608,14 @@ class Sequential(__ModelModule__):
 
         # Create the list for metric
         metric_storage = __MetricStorage__(
-            self.__device,
+            self._device,
             self.metrics,
             batch_size=batch_size,
             loss_name=type(self.loss).__name__,
         )
 
         # Indicate the model to train
-        self.__model.train()
+        self._model.train()
         
         # Initializer the data
         data = __DataHandler__(
@@ -626,7 +624,7 @@ class Sequential(__ModelModule__):
             batch_size=batch_size,
             shuffle=shuffle,
             random_seed=random_seed,
-            device=self.__device,
+            device=self._device,
             **kwargs,
         ).data_preprocessing(nprocs)
 
@@ -634,21 +632,21 @@ class Sequential(__ModelModule__):
         self.__progressbar.total = len(data)
 
         # # Handle on batch begin callback
-        self.__handle_callbacks("on_batch_begin")
+        self._handle_callbacks("on_batch_begin")
 
         # Loop over the data
         for idx, (feature, label) in enumerate(data):
 
             feature, label = (
-                feature.to(self.__device).float(),
-                label.to(self.__device).float(),
+                feature.to(self._device).float(),
+                label.to(self._device).float(),
             )
 
             # Zero the gradient.
             self.optimizer.zero_grad()
 
             # Make prediction
-            predict = self.__model(feature).float()
+            predict = self._model(feature).float()
                         
             # Changes data type or data shape
             label = self.__handle_label(label)
@@ -671,9 +669,9 @@ class Sequential(__ModelModule__):
             loss.backward()
 
             # update the parameters
-            if self.__xm is not None:
-                self.__xm.optimizer_step(self.optimizer)
-                self.__xm.mark_step()
+            if self._xm is not None:
+                self._xm.optimizer_step(self.optimizer)
+                self._xm.mark_step()
             else:
                 self.optimizer.step()
         
@@ -681,7 +679,7 @@ class Sequential(__ModelModule__):
         measurements = metric_storage.measurements
 
         # Handle on batch begin callback
-        self.__handle_callbacks("on_batch_end", logs=measurements)
+        self._handle_callbacks("on_batch_end", logs=measurements)
 
         return measurements
 
@@ -748,7 +746,7 @@ class Sequential(__ModelModule__):
 
         # Create the list for metric
         metric_storage = __MetricStorage__(
-            self.__device,
+            self._device,
             metrics_measures=self.metrics,
             batch_size=batch_size,
             train=False,
@@ -756,7 +754,7 @@ class Sequential(__ModelModule__):
         )
 
         # Indicate the model to evaluate
-        self.__model.eval()
+        self._model.eval()
 
         # Initializer the data
         data = __DataHandler__(
@@ -766,7 +764,7 @@ class Sequential(__ModelModule__):
             val_batch_size=val_batch_size,
             shuffle=shuffle,
             random_seed=random_seed,
-            device=self.__device,
+            device=self._device,
             **dataloader_kwargs,
         ).data_preprocessing(nprocs=nprocs)
 
@@ -775,7 +773,7 @@ class Sequential(__ModelModule__):
         self.__val_data_size = len(data)
 
         # Handle on validation begin
-        self.__handle_callbacks("on_validation_begin")
+        self._handle_callbacks("on_validation_begin")
 
         with __torch__.no_grad():
             # Loop over the data
@@ -783,12 +781,12 @@ class Sequential(__ModelModule__):
 
                 # Set the device for X and y
                 feature, label = (
-                    feature.to(self.__device).float(),
-                    label.to(self.__device).float(),
+                    feature.to(self._device).float(),
+                    label.to(self._device).float(),
                 )
 
                 # Make prediction
-                predict = self.__model(feature)
+                predict = self._model(feature)
 
                 # Check if using BCELoss optimizer
                 label = self.__handle_label(label)
@@ -805,8 +803,8 @@ class Sequential(__ModelModule__):
                     loss,
                 )
 
-                if self.__xm is not None:
-                    self.__xm.mark_step()
+                if self._xm is not None:
+                    self._xm.mark_step()
 
                 if verbose is not None:
                     # Update the progress bar
@@ -818,7 +816,7 @@ class Sequential(__ModelModule__):
         measurements = metric_storage.measurements
 
         # Handle on validation end
-        self.__handle_callbacks("on_validation_end", logs=measurements)
+        self._handle_callbacks("on_validation_end", logs=measurements)
 
         return measurements
 
@@ -863,12 +861,124 @@ class Sequential(__ModelModule__):
         self.optimizer_obj = (
             optimizer
             if isinstance(optimizer, __Optimizer__)
-            else __change_str_to_optimizer__(optimizer)
+            else self.__change_str_to_optimizer__(optimizer)
         )
         self.loss_obj = (
-            loss if isinstance(loss, __Loss__) else __change_str_to_loss__(loss)
+            loss if isinstance(loss, __Loss__) else self.__change_str_to_loss__(loss)
         )
-        self.metrics = __MetricStorage__.str_val_to_metric(metrics) if metrics is not None else []
+        self.metrics = self.__str_val_to_metric__(metrics) if metrics is not None else []
+
+    @staticmethod
+    def __str_val_to_metric__(metric_list: __tp__.List[__tp__.Any]) -> __tp__.List[__Metric__]:
+        from exttorch.metrics import (
+            Accuracy,
+            MeanSquaredError,
+            R2,
+            MeanAbsoluteError,
+            Recall,
+            Precision,
+            Jaccard,
+            Auc,
+            MatthewsCorrcoef,
+            ZeroOneLoss,
+            TopKAccuracy,
+            F1Score,
+        )
+        new_metric_list: __tp__.List[__Metric__]  = []
+        for new_metric_name in metric_list:
+            if type(new_metric_name) == str:
+                match new_metric_name:
+
+                    case "acc" | "Acc" | "accuracy" | "Accuracy":
+                        new_metric_list.append(Accuracy(new_metric_name))
+                    case "mse" | "MSE" | "MeanSquaredError":
+                        new_metric_list.append(MeanSquaredError(new_metric_name))
+                    case "r2" | "R2":
+                        new_metric_list.append(R2(new_metric_name))
+                    case "mae" | "MAE" | "MeanAbsoluteError":
+                        new_metric_list.append(MeanAbsoluteError(new_metric_name))
+                    case "recall" | "rec" | "Recall":
+                        new_metric_list.append(Recall(new_metric_name))
+                    case "precision" | "pre" | "Precision":
+                        new_metric_list.append(Precision(new_metric_name))
+                    case "jaccard" | "jac" | "Jaccard":
+                        new_metric_list.append(Jaccard(new_metric_name))
+                    case "Auc" | "auc":
+                        new_metric_list.append(Auc(new_metric_name))
+                    case "MatthewsCorrcoef" | "mat" | "mc" | "MC":
+                        new_metric_list.append(MatthewsCorrcoef(new_metric_name))
+                    case "ZeroOneLoss" | "zero" | "zol":
+                        new_metric_list.append(ZeroOneLoss(new_metric_name))
+                    case "TopKAccuracy" | "TKA" | "tka":
+                        new_metric_list.append(TopKAccuracy(new_metric_name))
+                    case "F1Score" | "f1" | "f1score" | "F1" | "f1_score":
+                        new_metric_list.append(F1Score(new_metric_name))
+                    case _:
+                        raise ValueError(f"Unknown metric name `{new_metric_name}`")
+            else:
+                new_metric_list.append(new_metric_name)
+
+        return new_metric_list
+    
+    @staticmethod
+    def __change_str_to_loss__(loss: str) -> object:
+        from exttorch.losses import (
+            MSELoss,
+            L1Loss,
+            NLLLoss,
+            CrossEntropyLoss,
+            BCELoss,
+            BCEWithLogitsLoss,
+            MarginRankingLoss,
+        )
+        match loss:
+            case "MSELoss" | "mse" | "mean_squared_error" | "MSE":
+                return MSELoss()
+            case "L1Loss" | "l1" | "mean_absolute_error" | "MAE":
+                return L1Loss()
+            case "NLLLoss" | "nll" | "negative_log_likelihood" | "nll_loss":
+                return NLLLoss()
+            case "CrossEntropyLoss" | "cross_entropy" | "crossentropy" | "categorical_crossentropy":
+                return CrossEntropyLoss()
+            case "BCELoss" | "bce" | "binary_crossentropy":
+                return BCELoss()
+            case "BCEWithLogitsLoss" | "bce_with_logits" | "binary_cross_entropy_with_logits":
+                return BCEWithLogitsLoss()
+            case "MarginRankingLoss" | "margin_ranking":
+                return MarginRankingLoss()
+            case _:
+                raise ValueError("Invalid loss name. Available options: "
+                                 "MSELoss, L1Loss, NLLLoss, CrossEntropyLoss, ")
+    
+    @staticmethod
+    def __change_str_to_optimizer__(optimizer: str) -> object:
+        from exttorch.optimizers import (
+            Adam,
+            SGD,
+            RMSprop,
+            Adadelta,
+            Adagrad,
+            Adamax,
+            ASGD,
+        )
+        match optimizer:
+            case "Adam" | "adam":
+                return Adam()
+            case "SGD" | "sgd":
+                return SGD()
+            case "RMSprop" | "rmsprop":
+                return RMSprop()
+            case "Adadelta" | "adadelta":
+                return Adadelta()
+            case "Adagrad" | "adagrad":
+                return Adagrad()
+            case "Adamax" | "adamax":
+                return Adamax()
+            case "ASGD" | "asgd":
+                return ASGD()
+            case _:
+                raise ValueError("Invalid optimizer name. Available options: "
+                                 "Adam, SGD, RMSprop, Adadelta, Adagrad, Adamax, ASGD.")
 
 
 class Wrapper(__BaseEstimator, __TransformerMixin):
@@ -881,7 +991,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         model: Sequential,
         loss: __Loss__,
         optimizer: __Optimizer__,
-        metrics=None,
+        metrics: __List__[str | __Metric__ | None]=None,
         **fit_kwargs,
     ):
         super().__init__()
@@ -903,9 +1013,11 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         return self
 
     def predict(self, X, verbose: str | None = None):
-        __check_is_fitted__(self, "is_fitted_")
+        from sklearn.utils.validation import check_is_fitted
+        check_is_fitted(self, "is_fitted_")
         return self.model.predict(X, verbose=verbose)
 
     def score(self, X, y=None, verbose: str | None = None):
-        __check_is_fitted__(self, "is_fitted_")
+        from sklearn.utils.validation import check_is_fitted
+        check_is_fitted(self, "is_fitted_")
         return self.model.evaluate(X, y, verbose=verbose)

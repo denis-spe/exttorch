@@ -5,7 +5,7 @@
 """
 
 # Import libraries
-from exttorch.__types import Logs as __Logs__, Weight as __Weight__
+from exttorch import __types as __types__
 from exttorch.__model import ModelModule as __ModelModule__
 from typing import Dict as __Dict__, Any as __Any__
 from typing import TYPE_CHECKING as __TYPE_CHECKING__
@@ -14,32 +14,32 @@ from typing import Literal as __Literal__
 from dataclasses import dataclass
 
 
-class Callback:
+class Callback():
     def __init__(self):
-        self.model: __ModelModule__ = __ModelModule__()
+        self.model: __ModelModule__ | None = None
         
     def on_train_begin(self) -> None:
         ...
     
-    def on_train_end(self, logs: __Logs__) -> None:
+    def on_train_end(self, logs: __types__.Logs) -> None:
         ...
         
     def on_epoch_begin(self, epoch: int) -> None:
         ...
         
-    def on_epoch_end(self, epoch: int, logs: __Logs__) -> None:
+    def on_epoch_end(self, epoch: int, logs: __types__.Logs) -> None:
         ...
         
     def on_validation_begin(self) -> None:
         ...
         
-    def on_validation_end(self, logs: __Logs__) -> None:
+    def on_validation_end(self, logs: __types__.Logs) -> None:
         ...
         
     def on_batch_begin(self) -> None:
         ...
         
-    def on_batch_end(self, logs: __Logs__) -> None:
+    def on_batch_end(self, logs: __types__.Logs) -> None:
         ...
 
 @dataclass  
@@ -59,9 +59,9 @@ class EarlyStopping(Callback):
         self.__monitor = monitor
         self.__mode_str = mode
         # best_weights to store the weights at which the minimum loss occurs.
-        self.best_weights: __Weight__ = dict()
+        self.best_weights: __types__.Weight = dict()
         
-    def on_train_begin(self, logs: __Logs__ | None = None):
+    def on_train_begin(self, logs: __types__.Logs | None = None):
         # The number of epoch it has waited when loss is no longer minimum.
         self.wait = 0
         # The epoch the training stops at.
@@ -103,8 +103,9 @@ class EarlyStopping(Callback):
         else:
             return self.__mode(self.__mode_str, current=current)
 
-    def on_epoch_end(self, epoch: int, logs: __Logs__ | None = None):
+    def on_epoch_end(self, epoch: int, logs: __types__.Logs | None = None):
         assert logs != None, "Logs were not provided."
+        assert self.model is not None, "Model must be set before calling on_epoch_end."
         current = logs.get(self.__monitor)
         
         if current is not None and self.__check_state(current):
@@ -120,6 +121,6 @@ class EarlyStopping(Callback):
                 print("\nRestoring model weights from the end of the best epoch.")
                 self.model.set_weights(self.best_weights)
 
-    def on_train_end(self, logs: __Logs__ = None):
+    def on_train_end(self, logs: __types__.Logs = None):
         if self.stopped_epoch > 0:
             print(f"Epoch {self.stopped_epoch + 1}: early stopping\n")

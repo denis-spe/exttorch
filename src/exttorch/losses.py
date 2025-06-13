@@ -13,7 +13,7 @@ class Loss(ABC):
     def __call__(self):
         ...
         
-def __change_str_to_loss(loss: str):
+def change_str_to_loss(loss: str):
     match loss:
         case "MSELoss" | "mse" | "mean_squared_error" | "MSE":
             return MSELoss()

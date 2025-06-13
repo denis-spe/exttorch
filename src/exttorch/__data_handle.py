@@ -5,7 +5,8 @@ from typing import Tuple, Optional, Any, Dict
 import numpy as np
 import pandas as pd
 import types
-from torch.utils.data import DataLoader as __dataloader__
+import exttorch.__types as __types__
+from torch.utils.data import DataLoader as __dataloader__, Dataset as __Dataset__
 
 # Import the libraries
 import torch
@@ -15,14 +16,14 @@ from numpy.typing import ArrayLike
 class DataHandler:
     def __init__(
         self,
-        x: Any,
+        x: __types__.Data,
         y: ArrayLike | None = None,
         batch_size: int = 1,
         val_batch_size: int = 1,
         shuffle: bool = False,
         random_seed: int | None = None,
         device: str = "cpu",
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> None:
 
         # Import the libraries
@@ -63,7 +64,7 @@ class DataHandler:
 
     def __call__(
         self, val_size: Optional[float] = None
-    ) -> __dataloader__ | Tuple[__dataloader__]:
+    ) -> __dataloader__ | Tuple[__dataloader__, __dataloader__] | __Dataset__:
         from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset
 
         if isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
@@ -156,7 +157,7 @@ class DataHandler:
             if isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
                 x = torch.from_numpy(x)
                 y = torch.from_numpy(y)
-
+    
             __Dataset_obj = TensorDataset(x, y)
 
             if val_size is not None:
