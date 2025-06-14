@@ -3,9 +3,8 @@
 # Import libraries
 import torch as __torch__
 from torch import nn as __nn__
+from sklearn.utils import Bunch as __Bunch__
 import typing as __tp__
-from typing import Any as __Any__
-from typing import List as __List__, Literal as __Literal__
 from exttorch.losses import Loss as __Loss__
 from exttorch.__data_handle import DataHandler as __DataHandler__
 from exttorch.__metrics_handles import MetricStorage as __MetricStorage__
@@ -15,6 +14,8 @@ from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
 from exttorch import __types as __types__
 from exttorch.__model import ModelModule as __ModelModule__
+from numpy.typing import ArrayLike as __ArrayLike__
+from torch.utils import data as __data__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
     TransformerMixin as __TransformerMixin,
@@ -73,8 +74,8 @@ class Sequential(__ModelModule__):
         
     def fit(
         self,
-        X,
-        y=None,
+        X: __data__.Dataset[__tp__.Any] | __data__.DataLoader[__tp__.Any] | __data__.TensorDataset | __ArrayLike__ | __data__.Subset[__tp__.Any] | __tp__.Iterator | __torch__.TensorType | __Bunch__,
+        y:  __ArrayLike__ | None = None,
         *,
         epochs: int = 1,
         random_seed: int | None = None,
@@ -86,14 +87,14 @@ class Sequential(__ModelModule__):
         callbacks = None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
-        progress_fill_style: __Literal__['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",
-        progress_empty_style: __Literal__['━', '◎', '◇', '○', '░', '▯', '-', '▒', '.', '▷', '□'] = "━",
+        progress_fill_style: __tp__.Literal['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",
+        progress_empty_style: __tp__.Literal['━', '◎', '◇', '○', '░', '▯', '-', '▒', '.', '▷', '□'] = "━",
         progress_fill_color: str = "\033[92m",
         progress_empty_color: str = "\033[90m",
-        progress_percentage_colors: __List__[str] | None = None,
-        progress_progress_type: __Literal__['bar', 'pie', 'squares', 'cross', 'arrows', 'clock', 'bounce', 'moon', 'triangles'] = "bar",
-        verbose: __Literal__[0, 1, 2, 'full', 'hide-epoch', 'hide-batch-size', 'hide-metrics', 'hide-train-metrics', 'hide-val-metrics', 'hide-progress-bar', 'hide-time-estimation', 'percentage', 'only_percentage', 'only_epochs', 'only_batch_size', 'only_metrics', 'only_train_metrics', 'only_val_metrics', 'only_progress_bar', 'only_time_estimation'] | None = "full",
-        **dataloader_kwargs: __Any__,
+        progress_percentage_colors: __tp__.List[str] | None = None,
+        progress_progress_type: __tp__.Literal['bar', 'pie', 'squares', 'cross', 'arrows', 'clock', 'bounce', 'moon', 'triangles'] = "bar",
+        verbose: __tp__.Literal[0, 1, 2, 'full', 'hide-epoch', 'hide-batch-size', 'hide-metrics', 'hide-train-metrics', 'hide-val-metrics', 'hide-progress-bar', 'hide-time-estimation', 'percentage', 'only_percentage', 'only_epochs', 'only_batch_size', 'only_metrics', 'only_train_metrics', 'only_val_metrics', 'only_progress_bar', 'only_time_estimation'] | None = "full",
+        **dataloader_kwargs: __tp__.Any,
     ):
         """
         Fit the model to the data.
@@ -204,7 +205,15 @@ class Sequential(__ModelModule__):
             #     self.__device = self.__xm.xla_device()
 
             # Instantiate the Loss and optimizer
-            self.loss = self.loss_obj()
+            if self.loss_obj is None:
+                raise TypeError(
+                    "Compile the model with `model.compile` before " + "fitting the model"
+                )
+            if self.optimizer_obj is None:
+                raise TypeError(
+                    "Compile the model with `model.compile` before " + "fitting the model"
+                )
+            self.loss  = self.loss_obj()
             self.optimizer = self.optimizer_obj(self._model.parameters())
             self._model = self._model.to(self._device)
 
@@ -223,7 +232,6 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self._device,
                     **dataloader_kwargs,
                 )
 
@@ -308,7 +316,6 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self._device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
 
@@ -324,7 +331,6 @@ class Sequential(__ModelModule__):
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        device=self._device,
                         **dataloader_kwargs,
                     ).data_preprocessing(nprocs)
                 else:
@@ -336,7 +342,6 @@ class Sequential(__ModelModule__):
                         val_batch_size=val_batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        device=self._device,
                         **dataloader_kwargs,
                     ).data_preprocessing(nprocs)
 
@@ -414,7 +419,6 @@ class Sequential(__ModelModule__):
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
                     random_seed=random_seed,
-                    device=self._device,
                     **dataloader_kwargs,
                 ).data_preprocessing(nprocs)
 
@@ -624,7 +628,6 @@ class Sequential(__ModelModule__):
             batch_size=batch_size,
             shuffle=shuffle,
             random_seed=random_seed,
-            device=self._device,
             **kwargs,
         ).data_preprocessing(nprocs)
 
@@ -764,7 +767,6 @@ class Sequential(__ModelModule__):
             val_batch_size=val_batch_size,
             shuffle=shuffle,
             random_seed=random_seed,
-            device=self._device,
             **dataloader_kwargs,
         ).data_preprocessing(nprocs=nprocs)
 
@@ -824,7 +826,7 @@ class Sequential(__ModelModule__):
         self,
         optimizer: __Optimizer__ | str,
         loss: __Loss__ | str,
-        metrics: __List__[str | __Metric__] | None = None,
+        metrics: __tp__.List[str | __Metric__] | None = None,
     ):
         """
         Compile the model.
@@ -921,7 +923,7 @@ class Sequential(__ModelModule__):
         return new_metric_list
     
     @staticmethod
-    def __change_str_to_loss__(loss: str) -> object:
+    def __change_str_to_loss__(loss: str):
         from exttorch.losses import (
             MSELoss,
             L1Loss,
@@ -951,7 +953,7 @@ class Sequential(__ModelModule__):
                                  "MSELoss, L1Loss, NLLLoss, CrossEntropyLoss, ")
     
     @staticmethod
-    def __change_str_to_optimizer__(optimizer: str) -> object:
+    def __change_str_to_optimizer__(optimizer: str):
         from exttorch.optimizers import (
             Adam,
             SGD,
@@ -991,7 +993,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         model: Sequential,
         loss: __Loss__,
         optimizer: __Optimizer__,
-        metrics: __List__[str | __Metric__ | None]=None,
+        metrics: __tp__.List[str | __Metric__] | None = None,
         **fit_kwargs,
     ):
         super().__init__()

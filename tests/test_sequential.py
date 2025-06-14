@@ -143,10 +143,10 @@ class TestSequential(ut.TestCase):
         """
 
         train_df = pd.read_csv(
-            "/Volumes/Storage/DS/DL/exttorch/datasets/digit-recognizer/train.csv"
+            "/Users/den/Library/CloudStorage/GoogleDrive-denisbrian07@gmail.com/My Drive/Datasets/MNIST/train.csv"
         )
         test_df = pd.read_csv(
-            "/Volumes/Storage/DS/DL/exttorch/datasets/digit-recognizer/test.csv"
+            "/Users/den/Library/CloudStorage/GoogleDrive-denisbrian07@gmail.com/My Drive/Datasets/MNIST/test.csv"
         )
         x = train_df.drop("label", axis=1).values
         y = train_df.label.values

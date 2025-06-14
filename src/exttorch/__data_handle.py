@@ -1,28 +1,28 @@
 # Praise Ye The Lord
 
-from typing import Tuple, Optional, Any, Dict
+from typing import Tuple, Optional, Any, Iterator
 
 import numpy as np
 import pandas as pd
 import types
-import exttorch.__types as __types__
-from torch.utils.data import DataLoader as __dataloader__, Dataset as __Dataset__
 
 # Import the libraries
 import torch
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike as __ArrayLike__
+from torch.utils import data as __data__
+from sklearn.utils import Bunch as __Bunch__
+
 
 class DataHandler:
     def __init__(
         self,
-        x: __types__.Data,
-        y: ArrayLike | None = None,
+        x: __data__.Dataset[Any] | __data__.DataLoader[Any] | __data__.TensorDataset | __ArrayLike__ | __data__.Subset[Any] | Iterator | torch.TensorType | __Bunch__,
+        y:  __ArrayLike__ | None = None,
         batch_size: int = 1,
         val_batch_size: int = 1,
         shuffle: bool = False,
         random_seed: int | None = None,
-        device: str = "cpu",
         **kwargs: Any,
     ) -> None:
 
@@ -53,7 +53,7 @@ class DataHandler:
         from torch.utils.data import random_split
 
         # Check if the data is a DataLoader object
-        dataset = data.dataset if isinstance(data, __dataloader__) else data
+        dataset = data.dataset if isinstance(data, __data__.DataLoader) else data
 
         # Split the data into train and validation.
         data_split = random_split(
@@ -64,7 +64,7 @@ class DataHandler:
 
     def __call__(
         self, val_size: Optional[float] = None
-    ) -> __dataloader__ | Tuple[__dataloader__, __dataloader__] | __Dataset__:
+    ) -> __data__.DataLoader | Tuple[__data__.DataLoader, __data__.DataLoader] | __data__.Dataset:
         from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset
 
         if isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
@@ -157,8 +157,15 @@ class DataHandler:
             if isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
                 x = torch.from_numpy(x)
                 y = torch.from_numpy(y)
+
+            __Dataset_obj = None
     
-            __Dataset_obj = TensorDataset(x, y)
+            if isinstance(x, torch.Tensor):
+                __Dataset_obj = TensorDataset(x, y)
+            else:
+                raise TypeError(
+                    "The generator must yield a tuple of (x, y) where x is a torch.Tensor or np.ndarray and y is a torch.Tensor or np.ndarray."
+                )
 
             if val_size is not None:
                 train_data, val_data = self.__split_data(__Dataset_obj, val_size)

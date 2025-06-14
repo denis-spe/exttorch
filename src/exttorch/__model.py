@@ -2,12 +2,12 @@
 
 # Import libraries.
 import torch as __torch__
-from torch.nn import Module as __Module__
+import torch.nn as __nn__
 import typing as __typing__
 from exttorch import __types as __types__
 
 
-class ModelModule(__Module__):
+class ModelModule(__nn__.Module):
     def __init__(self, layers: __typing__.List[__types__.Layer] | None = None, device: str = "cpu"):
         """
         Initializes the ModelModule with the given layers and device.
@@ -19,6 +19,9 @@ class ModelModule(__Module__):
             ImportError: If the required libraries for TPU or GPU are not available.
         """
         from exttorch.callbacks import Callback
+        from exttorch.optimizers import Optimizer
+        from exttorch.losses import Loss
+
         super().__init__() # type: ignore
         self._xm = None
 
@@ -39,10 +42,10 @@ class ModelModule(__Module__):
             case _:
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
         
-        self.loss = None
-        self.loss_obj = None
-        self.optimizer = None
-        self.optimizer_obj = None
+        self.loss: Loss | None = None
+        self.loss_obj: Loss | None = None
+        self.optimizer: Optimizer | None = None
+        self.optimizer_obj: Optimizer | None = None
         self.layers = layers if layers else []
         self.metrics = None
         self.__callbacks: __typing__.List[Callback] | None = None
@@ -51,7 +54,7 @@ class ModelModule(__Module__):
         self._device = None
         self.__verbose = None
         self.__val_data_size = None
-        self._model: ModelModule = self
+        self._model: ModelModule | __nn__.Sequential = self
 
     def get_weights(self) -> __types__.Weight:
         if self._model is not None:

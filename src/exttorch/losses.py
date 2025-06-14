@@ -2,13 +2,10 @@
 
 # import libraries
 import torch
+import exttorch.__types as __types__
 from abc import ABC, abstractmethod
 
 class Loss(ABC):
-    @abstractmethod
-    def __str__(self):
-        ...
-    
     @abstractmethod
     def __call__(self):
         ...

@@ -300,10 +300,11 @@ class Precision(Metric):
             num_classes = self.__num_classes
         )
         
+
         # Compute AUC
         recall = metrics.precision_score(
-            y, 
-            prediction,
+            y.reshape(-1), 
+            prediction.reshape(-1),
             average = self.__average,
             sample_weight = self.__sample_weight,
             labels= self.__labels,
@@ -379,7 +380,7 @@ class Auc(Metric):
             )
                         
         # Return as [[value]] array
-        return __return_value__(auc)
+        return auc
         
 
 

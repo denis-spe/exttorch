@@ -12,7 +12,7 @@ class Optimizer(ABC):
         """
         return self.__class__.__name__
     @abstractmethod
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         ...
 
 class Adam(Optimizer):
@@ -37,7 +37,7 @@ class Adam(Optimizer):
     def __str__(self):
         return "Adam"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.Adam(
             model_parameters,
             lr=self.__lr,
@@ -70,7 +70,7 @@ class SGD(Optimizer):
     def __str__(self):
         return "SGD"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.SGD(
             model_parameters,
             lr=self.__lr,
@@ -105,7 +105,7 @@ class RMSprop(Optimizer):
     def __str__(self):
         return "RMSprop"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.RMSprop(
             model_parameters,
             lr=self.__lr,
@@ -137,7 +137,7 @@ class Adadelta(Optimizer):
     def __str__(self):
         return "Adadelta"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.Adadelta(
             model_parameters,
             lr=self.__lr,
@@ -169,7 +169,7 @@ class Adagrad(Optimizer):
     def __str__(self):
         return "Adagrad"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.Adagrad(
             model_parameters,
             lr=self.__lr,
@@ -200,7 +200,7 @@ class Adamax(Optimizer):
     def __str__(self):
         return "Adamax"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.Adamax(
             model_parameters,
             lr=self.__lr,
@@ -232,7 +232,7 @@ class ASGD(Optimizer):
     def __str__(self):
         return "ASGD"
     
-    def __call__(self, model_parameters: torch.Tensor):
+    def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         return torch.optim.ASGD(
             model_parameters,
             lr=self.__lr,
