@@ -15,6 +15,27 @@ class Optimizer(ABC):
     def __call__(self, model_parameters: __tp__.Iterable[__tp__.Any]):
         ...
 
+    def step(self):
+        """
+        Performs a single optimization step.
+        This method should be called after computing the gradients.
+        """
+        raise NotImplementedError("This method should be overridden by subclasses.")
+    
+    def zero_grad(self):
+        """
+        Clears the gradients of all optimized parameters.
+        This method should be called before computing the gradients for the next step.
+        """
+        raise NotImplementedError("This method should be overridden by subclasses.")
+
+    def state_dict(self):
+        """
+        Returns the state of the optimizer as a dictionary.
+        This can be used to save the optimizer state for later use.
+        """
+        raise NotImplementedError("This method should be overridden by subclasses.")
+
 class Adam(Optimizer):
     def __init__(self, lr: float=0.001, betas:__tp__.Tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0, amsgrad: bool=False, **kwds):
         """

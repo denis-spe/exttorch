@@ -70,11 +70,15 @@ class Sequential(__ModelModule__):
         >>> model.evaluate(x, y, verbose=None) # doctest: +ELLIPSIS
         {'val_loss': ..., 'val_accuracy': ...}
         """
+        # Import libraries
+        from exttorch.callbacks import Callback
+
         super().__init__(layers=layers, device=device) # type: ignore
+        self.__callbacks: __tp__.List[Callback] | None = None
         
     def fit(
         self,
-        X: __data__.Dataset[__tp__.Any] | __data__.DataLoader[__tp__.Any] | __data__.TensorDataset | __ArrayLike__ | __data__.Subset[__tp__.Any] | __tp__.Iterator | __torch__.TensorType | __Bunch__,
+        X: __types__.Dataset_DataLoader_TensorDataset_ArrayLike_Subset_Iterator_TensorType_Bunch,
         y:  __ArrayLike__ | None = None,
         *,
         epochs: int = 1,
@@ -83,7 +87,7 @@ class Sequential(__ModelModule__):
         batch_size: int = 1,
         val_batch_size: int | None = None,
         validation_split: float | None = None,
-        validation_data: None = None,
+        validation_data: __types__.List_Tuple_DataLoader_Dataset_TensorDataset = None,
         callbacks = None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
@@ -222,8 +226,6 @@ class Sequential(__ModelModule__):
                 # Handle the callbacks on train begin
                 self._handle_callbacks("on_train_begin")
 
-                print(end="\n")
-
                 # Initializer the data
                 data = __DataHandler__(
                     X,
@@ -287,7 +289,7 @@ class Sequential(__ModelModule__):
                     # Last progress update
                     self.__progressbar.last_update(
                         self.__val_data_size, 
-                        metric_copy.items()
+                        list(metric_copy.items())
                         )
 
                     # Handle the callbacks on epoch end
@@ -305,8 +307,6 @@ class Sequential(__ModelModule__):
 
                 # Handle the callbacks on train begin
                 self._handle_callbacks("on_train_begin")
-
-                print(end="\n")
 
                 # Initializer the data
                 train_data = __DataHandler__(
@@ -384,16 +384,16 @@ class Sequential(__ModelModule__):
                     # Add the validation metric to the history
                     history.add_history(val_metric)
 
-                    # Make a copy
+                    # # Make a copy
                     metric_copy = train_metric.copy()
                     metric_copy.update(val_metric)
                     
-                    # Last progress update
+                    # # Last progress update
                     self.__progressbar.last_update(
                         self.__val_data_size,
-                        metric_copy.items()
+                        list(metric_copy.items())
                         )
-
+                    
                     # Handle the callbacks on epoch end
                     self._handle_callbacks(
                         "on_epoch_end", logs=metric_copy, epoch=epoch
@@ -408,8 +408,6 @@ class Sequential(__ModelModule__):
             else:
                 # Handle the callbacks on train begin
                 self._handle_callbacks("on_train_begin")
-
-                print(end="\n")
 
                 # Initializer the data
                 data = __DataHandler__(
@@ -443,8 +441,6 @@ class Sequential(__ModelModule__):
 
                     # Add the train metric to the history
                     history.add_history(train_metric)
-
-                    print(end="\n")
 
                     # Handle the callbacks on epoch end
                     self._handle_callbacks(
@@ -666,7 +662,7 @@ class Sequential(__ModelModule__):
             )
                 
             # Update the progress bar
-            self.__progressbar.update(idx + 1, metric_storage.measurements.items())
+            self.__progressbar.update(idx + 1, list(metric_storage.measurements.items()))
 
             # Compute the gradient
             loss.backward()
@@ -811,7 +807,7 @@ class Sequential(__ModelModule__):
                 if verbose is not None:
                     # Update the progress bar
                     eval_progressbar.update(
-                        idx + 1, metric_storage.measurements.items()
+                        idx + 1, list(metric_storage.measurements.items())
                     )
 
         # Final measurements
@@ -869,6 +865,38 @@ class Sequential(__ModelModule__):
             loss if isinstance(loss, __Loss__) else self.__change_str_to_loss__(loss)
         )
         self.metrics = self.__str_val_to_metric__(metrics) if metrics is not None else []
+
+    def _handle_callbacks(self, callback_method: str, logs = None, epoch: int | None = None):
+
+        if self.__callbacks is not None:
+            for callback in self.__callbacks:
+                # Set the model and stop_training to the callback
+                callback.model = self
+
+                # Check if the present callback method
+                match callback_method:
+                    case "on_train_begin":
+                        callback.on_train_begin()
+                    case "on_train_end":
+                        callback.on_train_end(logs)
+                    case "on_validation_begin":
+                        callback.on_validation_begin()
+                    case "on_validation_end":
+                        callback.on_validation_end(logs)
+                    case "on_batch_begin":
+                        callback.on_batch_begin()
+                    case "on_batch_end":
+                        callback.on_batch_end(logs)
+                    case "on_epoch_begin":
+                        if epoch is None:
+                            raise ValueError("epoch must be provided for on_epoch_begin callback method")
+                        callback.on_epoch_begin(epoch)
+                    case "on_epoch_end":
+                        if epoch is None:
+                            raise ValueError("epoch must be provided for on_epoch_end callback method")
+                        callback.on_epoch_end(epoch, logs)
+                    case _:
+                        raise ValueError("Unknown callback_method name: {}".format(callback_method))
 
     @staticmethod
     def __str_val_to_metric__(metric_list: __tp__.List[__tp__.Any]) -> __tp__.List[__Metric__]:

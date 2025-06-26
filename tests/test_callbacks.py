@@ -39,9 +39,9 @@ class TestCallbacks(ut.TestCase):
 
         history = self.iris_model.fit(
             self.ir_x, self.ir_y,
-            validation_data=[self.ir_x, self.ir_y],
+            validation_data=(self.ir_x, self.ir_y),
             epochs=10,
-            callbacks=[EarlyStopping(patience=3, monitor="val_acc")]
+            callbacks=[EarlyStopping(patience=1, monitor="val_acc")]
             )
         
         self.assertIsInstance(history.history, dict)

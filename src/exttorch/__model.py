@@ -18,7 +18,6 @@ class ModelModule(__nn__.Module):
             ValueError: If the device is not one of "TPU", "GPU", or "CPU".
             ImportError: If the required libraries for TPU or GPU are not available.
         """
-        from exttorch.callbacks import Callback
         from exttorch.optimizers import Optimizer
         from exttorch.losses import Loss
 
@@ -48,7 +47,6 @@ class ModelModule(__nn__.Module):
         self.optimizer_obj: Optimizer | None = None
         self.layers = layers if layers else []
         self.metrics = None
-        self.__callbacks: __typing__.List[Callback] | None = None
         self.__progressbar = None
         self.stop_training = False
         self._device = None
@@ -70,38 +68,6 @@ class ModelModule(__nn__.Module):
 
     def add(self, layer: __types__.Layer):
         self.layers.append(layer)
-
-    def _handle_callbacks(self, callback_method: str, logs = None, epoch: int | None = None):
-
-        if self.__callbacks is not None:
-            for callback in self.__callbacks:
-                # Set the model and stop_training to the callback
-                callback.model = self
-
-                # Check if the present callback method
-                match callback_method:
-                    case "on_train_begin":
-                        callback.on_train_begin()
-                    case "on_train_end":
-                        callback.on_train_end(logs)
-                    case "on_validation_begin":
-                        callback.on_validation_begin()
-                    case "on_validation_end":
-                        callback.on_validation_end(logs)
-                    case "on_batch_begin":
-                        callback.on_batch_begin()
-                    case "on_batch_end":
-                        callback.on_batch_end(logs)
-                    case "on_epoch_begin":
-                        if epoch is None:
-                            raise ValueError("epoch must be provided for on_epoch_begin callback method")
-                        callback.on_epoch_begin(epoch)
-                    case "on_epoch_end":
-                        if epoch is None:
-                            raise ValueError("epoch must be provided for on_epoch_end callback method")
-                        callback.on_epoch_end(epoch, logs)
-                    case _:
-                        raise ValueError("Unknown callback_method name: {}".format(callback_method))
         
     # def forward(self, *args: Any, **kwargs: Any) -> __Module__:
         # raise NotImplementedError("The forward method must be implemented in the subclass.")

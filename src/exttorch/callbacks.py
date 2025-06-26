@@ -68,6 +68,8 @@ class EarlyStopping(Callback):
         self.stopped_epoch = 0
         # Initialize the best as infinity.
         self.best: float = self.__metric_state
+
+        print(f"\nEarlyStopping will monitor `{self.__monitor}` with mode `{self.__mode_str}`")
     
     @property
     def __metric_state(self) -> float:
@@ -103,9 +105,10 @@ class EarlyStopping(Callback):
         else:
             return self.__mode(self.__mode_str, current=current)
 
-    def on_epoch_end(self, epoch: int, logs: __types__.Logs | None = None):
+    def on_epoch_end(self, epoch: int, logs: __types__.Logs | None = None):        
         assert logs != None, "Logs were not provided."
         assert self.model is not None, "Model must be set before calling on_epoch_end."
+
         current = logs.get(self.__monitor)
         
         if current is not None and self.__check_state(current):
@@ -124,3 +127,23 @@ class EarlyStopping(Callback):
     def on_train_end(self, logs: __types__.Logs = None):
         if self.stopped_epoch > 0:
             print(f"Epoch {self.stopped_epoch + 1}: early stopping\n")
+
+class SaveOnCheckpoint(Callback):
+    def __init__(
+        self,
+        filepath: str,
+        monitor: str = "val_loss",
+        verbose: int = 0,
+        save_best_only: bool = False,
+        save_weights_only: bool = False,
+        mode: __Literal__["auto", "min", "max"] = "auto",
+        save_freq: str = "epoch"
+    ):
+        super().__init__()
+        self.filepath = filepath
+        self.monitor = monitor
+        self.verbose = verbose
+        self.save_best_only = save_best_only
+        self.save_weights_only = save_weights_only
+        self.mode = mode
+        self.save_freq = save_freq

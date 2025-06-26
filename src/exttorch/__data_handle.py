@@ -64,7 +64,7 @@ class DataHandler:
 
     def __call__(
         self, val_size: Optional[float] = None
-    ) -> __data__.DataLoader | Tuple[__data__.DataLoader, __data__.DataLoader] | __data__.Dataset:
+    ) -> __data__.DataLoader | Tuple[__data__.DataLoader, __data__.DataLoader] | __data__.Dataset | Iterator:
         from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset
 
         if isinstance(self.__x, np.ndarray) and isinstance(self.__y, np.ndarray):
