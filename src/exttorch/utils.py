@@ -3,9 +3,10 @@
 # Importing necessary modules
 import sys
 import time
-from typing import List, Tuple, Literal
+from typing import List, Tuple
 from dataclasses import dataclass
 import itertools
+from exttorch.__types import FillStyleType, EmptyStyleType, ProgressType, VerboseType
 
 
 @dataclass
@@ -27,38 +28,17 @@ class ProgressBar:
 
     # Constructor
     def __init__(
-        self, 
-        bar_width: int = 40, 
+        self,
+        bar_width: int = 40,
         epochs: int | None = None,
-        fill_style: Literal["━", "◉", "◆", "●", "█", "▮", "=", "#", "▶", "■", "➤"] = "━",
-        empty_style: Literal["━", "◎", "◇", "○", "░", "▯", "-", "▒", ".", "▷", "□"] = "━",
-        fill_color: str = "\033[92m", # Green
-        empty_color: str = "\033[90m", # Grey
+        fill_style: FillStyleType = "━",
+        empty_style: EmptyStyleType = "━",
+        fill_color: str = "\033[92m",  # Green
+        empty_color: str = "\033[90m",  # Grey
         percentage_colors: List[str] | None = None,
-        progress_type: Literal[
-            "bar", "pie", "squares", 
-            "cross", "arrows", "clock", "bounce", 
-            "moon", "triangles"] = "bar",
-        verbose: Literal[
-            None, 0, 1, 2, 
-            "full", "hide-epoch", 
-            "hide-batch-size",
-            "hide-metrics",
-            "hide-train-metrics",
-            "hide-val-metrics",
-            "hide-progress-bar",
-            "hide-time-estimation",
-            "percentage",
-            "only_percentage",
-            "only_epochs", 
-            "only_batch_size", 
-            "only_metrics", 
-            "only_train_metrics", 
-            "only_val_metrics", 
-            "only_progress_bar", 
-            "only_time_estimation"
-            ] = "full",
-        ):
+        progress_type: ProgressType = "bar",
+        verbose: VerboseType = "full",
+    ):
         """
         Initializes the ProgressBar with total iterations, prefix and length of the bar.
 
@@ -92,7 +72,7 @@ class ProgressBar:
                 - "only_progress_bar": Show only progress bar.
                 - "only_time_estimation": Show only time estimation.
         """
-        
+
         # Validate parameters
         self.param_validation(
             fill_style=fill_style,
@@ -104,7 +84,7 @@ class ProgressBar:
             percentage_colors=percentage_colors,
             epochs=epochs,
         )
-        
+
         # Initialize parameters
         self.__total = None
         self.__bar_width = bar_width
@@ -123,17 +103,31 @@ class ProgressBar:
         self.__percent = 0
         self.__progress_type = progress_type
         self.__pre_epoch = None
-        
+
         # Store original sequences
-        self.__bounce_seq = ['▇', '▁','▃','▄','▅','▆','▇','█','▇','▆','▅','▄','▃']
-        self.__square_seq = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-        self.__clock_seq = ['◴','◷','◶','◵']
-        self.__arrows_seq = ['←','↖','↑','↗','→','↘','↓','↙']
-        self.__triangles_seq = ['◢','◣','◤','◥']
-        self.__cross_seq = ['✶','✸','✹','✺','✻','✼','✽','✾']
-        self.__moon_seq = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘']
-        self.__pie_seq = ['◐', '◓', '◑', '◒']
-        
+        self.__bounce_seq = [
+            "▇",
+            "▁",
+            "▃",
+            "▄",
+            "▅",
+            "▆",
+            "▇",
+            "█",
+            "▇",
+            "▆",
+            "▅",
+            "▄",
+            "▃",
+        ]
+        self.__square_seq = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        self.__clock_seq = ["◴", "◷", "◶", "◵"]
+        self.__arrows_seq = ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"]
+        self.__triangles_seq = ["◢", "◣", "◤", "◥"]
+        self.__cross_seq = ["✶", "✸", "✹", "✺", "✻", "✼", "✽", "✾"]
+        self.__moon_seq = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+        self.__pie_seq = ["◐", "◓", "◑", "◒"]
+
         # Initialize cycles
         self.__pie = itertools.cycle(self.__pie_seq)
         self.__square = itertools.cycle(self.__square_seq)
@@ -143,17 +137,17 @@ class ProgressBar:
         self.__triangles = itertools.cycle(self.__triangles_seq)
         self.__cross = itertools.cycle(self.__cross_seq)
         self.__moon = itertools.cycle(self.__moon_seq)
-        
+
     @property
     def total(self):
         return self.__total
-    
+
     @total.setter
     def total(self, value: int):
         if value <= 0:
             raise ValueError("Total must be a positive integer.")
         self.__total = value
-    
+
     @property
     def __reset_cycles(self):
         """Reset all animation cycles to their first values"""
@@ -165,7 +159,7 @@ class ProgressBar:
         self.__cross = itertools.cycle(self.__cross_seq)
         self.__moon = itertools.cycle(self.__moon_seq)
         self.__pie = itertools.cycle(self.__pie_seq)
-        
+
     def param_validation(
         self,
         fill_style: str,
@@ -176,26 +170,59 @@ class ProgressBar:
         verbose: str | int | None,
         percentage_colors: List[str] | None = None,
         epochs: int | None = None,
-        ):
+    ):
         """
         Validates the parameters for the ProgressBar class.
         """
-        symbols = ["━", "◉", "◆", "●", "█", "▮", "=", "#", "◎", "◇", "○", "░", "▯", "-", "▒", ".",
-                "▶", "▷", "■", "□", "➤"
-                ]
+        symbols = [
+            "━",
+            "◉",
+            "◆",
+            "●",
+            "█",
+            "▮",
+            "=",
+            "#",
+            "◎",
+            "◇",
+            "○",
+            "░",
+            "▯",
+            "-",
+            "▒",
+            ".",
+            "▶",
+            "▷",
+            "■",
+            "□",
+            "➤",
+        ]
         if fill_style not in symbols:
             raise ValueError(f"Invalid fill_style. Choose from {symbols}.")
         if empty_style not in symbols:
             raise ValueError(f"Invalid empty_style. Choose from {symbols}.")
-        verbose_lst = [None, 0, 1, 2, "full", "hide-epoch", 
-                    "hide-batch-size", "hide-metrics", 
-                    "hide-train-metrics", "hide-val-metrics", 
-                    "hide-progress-bar", "hide-time-estimation"
-                    "percentage", "only_percentage", "only_epochs", 
-                    "only_batch_size", "only_metrics", 
-                    "only_train_metrics", "only_val_metrics", 
-                    "only_progress_bar", "only_time_estimation"
-                    ]
+        verbose_lst = [
+            None,
+            0,
+            1,
+            2,
+            "full",
+            "hide-epoch",
+            "hide-batch-size",
+            "hide-metrics",
+            "hide-train-metrics",
+            "hide-val-metrics",
+            "hide-progress-bar",
+            "hide-time-estimation" "percentage",
+            "only_percentage",
+            "only_epochs",
+            "only_batch_size",
+            "only_metrics",
+            "only_train_metrics",
+            "only_val_metrics",
+            "only_progress_bar",
+            "only_time_estimation",
+        ]
         if verbose not in verbose_lst:
             raise ValueError(f"Invalid verbose. Choose from {verbose_lst}.")
         if not fill_color.startswith("\033[") or not fill_color.endswith("m"):
@@ -205,7 +232,9 @@ class ProgressBar:
         if not isinstance(bar_width, int) or bar_width <= 0:
             raise ValueError("Invalid bar_width. Must be a positive integer.")
         if percentage_colors is not None and len(percentage_colors) != 4:
-            raise ValueError("Invalid percentage_colors. Must be a list of 4 color codes.")
+            raise ValueError(
+                "Invalid percentage_colors. Must be a list of 4 color codes."
+            )
         if epochs is not None and not isinstance(epochs, int) and epochs <= 0:
             raise ValueError("Invalid epochs. Must be a positive integer.")
 
@@ -216,21 +245,31 @@ class ProgressBar:
         Args:
             epoch (int): Current epoch number.
         """
-        
-        if epoch > self.__epochs:
+
+        if self.__epochs is not None and epoch > self.__epochs:
             raise ValueError("Epoch exceeds the total number of epochs.")
-        
+
         # Track epoch
         self.__pre_epoch = epoch + 1
 
         if (
-            self.__epochs is not None and self.__verbose != "hide-epoch" 
-            and self.__verbose is not None and not self.__verbose.startswith("only")
+            self.__epochs is not None
+            and self.__verbose != "hide-epoch"
+            and self.__verbose is not None
+            and (
+                isinstance(self.__verbose, str)
+                and not self.__verbose.startswith("only")
+            )
             and self.__verbose != 0
-            ):
+        ):
             print(f"\nEpoch {epoch + 1}/{self.__epochs}")
         elif self.__verbose == "hide-epoch" or (
-            self.__verbose is not None and self.__verbose.startswith("only")):
+            self.__verbose is not None
+            and (
+                isinstance(self.__verbose, str)
+                and not self.__verbose.startswith("only")
+            )
+        ):
             print(f"\n")
 
     # Methods
@@ -242,7 +281,7 @@ class ProgressBar:
             str: Style of the progress bar.
         """
         color = self.__fill_color
-        
+
         if self.__percentage_colors is not None:
             if self.__percent <= 25:
                 color = self.__percentage_colors[0]
@@ -252,7 +291,7 @@ class ProgressBar:
                 color = self.__percentage_colors[2]
             elif self.__percent <= 100:
                 color = self.__percentage_colors[3]
-                    
+
         return BarStyle(
             fill_style=f"{color}{self.__fill_style}{self.__reset_color}",
             empty_style=f"{self.__empty_color}{self.__empty_style}{self.__reset_color}",
@@ -269,7 +308,7 @@ class ProgressBar:
         elapsed = int(now - start_time)
         milliseconds = int((elapsed / value) * 1000) if value > 0 else 0
         return TimeEstimate(elapsed, milliseconds=milliseconds)
-    
+
     def __selecting_verbose(
         self,
         bar: str,
@@ -277,22 +316,28 @@ class ProgressBar:
         milliseconds: str,
         formatted_metrics: str | None,
         percent: int,
-        ):
+    ):
         if formatted_metrics is not None:
             hide_train_metrics = formatted_metrics.split(" - ")
-            hide_train_metrics = " - ".join(list(filter(lambda x: "val" not in x, hide_train_metrics)))
+            hide_train_metrics = " - ".join(
+                list(filter(lambda x: "val" not in x, hide_train_metrics))
+            )
             hide_train_metrics = " - " + hide_train_metrics
-            
+
             hide_val_metrics = formatted_metrics.split(" - ")
-            hide_val_metrics = " - ".join(list(filter(lambda x: "val" in x, hide_val_metrics)))
+            hide_val_metrics = " - ".join(
+                list(filter(lambda x: "val" in x, hide_val_metrics))
+            )
             if self.__current_value == self.__total:
                 hide_val_metrics = " - " + hide_val_metrics
         else:
             hide_train_metrics = ""
             hide_val_metrics = ""
-        
-        formatted_metrics = f" - {formatted_metrics}" if formatted_metrics is not None else ""
-        
+
+        formatted_metrics = (
+            f" - {formatted_metrics}" if formatted_metrics is not None else ""
+        )
+
         verbose_style = {
             "full": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
             "hide-epoch": f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
@@ -316,17 +361,20 @@ class ProgressBar:
             4: f"\r{self.__current_value}/{self.__total} {bar} {elapsed} {milliseconds}{formatted_metrics}",
         }
         return verbose_style.get(self.__verbose)
-    
+
     def __progress_symbol(
-        self, 
+        self,
         progress_type: str,
-        filled_length: int, 
-        empty_length: int, 
-        bar_style: BarStyle
-        ):
+        filled_length: int,
+        empty_length: int,
+        bar_style: BarStyle,
+    ):
         match progress_type:
             case "bar":
-                return f"{bar_style.fill_style}" * filled_length + f"{bar_style.empty_style}" * empty_length
+                return (
+                    f"{bar_style.fill_style}" * filled_length
+                    + f"{bar_style.empty_style}" * empty_length
+                )
             case "pie":
                 next_pie = next(self.__pie)
                 return f"{next_pie}"
@@ -352,8 +400,9 @@ class ProgressBar:
                 next_moon = next(self.__moon)
                 return f"{next_moon}"
             case _:
-                raise ValueError(f"Invalid progress_type: {progress_type}. Choose from ['bar', 'pie', 'squares', 'bounce', 'clock', 'arrows', 'triangles', 'cross', 'moon'].")
-                
+                raise ValueError(
+                    f"Invalid progress_type: {progress_type}. Choose from ['bar', 'pie', 'squares', 'bounce', 'clock', 'arrows', 'triangles', 'cross', 'moon']."
+                )
 
     def __progress_contents(
         self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]] | None
@@ -369,7 +418,7 @@ class ProgressBar:
             str: Formatted string of progress bar.
         """
         formatted_metrics = None
-        
+
         if metrics is not None:
             formatted_metrics = " - ".join(
                 [f"{name}: {value:.4f}" for name, value in metrics]
@@ -400,7 +449,9 @@ class ProgressBar:
             percent=percent,
         )
 
-    def __render(self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]] | None):
+    def __render(
+        self, time_estimate: TimeEstimate, metrics: List[Tuple[str, float]] | None
+    ):
         """
         Renders the progress bar with metrics.
 
@@ -408,12 +459,18 @@ class ProgressBar:
             metrics (List[Tuple[str, float]]): List of tuples containing metric name and value.
         """
         content = self.__progress_contents(time_estimate, metrics)
-        
-        if self.__verbose is not None and self.__verbose !=  "only_epochs" and self.__verbose != 0:
+
+        if (
+            self.__verbose is not None
+            and self.__verbose != "only_epochs"
+            and self.__verbose != 0
+        ):
             sys.stdout.write(content)
             sys.stdout.flush()
 
-    def update(self, current_value: int, metrics: List[Tuple[str, float]] | None = None):
+    def update(
+        self, current_value: int, metrics: List[Tuple[str, float]] | None = None
+    ):
         """
         Updates the progress bar with new metrics.
 
@@ -454,6 +511,6 @@ class ProgressBar:
         self.__render(time_estimate, metrics)
         sys.stdout.flush()
         self.__reset_progress()
-        
+
         if self.__pre_epoch == self.__epochs:
             print("\n")

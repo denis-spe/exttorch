@@ -42,5 +42,6 @@
     ],
     "code-runner.executorMap": {
         "python": "conda activate ds && python"
-    }
+    },
+    "python.analysis.autoImportCompletions": true
 }

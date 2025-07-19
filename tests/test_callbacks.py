@@ -38,17 +38,18 @@ class TestCallbacks(ut.TestCase):
         )
 
         history = self.iris_model.fit(
-            self.ir_x, self.ir_y,
+            self.ir_x,
+            self.ir_y,
             validation_data=(self.ir_x, self.ir_y),
             epochs=10,
-            callbacks=[EarlyStopping(patience=1, monitor="val_acc")]
-            )
-        
+            callbacks=[EarlyStopping(patience=3, monitor="val_acc")],
+        )
+
         self.assertIsInstance(history.history, dict)
-    
+
     def test_is_there_check_point(self):
         self.assertTrue(hasattr(callbacks, "SaveOnCheckpoint"))
-        
+
     def test_check_point_instance(self):
         try:
             checkpoint = callbacks.SaveOnCheckpoint(
@@ -62,7 +63,7 @@ class TestCallbacks(ut.TestCase):
             )
         except AttributeError:
             self.fail("Invalid parameters")
-    
+
     def test_sequential_using_SaveOnCheckpoint(self):
         """
         Test the sequential model using iris dataset
@@ -82,22 +83,23 @@ class TestCallbacks(ut.TestCase):
             loss="crossentropy",
             metrics=["acc"],
         )
-        
-        # checkpoint = callbacks.SaveOnCheckpoint(
-        #         "./tmp/checkpoint.json",
-        #         monitor="val_loss",
-        #         verbose=0,
-        #         save_best_only=False,
-        #         save_weights_only=False,
-        #         mode="auto",
-        #         save_freq="epoch",
-        #     )
+
+        checkpoint = callbacks.SaveOnCheckpoint(
+            "./tmp/checkpoint.json",
+            monitor="val_loss",
+            verbose=0,
+            save_best_only=False,
+            save_weights_only=False,
+            mode="auto",
+            save_freq="epoch",
+        )
 
         history = self.iris_model.fit(
-            self.ir_x, self.ir_y,
+            self.ir_x,
+            self.ir_y,
             validation_data=[self.ir_x, self.ir_y],
             epochs=1,
-            # callbacks=[checkpoint]
+            callbacks=[checkpoint],
         )
 
 

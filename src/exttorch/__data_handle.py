@@ -18,7 +18,7 @@ class DataHandler:
     def __init__(
         self,
         x: __data__.Dataset[Any] | __data__.DataLoader[Any] | __data__.TensorDataset | __ArrayLike__ | __data__.Subset[Any] | Iterator | torch.TensorType | __Bunch__,
-        y:  __ArrayLike__ | None = None,
+        y:  __ArrayLike__ | __Bunch__ | None = None,
         batch_size: int = 1,
         val_batch_size: int = 1,
         shuffle: bool = False,

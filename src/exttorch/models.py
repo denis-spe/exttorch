@@ -8,7 +8,7 @@ import typing as __tp__
 from exttorch.losses import Loss as __Loss__
 from exttorch.__data_handle import DataHandler as __DataHandler__
 from exttorch.__metrics_handles import MetricStorage as __MetricStorage__
-from exttorch.history import History as __History__ 
+from exttorch.history import History as __History__
 from exttorch.utils import ProgressBar as __ProgressBar__
 from exttorch.metrics import Metric as __Metric__
 from exttorch.optimizers import Optimizer as __Optimizer__
@@ -23,7 +23,7 @@ from sklearn.base import (
 
 
 class Sequential(__ModelModule__):
-    def __init__(self, layers = None, device: str = "cpu"):
+    def __init__(self, layers=None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
 
@@ -73,13 +73,13 @@ class Sequential(__ModelModule__):
         # Import libraries
         from exttorch.callbacks import Callback
 
-        super().__init__(layers=layers, device=device) # type: ignore
+        super().__init__(layers=layers, device=device)  # type: ignore
         self.__callbacks: __tp__.List[Callback] | None = None
-        
+
     def fit(
         self,
         X: __types__.Dataset_DataLoader_TensorDataset_ArrayLike_Subset_Iterator_TensorType_Bunch,
-        y:  __ArrayLike__ | None = None,
+        y: __ArrayLike__ | None = None,
         *,
         epochs: int = 1,
         random_seed: int | None = None,
@@ -88,16 +88,16 @@ class Sequential(__ModelModule__):
         val_batch_size: int | None = None,
         validation_split: float | None = None,
         validation_data: __types__.List_Tuple_DataLoader_Dataset_TensorDataset = None,
-        callbacks = None,
+        callbacks=None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
-        progress_fill_style: __tp__.Literal['━', '◉', '◆', '●', '█', '▮', '=', '#', '▶', '■'] = "━",
-        progress_empty_style: __tp__.Literal['━', '◎', '◇', '○', '░', '▯', '-', '▒', '.', '▷', '□'] = "━",
+        progress_fill_style: __types__.FillStyleType = "━",
+        progress_empty_style: __types__.EmptyStyleType = "━",
         progress_fill_color: str = "\033[92m",
         progress_empty_color: str = "\033[90m",
         progress_percentage_colors: __tp__.List[str] | None = None,
-        progress_progress_type: __tp__.Literal['bar', 'pie', 'squares', 'cross', 'arrows', 'clock', 'bounce', 'moon', 'triangles'] = "bar",
-        verbose: __tp__.Literal[0, 1, 2, 'full', 'hide-epoch', 'hide-batch-size', 'hide-metrics', 'hide-train-metrics', 'hide-val-metrics', 'hide-progress-bar', 'hide-time-estimation', 'percentage', 'only_percentage', 'only_epochs', 'only_batch_size', 'only_metrics', 'only_train_metrics', 'only_val_metrics', 'only_progress_bar', 'only_time_estimation'] | None = "full",
+        progress_progress_type: __types__.ProgressType = "bar",
+        verbose: __types__.VerboseType = "full",
         **dataloader_kwargs: __tp__.Any,
     ):
         """
@@ -173,17 +173,17 @@ class Sequential(__ModelModule__):
             percentage_colors=progress_percentage_colors,
             progress_type=progress_progress_type,
             verbose=verbose,
-            epochs=epochs
+            epochs=epochs,
         )
 
-        self.__verbose = verbose
-        self.__progress_bar_width=progress_bar_width
-        self.__progress_fill_style=progress_fill_style
-        self.__progress_empty_style=progress_empty_style
-        self.__progress_fill_color=progress_fill_color
-        self.__progress_empty_color=progress_empty_color
-        self.__progress_percentage_colors=progress_percentage_colors
-        self.__progress_progress_type=progress_progress_type
+        self.__verbose: __types__.VerboseType = verbose
+        self.__progress_bar_width = progress_bar_width
+        self.__progress_fill_style: __types__.FillStyleType = progress_fill_style
+        self.__progress_empty_style: __types__.EmptyStyleType = progress_empty_style
+        self.__progress_fill_color = progress_fill_color
+        self.__progress_empty_color = progress_empty_color
+        self.__progress_percentage_colors = progress_percentage_colors
+        self.__progress_progress_type: __types__.ProgressType = progress_progress_type
 
         # Set the val_batch_size to batch_size if None
         val_batch_size = val_batch_size if val_batch_size is not None else batch_size
@@ -211,13 +211,15 @@ class Sequential(__ModelModule__):
             # Instantiate the Loss and optimizer
             if self.loss_obj is None:
                 raise TypeError(
-                    "Compile the model with `model.compile` before " + "fitting the model"
+                    "Compile the model with `model.compile` before "
+                    + "fitting the model"
                 )
             if self.optimizer_obj is None:
                 raise TypeError(
-                    "Compile the model with `model.compile` before " + "fitting the model"
+                    "Compile the model with `model.compile` before "
+                    + "fitting the model"
                 )
-            self.loss  = self.loss_obj()
+            self.loss = self.loss_obj()
             self.optimizer = self.optimizer_obj(self._model.parameters())
             self._model = self._model.to(self._device)
 
@@ -228,8 +230,8 @@ class Sequential(__ModelModule__):
 
                 # Initializer the data
                 data = __DataHandler__(
-                    X,
-                    y,
+                    x=X,
+                    y=y,
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
                     shuffle=shuffle,
@@ -285,12 +287,11 @@ class Sequential(__ModelModule__):
                     # Make a copy
                     metric_copy = train_metric.copy()
                     metric_copy.update(val_metric)
-                    
+
                     # Last progress update
                     self.__progressbar.last_update(
-                        self.__val_data_size, 
-                        list(metric_copy.items())
-                        )
+                        self.__val_data_size, list(metric_copy.items())
+                    )
 
                     # Handle the callbacks on epoch end
                     self._handle_callbacks(
@@ -336,7 +337,7 @@ class Sequential(__ModelModule__):
                 else:
                     # Initializer the data
                     val_sample = __DataHandler__(
-                        validation_data,
+                        x=validation_data,
                         y=None,
                         batch_size=batch_size,
                         val_batch_size=val_batch_size,
@@ -387,13 +388,12 @@ class Sequential(__ModelModule__):
                     # # Make a copy
                     metric_copy = train_metric.copy()
                     metric_copy.update(val_metric)
-                    
+
                     # # Last progress update
                     self.__progressbar.last_update(
-                        self.__val_data_size,
-                        list(metric_copy.items())
-                        )
-                    
+                        self.__val_data_size, list(metric_copy.items())
+                    )
+
                     # Handle the callbacks on epoch end
                     self._handle_callbacks(
                         "on_epoch_end", logs=metric_copy, epoch=epoch
@@ -454,11 +454,11 @@ class Sequential(__ModelModule__):
                 self._handle_callbacks("on_train_end", logs=history.history)
 
         training()
-
+        print("\n")
 
         return history
 
-    def predict_proba(self, X, verbose: str | None = "inherited"):
+    def predict_proba(self, X, verbose: __types__.VerboseType = None):
         import torch
         import numpy as np
         from .utils import ProgressBar
@@ -477,7 +477,7 @@ class Sequential(__ModelModule__):
             empty_color=self.__progress_empty_color,
             percentage_colors=self.__progress_percentage_colors,
             progress_type=self.__progress_progress_type,
-            verbose=self.__verbose if verbose == "inherited" else verbose,            
+            verbose=self.__verbose if verbose is None else verbose,
         )
         # Set the progress bar total
         progressbar.total = len(x)
@@ -496,33 +496,31 @@ class Sequential(__ModelModule__):
 
                 # Update the progress bar
                 progressbar.update(i + 1)
-            
+
         if type(self.loss_obj).__name__ == "CrossEntropyLoss":
             probability = f.softmax(torch.tensor(probability), dim=1).numpy()
         else:
             # Convert the probability to numpy array
             probability = np.array(probability).reshape(-1, 1)
-            
+
         print("\n")
-            
+
         return probability
 
-    def predict(self, X, verbose: str | None = "inherited"):
+    def predict(self, X, verbose: __types__.VerboseType = None):
 
         # Get the probabilities of x
         probability = self.predict_proba(X, verbose=verbose)
-        
+
         # Get the class label if using CrossEntropyLoss
         # or BCELoss or BCEWithLogitsLoss
         if type(self.loss_obj).__name__ == "CrossEntropyLoss":
             pred = probability.argmax(axis=1).reshape(-1, 1)
-        elif type(self.loss_obj).__name__ in  ["BCELoss", "BCEWithLogitsLoss"]:
+        elif type(self.loss_obj).__name__ in ["BCELoss", "BCEWithLogitsLoss"]:
             pred = probability.round().reshape(-1, 1)
         else:
             pred = probability.reshape(-1, 1)
         return pred
-
-        
 
     def __handle_label(self, target):
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
@@ -530,14 +528,14 @@ class Sequential(__ModelModule__):
         elif self.loss.__class__.__name__ == "NLLLoss":
             return target.long().flatten()
         return target.view(-1, 1)
-    
+
     def __metrics_handler(
         self,
         metric_storage,
         predict,
         label,
         loss,
-        ):
+    ):
         """
         Handle the metrics for the model.
         Parameters
@@ -560,7 +558,7 @@ class Sequential(__ModelModule__):
 
         # Measurement live update
         metric_storage.measurement_computation()
-        
+
     def __train(
         self,
         X,
@@ -616,7 +614,7 @@ class Sequential(__ModelModule__):
 
         # Indicate the model to train
         self._model.train()
-        
+
         # Initializer the data
         data = __DataHandler__(
             X,
@@ -646,13 +644,13 @@ class Sequential(__ModelModule__):
 
             # Make prediction
             predict = self._model(feature).float()
-                        
+
             # Changes data type or data shape
             label = self.__handle_label(label)
 
             # Compute the loss
             loss = self.loss(predict, label)
-            
+
             # Handle the metrics
             self.__metrics_handler(
                 metric_storage,
@@ -660,9 +658,11 @@ class Sequential(__ModelModule__):
                 label,
                 loss,
             )
-                
+
             # Update the progress bar
-            self.__progressbar.update(idx + 1, list(metric_storage.measurements.items()))
+            self.__progressbar.update(
+                idx + 1, list(metric_storage.measurements.items())
+            )
 
             # Compute the gradient
             loss.backward()
@@ -673,7 +673,7 @@ class Sequential(__ModelModule__):
                 self._xm.mark_step()
             else:
                 self.optimizer.step()
-        
+
         # Measurements
         measurements = metric_storage.measurements
 
@@ -690,7 +690,7 @@ class Sequential(__ModelModule__):
         val_batch_size: int | None = None,
         shuffle: bool = False,
         random_seed: int | None = None,
-        verbose: str | None = "inherited",
+        verbose: __types__.VerboseType = None,
         nprocs: int = 1,
         **dataloader_kwargs,
     ):
@@ -740,7 +740,7 @@ class Sequential(__ModelModule__):
             empty_color=self.__progress_empty_color,
             percentage_colors=self.__progress_percentage_colors,
             progress_type=self.__progress_progress_type,
-            verbose=self.__verbose if verbose == "inherited" else verbose,
+            verbose=self.__verbose if verbose is None else verbose,
         )
 
         # Create the list for metric
@@ -864,9 +864,13 @@ class Sequential(__ModelModule__):
         self.loss_obj = (
             loss if isinstance(loss, __Loss__) else self.__change_str_to_loss__(loss)
         )
-        self.metrics = self.__str_val_to_metric__(metrics) if metrics is not None else []
+        self.metrics = (
+            self.__str_val_to_metric__(metrics) if metrics is not None else []
+        )
 
-    def _handle_callbacks(self, callback_method: str, logs = None, epoch: int | None = None):
+    def _handle_callbacks(
+        self, callback_method: str, logs=None, epoch: int | None = None
+    ):
 
         if self.__callbacks is not None:
             for callback in self.__callbacks:
@@ -889,17 +893,25 @@ class Sequential(__ModelModule__):
                         callback.on_batch_end(logs)
                     case "on_epoch_begin":
                         if epoch is None:
-                            raise ValueError("epoch must be provided for on_epoch_begin callback method")
+                            raise ValueError(
+                                "epoch must be provided for on_epoch_begin callback method"
+                            )
                         callback.on_epoch_begin(epoch)
                     case "on_epoch_end":
                         if epoch is None:
-                            raise ValueError("epoch must be provided for on_epoch_end callback method")
+                            raise ValueError(
+                                "epoch must be provided for on_epoch_end callback method"
+                            )
                         callback.on_epoch_end(epoch, logs)
                     case _:
-                        raise ValueError("Unknown callback_method name: {}".format(callback_method))
+                        raise ValueError(
+                            "Unknown callback_method name: {}".format(callback_method)
+                        )
 
     @staticmethod
-    def __str_val_to_metric__(metric_list: __tp__.List[__tp__.Any]) -> __tp__.List[__Metric__]:
+    def __str_val_to_metric__(
+        metric_list: __tp__.List[__tp__.Any],
+    ) -> __tp__.List[__Metric__]:
         from exttorch.metrics import (
             Accuracy,
             MeanSquaredError,
@@ -914,7 +926,8 @@ class Sequential(__ModelModule__):
             TopKAccuracy,
             F1Score,
         )
-        new_metric_list: __tp__.List[__Metric__]  = []
+
+        new_metric_list: __tp__.List[__Metric__] = []
         for new_metric_name in metric_list:
             if type(new_metric_name) == str:
                 match new_metric_name:
@@ -949,7 +962,7 @@ class Sequential(__ModelModule__):
                 new_metric_list.append(new_metric_name)
 
         return new_metric_list
-    
+
     @staticmethod
     def __change_str_to_loss__(loss: str):
         from exttorch.losses import (
@@ -961,6 +974,7 @@ class Sequential(__ModelModule__):
             BCEWithLogitsLoss,
             MarginRankingLoss,
         )
+
         match loss:
             case "MSELoss" | "mse" | "mean_squared_error" | "MSE":
                 return MSELoss()
@@ -968,18 +982,29 @@ class Sequential(__ModelModule__):
                 return L1Loss()
             case "NLLLoss" | "nll" | "negative_log_likelihood" | "nll_loss":
                 return NLLLoss()
-            case "CrossEntropyLoss" | "cross_entropy" | "crossentropy" | "categorical_crossentropy":
+            case (
+                "CrossEntropyLoss"
+                | "cross_entropy"
+                | "crossentropy"
+                | "categorical_crossentropy"
+            ):
                 return CrossEntropyLoss()
             case "BCELoss" | "bce" | "binary_crossentropy":
                 return BCELoss()
-            case "BCEWithLogitsLoss" | "bce_with_logits" | "binary_cross_entropy_with_logits":
+            case (
+                "BCEWithLogitsLoss"
+                | "bce_with_logits"
+                | "binary_cross_entropy_with_logits"
+            ):
                 return BCEWithLogitsLoss()
             case "MarginRankingLoss" | "margin_ranking":
                 return MarginRankingLoss()
             case _:
-                raise ValueError("Invalid loss name. Available options: "
-                                 "MSELoss, L1Loss, NLLLoss, CrossEntropyLoss, ")
-    
+                raise ValueError(
+                    "Invalid loss name. Available options: "
+                    "MSELoss, L1Loss, NLLLoss, CrossEntropyLoss, "
+                )
+
     @staticmethod
     def __change_str_to_optimizer__(optimizer: str):
         from exttorch.optimizers import (
@@ -991,6 +1016,7 @@ class Sequential(__ModelModule__):
             Adamax,
             ASGD,
         )
+
         match optimizer:
             case "Adam" | "adam":
                 return Adam()
@@ -1007,8 +1033,10 @@ class Sequential(__ModelModule__):
             case "ASGD" | "asgd":
                 return ASGD()
             case _:
-                raise ValueError("Invalid optimizer name. Available options: "
-                                 "Adam, SGD, RMSprop, Adadelta, Adagrad, Adamax, ASGD.")
+                raise ValueError(
+                    "Invalid optimizer name. Available options: "
+                    "Adam, SGD, RMSprop, Adadelta, Adagrad, Adamax, ASGD."
+                )
 
 
 class Wrapper(__BaseEstimator, __TransformerMixin):
@@ -1044,10 +1072,39 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
 
     def predict(self, X, verbose: str | None = None):
         from sklearn.utils.validation import check_is_fitted
+
         check_is_fitted(self, "is_fitted_")
         return self.model.predict(X, verbose=verbose)
 
     def score(self, X, y=None, verbose: str | None = None):
         from sklearn.utils.validation import check_is_fitted
+
         check_is_fitted(self, "is_fitted_")
         return self.model.evaluate(X, y, verbose=verbose)
+
+
+def load_model_or_weight(model_path: str):
+    """
+    Load the model from the given path.
+
+    Parameters
+    ----------
+        model_path : (str)
+            Path to the model file.
+
+    Returns
+    -------
+        Sequential or Sequential weight
+            Loaded model or weights.
+    """
+    import pickle
+
+    if model_path.endswith(".ext"):
+        with open(model_path, "rb") as f:
+            return pickle.load(f)
+
+    elif model_path.endswith(".we"):
+        # Load the state_dict
+        return __torch__.load(model_path)
+    else:
+        raise ValueError("Filepath must end with .ext or .we")

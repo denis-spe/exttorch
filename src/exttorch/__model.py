@@ -8,7 +8,11 @@ from exttorch import __types as __types__
 
 
 class ModelModule(__nn__.Module):
-    def __init__(self, layers: __typing__.List[__types__.Layer] | None = None, device: str = "cpu"):
+    def __init__(
+        self,
+        layers: __typing__.List[__types__.Layer] | None = None,
+        device: str = "cpu",
+    ):
         """
         Initializes the ModelModule with the given layers and device.
         Args:
@@ -21,7 +25,7 @@ class ModelModule(__nn__.Module):
         from exttorch.optimizers import Optimizer
         from exttorch.losses import Loss
 
-        super().__init__() # type: ignore
+        super().__init__()  # type: ignore
         self._xm = None
 
         match device:
@@ -40,7 +44,7 @@ class ModelModule(__nn__.Module):
                 self._device = __torch__.device("cpu")
             case _:
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
-        
+
         self.loss: Loss | None = None
         self.loss_obj: Loss | None = None
         self.optimizer: Optimizer | None = None
@@ -54,21 +58,46 @@ class ModelModule(__nn__.Module):
         self.__val_data_size = None
         self._model: ModelModule | __nn__.Sequential = self
 
-    def get_weights(self) -> __types__.Weight:
+    def model_state_dict(self) -> __types__.Weight:
         if self._model is not None:
             return self._model.state_dict()
         else:
-            raise TypeError("The model must be fitted before calling the get_weights method")
+            raise TypeError(
+                "The model must be fitted before calling the get_weights method"
+            )
 
-    def set_weights(self, weight: __types__.Weight):
+    def load_model_state_dict(self, weight: __types__.Weight):
         if self._model is not None:
             self._model.load_state_dict(weight)
         else:
-            raise TypeError("The model must be fitted before calling the set_weights method")
+            raise TypeError(
+                "The model must be fitted before calling the set_weights method"
+            )
 
     def add(self, layer: __types__.Layer):
         self.layers.append(layer)
-        
+
+    def save(self, filepath: str):
+        """
+        Saves the model to the specified file path.
+        Args:
+            filepath (str): The path where the model will be saved.
+        """
+        import pickle, os
+
+        if not os.path.exists(os.path.dirname(filepath)):
+            print(f"Creating directory: {os.path.dirname(filepath)}")
+            os.makedirs(os.path.dirname(filepath))
+
+        if filepath.endswith(".ext"):
+            with open(filepath, "wb") as f:
+                pickle.dump(self, f)
+
+        elif filepath.endswith(".we"):
+            weights = self.model_state_dict()
+            __torch__.save(weights, filepath)
+        else:
+            raise ValueError("Filepath must end with .ext or .we")
+
     # def forward(self, *args: Any, **kwargs: Any) -> __Module__:
-        # raise NotImplementedError("The forward method must be implemented in the subclass.")
-    
+    # raise NotImplementedError("The forward method must be implemented in the subclass.")
