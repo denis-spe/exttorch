@@ -46,16 +46,13 @@ class ModelModule(__nn__.Module):
                 raise ValueError("device must be either 'TPU', 'GPU' or 'CPU'.")
 
         self.loss: Loss | None = None
-        self.loss_obj: Loss | None = None
+        self.loss_obj: Loss | str | None = None
         self.optimizer: Optimizer | None = None
-        self.optimizer_obj: Optimizer | None = None
+        self.optimizer_obj: Optimizer | str | None = None
         self.layers = layers if layers else []
         self.metrics = None
-        self.__progressbar = None
         self.stop_training = False
         self._device = None
-        self.__verbose = None
-        self.__val_data_size = None
         self._model: ModelModule | __nn__.Sequential = self
 
     def model_state_dict(self) -> __types__.Weight:

@@ -1,28 +1,28 @@
 """Praise Ye The Lord Your God"""
 
+import typing as __tp__
+
 # Import libraries
 import torch as __torch__
-from torch import nn as __nn__
-from sklearn.utils import Bunch as __Bunch__
-import typing as __tp__
-from exttorch.losses import Loss as __Loss__
-from exttorch.__data_handle import DataHandler as __DataHandler__
-from exttorch.__metrics_handles import MetricStorage as __MetricStorage__
-from exttorch.history import History as __History__
-from exttorch.utils import ProgressBar as __ProgressBar__
-from exttorch.metrics import Metric as __Metric__
-from exttorch.optimizers import Optimizer as __Optimizer__
-from exttorch import __types as __types__
-from exttorch.__model import ModelModule as __ModelModule__
 from numpy.typing import ArrayLike as __ArrayLike__
-from torch.utils import data as __data__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
     TransformerMixin as __TransformerMixin,
 )
+from torch import nn as __nn__
+
+from src.exttorch import __types as __types__
+from src.exttorch.__data_handle import DataHandler as __DataHandler__
+from src.exttorch.__metrics_handles import MetricStorage as __MetricStorage__
+from src.exttorch.__model import ModelModule as __ModelModule__
+from src.exttorch.history import History as __History__
+from src.exttorch.losses import Loss as __Loss__
+from src.exttorch.metrics import Metric as __Metric__
+from src.exttorch.optimizers import Optimizer as __Optimizer__
+from src.exttorch.utils import ProgressBar as __ProgressBar__
 
 
-class Sequential(__ModelModule__):
+class Stack(__ModelModule__):
     def __init__(self, layers=None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
@@ -71,14 +71,22 @@ class Sequential(__ModelModule__):
         {'val_loss': ..., 'val_accuracy': ...}
         """
         # Import libraries
-        from exttorch.callbacks import Callback
+        self.__progress_progress_type = None
+        self.__progress_percentage_colors = None
+        self.__progress_empty_color = None
+        self.__progress_fill_color = None
+        self.__progress_fill_style = None
+        self.__progress_fill_style = None
+        self.__progress_empty_style = None
+        self.__progress_bar_width = None
+        from src.exttorch.callbacks import Callback
 
         super().__init__(layers=layers, device=device)  # type: ignore
         self.__callbacks: __tp__.List[Callback] | None = None
 
     def fit(
         self,
-        X: __types__.Dataset_DataLoader_TensorDataset_ArrayLike_Subset_Iterator_TensorType_Bunch,
+        x,
         y: __ArrayLike__ | None = None,
         *,
         epochs: int = 1,
@@ -87,7 +95,7 @@ class Sequential(__ModelModule__):
         batch_size: int = 1,
         val_batch_size: int | None = None,
         validation_split: float | None = None,
-        validation_data: __types__.List_Tuple_DataLoader_Dataset_TensorDataset = None,
+        validation_data = None,
         callbacks=None,
         nprocs: int = 1,
         progress_bar_width: int = 40,
@@ -97,69 +105,9 @@ class Sequential(__ModelModule__):
         progress_empty_color: str = "\033[90m",
         progress_percentage_colors: __tp__.List[str] | None = None,
         progress_progress_type: __types__.ProgressType = "bar",
-        verbose: __types__.VerboseType = "full",
+        verbose = "full",
         **dataloader_kwargs: __tp__.Any,
     ):
-        """
-        Fit the model to the data.
-
-        Parameters
-        ----------
-            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
-                Training feature for training the model.
-            y : (Optional[np.ndarray | pd.Series |pd.DataFrame]) None by default,
-                Training label for training the model.
-            epochs : (int) 1 by default,
-                Number of epochs to train the model.
-            generator : (Optional[torch.Generator]) None by default,
-                For generator reproducibility of data.
-            shuffle : (bool) False by default,
-                Shuffle the data.
-            batch_size : (Optional[int]) None by default,
-                Batch size for training data.
-            val_batch_size : (Optional[int]) batch_size by default
-                Batch size for validation data
-            validation_split : (Optional[float]) None by default,
-                Split the dataset into train and validation data using
-                validation_split as a test size and leaving the rest for
-                train size.
-            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset]) None by default,
-                Data for validating model performance
-            verbose : (str | None) verbose by default,
-                Handles the model progress bar.
-                If verbose is None, no progress bar is shown.
-                Option :
-                    - verbose: Displays the progress bar.
-                    - silent: No progress bar is shown.
-                    - silent_verbose: Displays the current batch, bar and elapsed time.
-                    - silent_verbose_suffix: Displays the current batch and metrics.
-                    - silent_epoch: Displays the current batch, bar, elapsed time and metrics but not epochs.
-                    - silent_epoch_suffix: Displays the current batch and metrics but not epochs.
-            callbacks: (Optional[List[Callback]])
-                Model list of callbacks.
-            nprocs: (int)
-                The number of processes/devices for the replication.
-                At the moment, if specified, can be either 1 or the maximum number of devices.
-            random_seed: (int)
-                Random seed for reproducibility.
-            progressbar_width: (int)
-                The width of the progress bar.
-            progressbar_dff_color: (bool)
-                If True, the progress bar will be displayed in a different color.
-            progressbar_style: (str) `default` by default
-                The style of the progress bar. option:
-                    - default: Default style.
-                    - square: Square style.
-                    - circle: Circle style.
-            progressbar_show_check_mark: (bool)
-                If True, a check mark will be shown at the end of the progress bar.
-            progressbar_color: (str)
-                The color of the progress bar.
-            progressbar_empty_color: (str)
-                The color of the empty part of the progress bar.
-            dataloader_kwargs: (Optional[Dict])
-                Additional arguments for DataLoader.
-        """
 
         self.stop_training = False
 
@@ -176,7 +124,7 @@ class Sequential(__ModelModule__):
             epochs=epochs,
         )
 
-        self.__verbose: __types__.VerboseType = verbose
+        self.__verbose = verbose
         self.__progress_bar_width = progress_bar_width
         self.__progress_fill_style: __types__.FillStyleType = progress_fill_style
         self.__progress_empty_style: __types__.EmptyStyleType = progress_empty_style
@@ -230,7 +178,7 @@ class Sequential(__ModelModule__):
 
                 # Initializer the data
                 data = __DataHandler__(
-                    x=X,
+                    x=x,
                     y=y,
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
@@ -259,9 +207,7 @@ class Sequential(__ModelModule__):
                         batch_size=batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        verbose=verbose,
                         nprocs=nprocs,
-                        show_val_metrics=True,
                         **dataloader_kwargs,
                     )
 
@@ -311,7 +257,7 @@ class Sequential(__ModelModule__):
 
                 # Initializer the data
                 train_data = __DataHandler__(
-                    X,
+                    x,
                     y,
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
@@ -360,9 +306,7 @@ class Sequential(__ModelModule__):
                         batch_size=batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        verbose=verbose,
                         nprocs=nprocs,
-                        show_val_metrics=True,
                         **dataloader_kwargs,
                     )
 
@@ -411,7 +355,7 @@ class Sequential(__ModelModule__):
 
                 # Initializer the data
                 data = __DataHandler__(
-                    X,
+                    x,
                     y,
                     batch_size=batch_size,
                     val_batch_size=val_batch_size,
@@ -434,7 +378,6 @@ class Sequential(__ModelModule__):
                         batch_size=batch_size,
                         shuffle=shuffle,
                         random_seed=random_seed,
-                        verbose=verbose,
                         nprocs=nprocs,
                         **dataloader_kwargs,
                     )
@@ -458,13 +401,13 @@ class Sequential(__ModelModule__):
 
         return history
 
-    def predict_proba(self, X, verbose: __types__.VerboseType = None):
+    def predict_proba(self, x, verbose = None):
         import torch
         import numpy as np
         from .utils import ProgressBar
         from torch.nn import functional as f
 
-        x = (X.double() if type(X) == torch.Tensor else torch.tensor(X).double()).to(
+        x = (x.float() if type(x) == torch.Tensor else torch.tensor(x).float()).to(
             self._device
         )
 
@@ -489,7 +432,7 @@ class Sequential(__ModelModule__):
             for i, data in enumerate(x):
 
                 # Make prediction and get probabilities
-                proba = self._model(data.view(1, -1).float())
+                proba = self._model(data)
 
                 # Append the probabilities to the list
                 probability.append(proba.detach().reshape(1, -1).tolist()[0])
@@ -507,20 +450,20 @@ class Sequential(__ModelModule__):
 
         return probability
 
-    def predict(self, X, verbose: __types__.VerboseType = None):
+    def predict(self, x, verbose = None):
 
         # Get the probabilities of x
-        probability = self.predict_proba(X, verbose=verbose)
+        probability = self.predict_proba(x, verbose=verbose)
 
         # Get the class label if using CrossEntropyLoss
         # or BCELoss or BCEWithLogitsLoss
         if type(self.loss_obj).__name__ == "CrossEntropyLoss":
-            pred = probability.argmax(axis=1).reshape(-1, 1)
+            predict = probability.argmax(axis=1).reshape(-1, 1)
         elif type(self.loss_obj).__name__ in ["BCELoss", "BCEWithLogitsLoss"]:
-            pred = probability.round().reshape(-1, 1)
+            predict = probability.round().reshape(-1, 1)
         else:
-            pred = probability.reshape(-1, 1)
-        return pred
+            predict = probability.reshape(-1, 1)
+        return predict
 
     def __handle_label(self, target):
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
@@ -529,8 +472,8 @@ class Sequential(__ModelModule__):
             return target.long().flatten()
         return target.view(-1, 1)
 
+    @staticmethod
     def __metrics_handler(
-        self,
         metric_storage,
         predict,
         label,
@@ -561,23 +504,20 @@ class Sequential(__ModelModule__):
 
     def __train(
         self,
-        X,
+        x,
         y=None,
         batch_size: int = 1,
         shuffle: bool = False,
         random_seed=None,
-        verbose: str | int | None = 1,
-        nprocs: int = 1,
-        show_val_metrics: bool = False,
-        warmup_steps: bool = False,
-        **kwargs,
+            nprocs: int = 1,
+            **kwargs,
     ) -> dict:
         """
         Trains the model.
 
         Parameters
         ----------
-            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+            x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
                 Training feature for training the model.
             y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
                 Training label for training the model.
@@ -602,7 +542,6 @@ class Sequential(__ModelModule__):
                 "Compile the model with `model.compile` before " + "fitting the model"
             )
 
-        metric_storage = None
 
         # Create the list for metric
         metric_storage = __MetricStorage__(
@@ -617,7 +556,7 @@ class Sequential(__ModelModule__):
 
         # Initializer the data
         data = __DataHandler__(
-            X,
+            x,
             y,
             batch_size=batch_size,
             shuffle=shuffle,
@@ -684,13 +623,13 @@ class Sequential(__ModelModule__):
 
     def evaluate(
         self,
-        X,
+        x,
         y=None,
         batch_size: int = 1,
         val_batch_size: int | None = None,
         shuffle: bool = False,
         random_seed: int | None = None,
-        verbose: __types__.VerboseType = None,
+        verbose = None,
         nprocs: int = 1,
         **dataloader_kwargs,
     ):
@@ -699,12 +638,10 @@ class Sequential(__ModelModule__):
 
         Parameters
         ----------
-            X : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+            x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
                 Training feature for training the model.
             y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
                 Training label for training the model.
-            generator : (Optional[torch.Generator])
-                For generator reproducibility of data.
             shuffle : (bool)
                 Shuffle the data.
             batch_size : (Optional[int])
@@ -728,8 +665,6 @@ class Sequential(__ModelModule__):
             dataloader_kwargs: (Optional[Dict])
                 Additional arguments for DataLoader.
         """
-
-        metric_storage = None
 
         # Instantiate the progress bar
         eval_progressbar = __ProgressBar__(
@@ -757,7 +692,7 @@ class Sequential(__ModelModule__):
 
         # Initializer the data
         data = __DataHandler__(
-            X,
+            x,
             y,
             batch_size=batch_size,
             val_batch_size=val_batch_size,
@@ -784,7 +719,7 @@ class Sequential(__ModelModule__):
                 )
 
                 # Make prediction
-                predict = self._model(feature)
+                predict = self._model(feature).float()
 
                 # Check if using BCELoss optimizer
                 label = self.__handle_label(label)
@@ -858,11 +793,11 @@ class Sequential(__ModelModule__):
         """
         self.optimizer_obj = (
             optimizer
-            if isinstance(optimizer, __Optimizer__)
+            if type(optimizer) != str
             else self.__change_str_to_optimizer__(optimizer)
         )
         self.loss_obj = (
-            loss if isinstance(loss, __Loss__) else self.__change_str_to_loss__(loss)
+            loss if type(loss) != str else self.__change_str_to_loss__(loss)
         )
         self.metrics = (
             self.__str_val_to_metric__(metrics) if metrics is not None else []
@@ -912,7 +847,7 @@ class Sequential(__ModelModule__):
     def __str_val_to_metric__(
         metric_list: __tp__.List[__tp__.Any],
     ) -> __tp__.List[__Metric__]:
-        from exttorch.metrics import (
+        from src.exttorch.metrics import (
             Accuracy,
             MeanSquaredError,
             R2,
@@ -965,7 +900,7 @@ class Sequential(__ModelModule__):
 
     @staticmethod
     def __change_str_to_loss__(loss: str):
-        from exttorch.losses import (
+        from src.exttorch.losses import (
             MSELoss,
             L1Loss,
             NLLLoss,
@@ -1007,7 +942,7 @@ class Sequential(__ModelModule__):
 
     @staticmethod
     def __change_str_to_optimizer__(optimizer: str):
-        from exttorch.optimizers import (
+        from src.exttorch.optimizers import (
             Adam,
             SGD,
             RMSprop,
@@ -1034,7 +969,7 @@ class Sequential(__ModelModule__):
                 return ASGD()
             case _:
                 raise ValueError(
-                    "Invalid optimizer name. Available options: "
+                    f"Invalid optimizer name `{optimizer}`. Available options: "
                     "Adam, SGD, RMSprop, Adadelta, Adagrad, Adamax, ASGD."
                 )
 
@@ -1046,13 +981,14 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
 
     def __init__(
         self,
-        model: Sequential,
+        model: Stack,
         loss: __Loss__,
         optimizer: __Optimizer__,
         metrics: __tp__.List[str | __Metric__] | None = None,
         **fit_kwargs,
     ):
         super().__init__()
+        self.is_fitted_ = None
         self.model = model
         self.fit_kwargs = fit_kwargs
         self.loss = loss
@@ -1060,27 +996,27 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         self.metrics = metrics
         self.history = None
 
-    def fit(self, X, y=None, **kwargs):
+    def fit(self, x, y=None, **kwargs):
         self.model.compile(
             loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
         )
         self.history = self.model.fit(
-            X, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs
+            x, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs
         )
         self.is_fitted_ = True
         return self
 
-    def predict(self, X, verbose: str | None = None):
+    def predict(self, x, verbose: str | None = None):
         from sklearn.utils.validation import check_is_fitted
 
         check_is_fitted(self, "is_fitted_")
-        return self.model.predict(X, verbose=verbose)
+        return self.model.predict(x, verbose=verbose)
 
-    def score(self, X, y=None, verbose: str | None = None):
+    def score(self, x, y=None, verbose: str | None = None):
         from sklearn.utils.validation import check_is_fitted
 
         check_is_fitted(self, "is_fitted_")
-        return self.model.evaluate(X, y, verbose=verbose)
+        return self.model.evaluate(x, y, verbose=verbose)
 
 
 def load_model_or_weight(model_path: str):

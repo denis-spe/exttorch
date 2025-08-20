@@ -8,7 +8,7 @@ import unittest as ut
 from torch import nn
 from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader
-from exttorch.models import Sequential
+from exttorch.models import Stack
 from exttorch import models
 from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression
@@ -195,7 +195,7 @@ class TestMetrics(ut.TestCase):
 
         train_dataloader = DataLoader(train_data, batch_size=32, num_workers=4)
         
-        self.iris_model = Sequential(
+        self.iris_model = Stack(
             [
                 nn.Linear(4, 32),
                 nn.ReLU(),

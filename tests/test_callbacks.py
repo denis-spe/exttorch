@@ -6,7 +6,7 @@ from contexts import exttorch
 from exttorch import callbacks
 from exttorch.callbacks import EarlyStopping
 from exttorch.metrics import Accuracy
-from exttorch.models import Sequential
+from exttorch.models import Stack
 from sklearn.datasets import load_iris, load_digits
 from torch import nn
 from torch.optim import Adam
@@ -21,7 +21,7 @@ class TestCallbacks(ut.TestCase):
         """
         Test the sequential model using iris dataset
         """
-        self.iris_model = Sequential(
+        self.iris_model = Stack(
             [
                 nn.Linear(4, 32),
                 nn.ReLU(),
@@ -68,7 +68,7 @@ class TestCallbacks(ut.TestCase):
         """
         Test the sequential model using iris dataset
         """
-        self.iris_model = Sequential(
+        self.iris_model = Stack(
             [
                 nn.Linear(4, 32),
                 nn.ReLU(),

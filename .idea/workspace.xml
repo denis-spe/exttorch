@@ -5,14 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file">
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__types.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/callbacks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/losses.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/losses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/__data_handle.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__data_handle.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/optimizers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/optimizers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/models/model.ext" beforeDir="false" afterPath="$PROJECT_DIR$/tests/models/model.ext" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_accepted_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_accepted_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_callbacks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_grid_search.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_grid_search.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_metrics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_random_search.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_random_search.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_save_load_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_save_load_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_sequential.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sequential.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_sklearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sklearn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/weights/model.we" beforeDir="false" afterPath="$PROJECT_DIR$/tests/weights/model.we" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +43,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/denis-spe/exttorch&quot;,
-    &quot;accountId&quot;: &quot;a04512fe-217a-47af-bebf-fdcc109eaef8&quot;
+    &quot;accountId&quot;: &quot;eb263218-c575-4e46-899f-1762eb03cb0d&quot;
   }
 }</component>
   <component name="ProblemsViewState">
@@ -48,35 +57,60 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python tests.Doctests in .executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Doctests in exttorch.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Doctests in src.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in tests.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Volumes/Storage/programming/DS/DL/exttorch&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python tests.Doctests in .executor": "Run",
+    "Python tests.Doctests in exttorch.executor": "Run",
+    "Python tests.Doctests in src.executor": "Run",
+    "Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset.executor": "Run",
+    "Python tests.Python tests for test_hyper_parameters.TestHyperParameter.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_add_method.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_digits_dataset.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor": "Run",
+    "Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor": "Run",
+    "Python tests.Python tests in tests.executor": "Run",
+    "Python.optimizers.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/Volumes/Storage/programming/ds/dl/exttorch",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
-  <component name="RunManager" selected="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset">
+}]]></component>
+  <component name="RunManager" selected="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset">
+    <configuration name="optimizers" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="exttorch" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="ds" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/exttorch/optimizers.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="Doctests in exttorch" type="tests" factoryName="Doctests" nameIsGenerated="true">
       <module name="exttorch" />
       <option name="ENV_FILES" value="" />
@@ -178,6 +212,7 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.optimizers" />
       <item itemvalue="Python tests.Doctests in exttorch" />
       <item itemvalue="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset" />
       <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
@@ -187,19 +222,18 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
+        <item itemvalue="Python tests.Python tests in tests" />
+        <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
         <item itemvalue="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset" />
         <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame" />
-        <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
-        <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
-        <item itemvalue="Python tests.Python tests in tests" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-b26f3e71634d-JavaScript-PY-251.26094.141" />
-        <option value="bundled-python-sdk-9f8e2b94138c-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26094.141" />
+        <option value="bundled-python-sdk-7e47963ff851-f0eec537fc84-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.23892.515" />
       </set>
     </attachedChunks>
   </component>

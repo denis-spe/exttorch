@@ -7,7 +7,7 @@ import unittest as ut
 from torch import nn
 from sklearn.datasets import load_iris
 from sklearn.model_selection import cross_validate
-from exttorch.models import Sequential, Wrapper
+from exttorch.models import Stack, Wrapper
 from sklearn.pipeline import Pipeline
 from exttorch.losses import CrossEntropyLoss
 from exttorch.metrics import Accuracy, Recall, F1Score
@@ -25,14 +25,14 @@ class TestPipeline(ut.TestCase):
         Test the pipeline model using iris dataset
         """
         wrapper = Wrapper(
-            Sequential(
+            Stack(
                 [
                     nn.Linear(4, 128),
                     nn.ReLU(),
                     nn.Linear(128, 128),
                     nn.ReLU(),
                     nn.Linear(128, 3),
-                    nn.Softmax(dim=1),
+                    nn.Softmax(dim=-1),
                 ]
             ),
             loss=CrossEntropyLoss(),
@@ -60,7 +60,7 @@ class TestPipeline(ut.TestCase):
         Test the cross-validation of the pipeline model using iris dataset
         """
         wrapper = Wrapper(
-            Sequential(
+            Stack(
                 [
                     nn.Linear(4, 128),
                     nn.ReLU(),

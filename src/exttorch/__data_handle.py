@@ -1,17 +1,15 @@
 # Praise Ye The Lord
 
+import types
 from typing import Tuple, Optional, Any, Iterator
 
 import numpy as np
 import pandas as pd
-import types
-
 # Import the libraries
 import torch
-import numpy as np
 from numpy.typing import ArrayLike as __ArrayLike__
-from torch.utils import data as __data__
 from sklearn.utils import Bunch as __Bunch__
+from torch.utils import data as __data__
 
 
 class DataHandler:

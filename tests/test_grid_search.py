@@ -10,13 +10,13 @@ from exttorch.losses import CrossEntropyLoss
 from exttorch.optimizers import Adam
 from exttorch.tuner import GridSearchTune
 from exttorch.hyperparameter import HyperParameters
-from exttorch.models import Sequential
+from exttorch.models import Stack
 
 
 def tuned_func(hp: HyperParameters):
     features = hp.Int("features", 1, 3)
 
-    model = Sequential(
+    model = Stack(
         [
             nn.Linear(13, features),
             nn.ReLU(),
