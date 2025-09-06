@@ -76,9 +76,9 @@ class TestAcceptedData(TestCase):
         model.compile(
             optimizer='adam', 
             loss='binary_crossentropy', 
-            # metrics=['precision', 'recall', 'f1_score']
+            metrics=['acc', 'precision']#, 'recall', 'f1_score']
             )
-        model.fit(X, y, epochs=1, batch_size=5, validation_split=0.2)
+        model.fit(X, y, epochs=2, batch_size=5, validation_split=0.2, verbose="hide-progress-bar")
         
     def test_multiclass_classification_dataset(self):
         

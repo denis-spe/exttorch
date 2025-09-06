@@ -814,8 +814,8 @@ class Stack(ModelFit):
         self, callback_method: str, logs=None, epoch: int | None = None
     ):
 
-        if self.callbacks is not None:
-            for callback in self.callbacks:
+        if self.__callbacks is not None:
+            for callback in self.__callbacks:
                 # Set the model and stop_training to the callback
                 callback.model = self
 

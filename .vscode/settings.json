@@ -43,5 +43,6 @@
     "code-runner.executorMap": {
         "python": "conda activate ds && python"
     },
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "git.ignoreLimitWarning": true
 }

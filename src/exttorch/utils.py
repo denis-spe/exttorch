@@ -543,15 +543,15 @@ class ModelFit:
         self.loss_obj = None
         self._model: nn.Module | None = None
         self._device: torch.device | str = torch.device("cpu")
-        self.callbacks: List | None = None
+        self.__callbacks: List | None = None
 
     # Private methods
     def __handle_callbacks(
         self, callback_method: str, logs=None, epoch: int | None = None
     ):
 
-        if self.callbacks is not None:
-            for callback in self.callbacks:
+        if self.__callbacks is not None:
+            for callback in self.__callbacks:
                 # Set the model and stop_training to the callback
                 callback.model = self
 
@@ -618,8 +618,12 @@ class ModelFit:
         **dataloader_kwargs,
     ):
 
+        # Stop training flag
         self.stop_training = False
-
+        
+        # Declare the combined_metric
+        combined_metric = None
+        
         # Instantiate the progress bar
         self._progressbar = ProgressBar(
             bar_width=progress_bar_width,
@@ -653,7 +657,7 @@ class ModelFit:
             torch.manual_seed(random_seed)
 
         if callbacks is not None:
-            self.callbacks = callbacks
+            self.__callbacks = callbacks
 
         # Initialize the model
         self._model = nn.Sequential(*self.layers)
@@ -667,6 +671,10 @@ class ModelFit:
             raise TypeError(
                 "Compile the model with `model.compile` before " + "fitting the model"
             )
+        
+        if validation_data is not None and validation_split is not None:
+            raise ValueError("Provide either validation_data or validation_split, not both.")
+        
         self.loss = self.loss_obj()
         self.optimizer = self.optimizer_obj(self._model.parameters())
         self._model = self._model.to(self._device)
@@ -688,8 +696,26 @@ class ModelFit:
 
         # Get the train and validation data
         train_data, val_data = data_handler.get_data()
+        
+        # Add the size of train
+        self._progressbar.total = len(train_data)
+        
+        # validation data size
+        val_data_size = len(val_data.dataset)
+        
+        # Handle on train begin callback
+        self.__handle_callbacks("on_train_begin")
 
         for epoch in range(epochs):
+            # Handle on epoch begin callback
+            self.__handle_callbacks("on_epoch_begin", epoch=epoch)
+            
+            # Set the epoch for progress bar
+            self._progressbar.set_epoch(epoch)
+            
+            if self.stop_training:
+                break
+            
             # Train metrics storage
             self.train_metric_storage = MetricStorage(
                 self._device,
@@ -704,13 +730,34 @@ class ModelFit:
                 self.metrics,
                 batch_size=val_batch_size,
                 loss_name=type(self.loss).__name__,
+                train=False
             )
 
-            train_metric = self.train_stage(train_data)
+            # Train stage
+            train_stage = self.train_stage(train_data) 
 
-            print(train_metric)
-            val_metric = self.val_stage(val_data)
-            print(val_metric)
+            # Update the history
+            history.add_history(train_stage)            
+
+            if validation_data is not None or validation_split is not None:
+                val_stage = self.val_stage(val_data)
+                combined_metric = {**train_stage, **val_stage}
+                
+                # Update the history
+                history.add_history(combined_metric)
+
+                # Last progress update
+                self._progressbar.last_update(
+                    val_data_size, list(combined_metric.items())
+                )
+        
+            # Handle on epoch end callback
+            self.__handle_callbacks(
+                "on_epoch_end",
+                logs=combined_metric if validation_data is not None or validation_split is not None else train_stage,
+                epoch=epoch
+            )
+            
         print("\n")
 
         return history
@@ -763,6 +810,12 @@ class ModelFit:
                 label=label,
                 loss=loss,
             )
+            
+            # Update the progress bar
+            self._progressbar.update(
+                current_value=idx + 1,
+                metrics=list(self.train_metric_storage.measurements.items())
+            )
 
             # Compute the gradient
             loss.backward()
@@ -796,12 +849,12 @@ class ModelFit:
         # Indicate the model to evaluate
         self._model.eval()
 
-        # Handle on validation begin
-        self.__handle_callbacks("on_validation_begin")
-
         with torch.no_grad():
             # Loop over the data
             for idx, (feature, label) in enumerate(val_data):
+                
+                # Handle on validation begin
+                self.__handle_callbacks("on_validation_begin")
 
                 # Set the device for X and y
                 feature, label = (
