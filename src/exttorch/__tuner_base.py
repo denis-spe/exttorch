@@ -3,6 +3,8 @@
 ======== ExtTorch Tuner Base ========
 """
 
+import typing as __typing__
+
 class BaseSearch:
     def __init__(self, tuned_func, objective):
         self.__tuned_func = tuned_func
@@ -123,7 +125,7 @@ class BaseSearch:
         table = columnar(data, headers, no_borders=False, row_sep=" ")
         print(table)
 
-    def __call__(self, params, iteration, n_iterations, X, y, **kwargs: any) -> any:
+    def __call__(self, params, iteration, n_iterations, X, y, **kwargs: __typing__.Any) -> None:
 
         # Import libraries
         import time

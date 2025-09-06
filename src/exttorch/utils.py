@@ -1,12 +1,19 @@
 # Holy, holy, holy is the LORD of host, the whole earth is full of his glory.
 
 # Importing necessary modules
+
 import sys
 import time
 from typing import List, Tuple
 from dataclasses import dataclass
 import itertools
-from exttorch.__types import FillStyleType, EmptyStyleType, ProgressType, VerboseType
+from src.exttorch.history import History
+import torch
+import torch.nn as nn
+from src.exttorch.metrics import Metric
+from src.exttorch.__metrics_handles import MetricStorage
+from src.exttorch.__data_handle import DataHandler
+from src.exttorch.__types import FillStyleType, EmptyStyleType, ProgressType, VerboseType
 
 
 @dataclass
@@ -514,3 +521,314 @@ class ProgressBar:
 
         if self.__pre_epoch == self.__epochs:
             print("\n")
+
+
+class ModelFit:
+    # Constructor
+    def __init__(self):
+        self._progressbar: ProgressBar | None = None
+        self.stop_training = False
+        self._verbose: VerboseType = "full"
+        self._progress_bar_width: int = 40
+        self._progress_fill_style: FillStyleType = "━"
+        self._progress_empty_style: EmptyStyleType = "━"
+        self._progress_fill_color: str = "\033[92m"
+        self._progress_empty_color: str = "\033[90m"
+        self._progress_percentage_colors: List[str] | None = None
+        self._progress_progress_type: ProgressType = "bar"
+        self._val_data_size: int = 0
+        self.metrics: List[Metric] = []
+        self.layers: List[torch.nn.Module] = []
+        self.optimizer_obj = None
+        self.loss_obj = None
+        self._model: nn.Module | None = None
+        self._device: torch.device | str = torch.device("cpu")
+        self.callbacks: List | None = None
+
+    # Private methods
+    def __handle_callbacks(
+        self, callback_method: str, logs=None, epoch: int | None = None
+    ):
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                # Set the model and stop_training to the callback
+                callback.model = self
+
+                # Check if the present callback method
+                match callback_method:
+                    case "on_train_begin":
+                        callback.on_train_begin()
+                    case "on_train_end":
+                        callback.on_train_end(logs)
+                    case "on_validation_begin":
+                        callback.on_validation_begin()
+                    case "on_validation_end":
+                        callback.on_validation_end(logs)
+                    case "on_batch_begin":
+                        callback.on_batch_begin()
+                    case "on_batch_end":
+                        callback.on_batch_end(logs)
+                    case "on_epoch_begin":
+                        if epoch is None:
+                            raise ValueError(
+                                "epoch must be provided for on_epoch_begin callback method"
+                            )
+                        callback.on_epoch_begin(epoch)
+                    case "on_epoch_end":
+                        if epoch is None:
+                            raise ValueError(
+                                "epoch must be provided for on_epoch_end callback method"
+                            )
+                        callback.on_epoch_end(epoch, logs)
+                    case _:
+                        raise ValueError(
+                            "Unknown callback_method name: {}".format(callback_method)
+                        )
+                    
+    def __handle_label(self, target):
+        if self.loss.__class__.__name__ == "CrossEntropyLoss":
+            return target.long()
+        elif self.loss.__class__.__name__ == "NLLLoss":
+            return target.long().flatten()
+        return target.view(-1, 1)
+
+    # Public methods
+    def fit(
+        self,
+        x,
+        y=None,
+        *,
+        epochs: int = 1,
+        random_seed: int | None = None,
+        shuffle: bool = False,
+        batch_size: int | None = 1,
+        val_batch_size: int | None = 1,
+        validation_split: float | None = None,
+        validation_data=None,
+        callbacks=None,
+        progress_bar_width: int = 40,
+        progress_fill_style: FillStyleType = "━",
+        progress_empty_style: EmptyStyleType = "━",
+        progress_fill_color: str = "\033[92m",
+        progress_empty_color: str = "\033[90m",
+        progress_percentage_colors=None,
+        progress_progress_type: ProgressType = "bar",
+        verbose: VerboseType = "full",
+        **dataloader_kwargs,
+    ):
+
+        self.stop_training = False
+
+        # Instantiate the progress bar
+        self._progressbar = ProgressBar(
+            bar_width=progress_bar_width,
+            fill_style=progress_fill_style,
+            empty_style=progress_empty_style,
+            fill_color=progress_fill_color,
+            empty_color=progress_empty_color,
+            percentage_colors=progress_percentage_colors,
+            progress_type=progress_progress_type,
+            verbose=verbose,
+            epochs=epochs,
+        )
+
+        self._verbose = verbose
+        self._progress_bar_width = progress_bar_width
+        self._progress_fill_style: FillStyleType = progress_fill_style
+        self._progress_empty_style: EmptyStyleType = progress_empty_style
+        self._progress_fill_color = progress_fill_color
+        self._progress_empty_color = progress_empty_color
+        self._progress_percentage_colors = progress_percentage_colors
+        self._progress_progress_type: ProgressType = progress_progress_type
+
+        # Set the val_batch_size to batch_size if None
+        val_batch_size = val_batch_size if val_batch_size is not None else batch_size
+
+        # Initializer the History object
+        history = History(self.metrics)
+
+        if type(random_seed) == int:
+            # Set the random seed
+            torch.manual_seed(random_seed)
+
+        if callbacks is not None:
+            self.callbacks = callbacks
+
+        # Initialize the model
+        self._model = nn.Sequential(*self.layers)
+
+        # Instantiate the Loss and optimizer
+        if self.loss_obj is None:
+            raise TypeError(
+                "Compile the model with `model.compile` before " + "fitting the model"
+            )
+        if self.optimizer_obj is None:
+            raise TypeError(
+                "Compile the model with `model.compile` before " + "fitting the model"
+            )
+        self.loss = self.loss_obj()
+        self.optimizer = self.optimizer_obj(self._model.parameters())
+        self._model = self._model.to(self._device)
+
+        # Initialize the data handler
+        data_handler = DataHandler(
+            x=x,
+            y=y,
+            dataloader_kwargs=dict(
+                batch_size=batch_size,
+                shuffle=shuffle,
+            ),
+            val_dataloader_kwargs=dict(
+                batch_size=val_batch_size,
+            ),
+            validation_split=validation_split,
+            validation_data=validation_data,
+        )
+
+        # Get the train and validation data
+        train_data, val_data = data_handler.get_data()
+
+        for epoch in range(epochs):
+            # Train metrics storage
+            self.train_metric_storage = MetricStorage(
+                self._device,
+                self.metrics,
+                batch_size=batch_size,
+                loss_name=type(self.loss).__name__,
+            )
+
+            # Validation metrics storage
+            self.val_metric_storage = MetricStorage(
+                self._device,
+                self.metrics,
+                batch_size=val_batch_size,
+                loss_name=type(self.loss).__name__,
+            )
+
+            train_metric = self.train_stage(train_data)
+
+            print(train_metric)
+            val_metric = self.val_stage(val_data)
+            print(val_metric)
+        print("\n")
+
+        return history
+
+    def train_stage(
+        self,
+        train_data,
+    ) -> dict:
+
+        # Validate the parameters
+        if self.optimizer is None or self.loss is None:
+            raise TypeError(
+                "Compile the model with `model.compile` before " + "fitting the model"
+            )
+        if self._progressbar is None:
+            raise ValueError("Progress bar is not initialized.")
+
+        if self._model is None:
+            raise ValueError("Model is not initialized.")
+
+        # Indicate the model to train
+        self._model.train()
+
+        # Loop over the data
+        for idx, (feature, label) in enumerate(train_data):
+
+            # # Handle on batch begin callback
+            self.__handle_callbacks("on_batch_begin")
+
+            feature, label = (
+                feature.to(self._device).float(),
+                label.to(self._device).float(),
+            )
+
+            # Zero the gradient.
+            self.optimizer.zero_grad()
+
+            # Make prediction
+            predict = self._model(feature).float()
+
+            # Changes data type or data shape
+            label = self.__handle_label(label)
+
+            # Compute the loss
+            loss = self.loss(predict, label)
+
+            # Update metric state
+            self.train_metric_storage.update_state(
+                predict,
+                label=label,
+                loss=loss,
+            )
+
+            # Compute the gradient
+            loss.backward()
+
+            # update the parameters
+            self.optimizer.step()
+
+            # Handle on batch begin callback
+            self.__handle_callbacks(
+                "on_batch_end", logs=self.train_metric_storage.measurements
+            )
+
+        return self.train_metric_storage.measurements
+
+    def val_stage(
+        self, 
+        val_data
+        ) -> dict:
+        
+        # Validate the parameters
+        if self.optimizer is None or self.loss is None:
+            raise TypeError(
+                "Compile the model with `model.compile` before " + "fitting the model"
+            )
+        if self._progressbar is None:
+            raise ValueError("Progress bar is not initialized.")
+
+        if self._model is None:
+            raise ValueError("Model is not initialized.")
+
+        # Indicate the model to evaluate
+        self._model.eval()
+
+        # Handle on validation begin
+        self.__handle_callbacks("on_validation_begin")
+
+        with torch.no_grad():
+            # Loop over the data
+            for idx, (feature, label) in enumerate(val_data):
+
+                # Set the device for X and y
+                feature, label = (
+                    feature.to(self._device).float(),
+                    label.to(self._device).float(),
+                )
+
+                # Make prediction
+                predict = self._model(feature).float()
+
+                # Check if using BCELoss optimizer
+                label = self.__handle_label(label)
+
+                # Compute the loss
+                loss = self.loss(predict, label)
+
+                # Update metric state
+                self.val_metric_storage.update_state(
+                    predict,
+                    label=label,
+                    loss=loss,
+                )
+
+                # Handle on validation end
+                self.__handle_callbacks(
+                    "on_validation_end", logs=self.val_metric_storage.measurements
+                )
+
+        return self.val_metric_storage.measurements
+ 

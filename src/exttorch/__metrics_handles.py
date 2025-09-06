@@ -6,7 +6,7 @@ from torch.nn import functional as f
 from dataclasses import dataclass
 from typing import Callable, Any, Dict, List, Tuple
 import numpy as np
-from exttorch.metrics import (
+from src.exttorch.metrics import (
     Metric,
     Accuracy,
     MeanSquaredError,
@@ -35,13 +35,14 @@ class MetricComputation:
             self.labels,
         )
 
+
 class MetricStorage:
     def __init__(
         self,
-        device: str,
+        device: str | torch.device,
         metrics_measures: list[Metric],
-        batch_size: int,
-        loss_name: str = None,
+        batch_size: int | None,
+        loss_name: str | None = None,
         train: bool = True,
     ):
         self.__device = device
@@ -66,7 +67,6 @@ class MetricStorage:
         self.__is_batched = False
         self.__metric_name_proba = ["Auc", "TopKAccuracy", "auc", "tka", "TKA"]
 
-    # 1) First step is to add the model results
     def add_model_results(
         self,
         probability: torch.Tensor,
@@ -82,17 +82,17 @@ class MetricStorage:
         """
         # Change the shape of the inputs
         probability, label, loss = self.__change_shape(probability, label, loss)
-        
+
         # Validate the inputs
         self.__validate_dtype(probability, label, loss)
         self.__validator_shape(probability, label, loss)
-        
+
         clone = lambda x: x.clone().detach().cpu().numpy()
         # Convert the inputs to numpy arrays
         probability = clone(probability)
         label = clone(label)
         loss = clone(loss).item()
-        
+
         # Store the results
         if self.__batch_size > 1 or label.shape[0] > 1:
             self.__batch_probabilities = np.atleast_2d(probability)
@@ -165,9 +165,7 @@ class MetricStorage:
         if loss.shape[0] != 1 and loss.shape[1] != 1:
             raise ValueError("The loss must be a scalar.")
 
-    def __change_list_to_numpy(
-        self, value: List[torch.Tensor] | float
-    ) -> torch.Tensor:
+    def __change_list_to_numpy(self, value: List[torch.Tensor] | float) -> torch.Tensor:
         """
         Changes the list of tensors to a tensor.
         Args:
@@ -186,7 +184,7 @@ class MetricStorage:
         Returns:
             Tuple[torch.Tensor]: The model results as a tensor.
         """
-        
+
         loss = self.__change_list_to_numpy(self.__loss)
 
         if self.__batch_size > 1 or self.__is_batched:
@@ -195,7 +193,7 @@ class MetricStorage:
         else:
             labels = self.__change_list_to_numpy(self.__label)
             probabilities = self.__change_list_to_numpy(self.__probabilities)
-            
+
         return probabilities, labels, loss
 
     def __get_predicts(self, probabilities: np.ndarray) -> np.ndarray:
@@ -268,44 +266,43 @@ class MetricStorage:
         """
         # Change the model results to a tensor
         probabilities, labels, loss = self.__change_results_to_tensor()
-                
+
         # Get the predictions of the model
         predicts = self.__get_predicts(probabilities)
-        
+
         # Get the loss name
         loss_name = "loss" if self.__train else "val_loss"
 
         # Add the loss to the measurements dictionary
         self.__measurements_dict[loss_name].append(loss)
-        
-        # Check if the batch size is greater than 1 and the labels are one-hot encoded        
+
+        # Check if the batch size is greater than 1 and the labels are one-hot encoded
         if self.__batch_size > 1 or self.__is_batched:
             probabilities = np.atleast_2d(probabilities)
             labels = np.atleast_2d(labels)
         else:
             if probabilities.ndim != 2:
                 probabilities = probabilities.squeeze(axis=2)
-            
+
             if labels.ndim != 2:
                 labels = labels.squeeze(axis=2)
-        
 
         # Loop over the measurements of metrics
         for measure in self.__metrics_measures:
             # Check if the measure is a string in the list of probability metrics
             if str(measure) in self.__metric_name_proba:
-                
+
                 if probabilities.shape[1] > 1:
                     tensor_probabilities = torch.from_numpy(probabilities)
-                    probabilities = f.softmax(tensor_probabilities, dim=1).numpy()                    
-                    
+                    probabilities = f.softmax(tensor_probabilities, dim=1).numpy()
+
                 # Compute the metric
                 metric = MetricComputation(
                     measure,
                     predictions=probabilities,
                     labels=labels,
                 ).compute_metric()
-                
+
                 # Handle zeros and ones
                 metric = self.__between_zero_and_one(str(measure), metric)
 
@@ -338,3 +335,32 @@ class MetricStorage:
         measurements = self.__change_metric_first_position(measurements)
 
         return measurements
+
+    def update_state(
+        self,
+        predict,
+        label,
+        loss,
+    ):
+        """
+        Handle the metrics for the model.
+        Parameters
+        ----------
+            metric_storage : (MetricStorage)
+                The metric storage object.
+            predict : (torch.Tensor)
+                The prediction of the model.
+            label : (torch.Tensor)
+                The label of the model.
+            loss : (torch.Tensor)
+                The loss of the model.
+        """
+        # Add the prediction, labels(target) and loss to metric storage
+        self.add_model_results(
+            predict.detach(),
+            label=label.detach(),
+            loss=loss.detach(),
+        )
+
+        # Measurement live update
+        self.measurement_computation()

@@ -1,13 +1,12 @@
 # Bless Be Name of LORD GOD Of Hosts
 
 # Importing necessary modules
-from contexts import *
 import torch
 from torch import nn
 from sklearn.datasets import make_classification, make_regression, load_iris
 from unittest import TestCase
-from exttorch.models import Stack
-from exttorch.metrics import Precision, Recall, F1Score, Auc
+from src.exttorch.models import Stack
+from src.exttorch.metrics import Precision, Recall, F1Score, Auc
 
 def torch_data_generator(batch_size=100):
     while True:
@@ -77,7 +76,7 @@ class TestAcceptedData(TestCase):
         model.compile(
             optimizer='adam', 
             loss='binary_crossentropy', 
-            metrics=['precision', 'recall', 'f1_score']
+            # metrics=['precision', 'recall', 'f1_score']
             )
         model.fit(X, y, epochs=1, batch_size=5, validation_split=0.2)
         
@@ -111,4 +110,10 @@ class TestAcceptedData(TestCase):
                 Precision(average='macro', num_classes=n_label)
                 ]
             )
-        model.fit(X, y, epochs=1, batch_size=1)
+        model.fit(X, y, epochs=1, batch_size=1, verbose=2)
+
+
+
+
+        
+

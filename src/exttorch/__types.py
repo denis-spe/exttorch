@@ -2,13 +2,11 @@
 
 # Import libraries.
 from typing import Dict, Any, List, Iterator, Tuple, Literal
-import torch.nn as __nn__
-from types import GeneratorType
-from torch.utils.data import DataLoader, Dataset, TensorDataset, Subset
-from torch import TensorType
 from numpy.typing import ArrayLike
-from torch import nn as __nn__
 from sklearn.utils import Bunch
+from torch import TensorType
+from torch import nn as __nn__
+from torch.utils.data import DataLoader, Dataset, TensorDataset, Subset
 
 Logs = Dict[str, float] | None
 Weight = Dict[str, Any]

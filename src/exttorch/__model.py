@@ -4,7 +4,7 @@
 import torch as __torch__
 import torch.nn as __nn__
 import typing as __typing__
-from exttorch import __types as __types__
+from src.exttorch import __types as __types__
 
 
 class ModelModule(__nn__.Module):

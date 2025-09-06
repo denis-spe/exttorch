@@ -10,7 +10,7 @@ from sklearn.base import (
     TransformerMixin as __TransformerMixin,
 )
 from torch import nn as __nn__
-
+from src.exttorch.utils import ModelFit
 from src.exttorch import __types as __types__
 from src.exttorch.__data_handle import DataHandler as __DataHandler__
 from src.exttorch.__metrics_handles import MetricStorage as __MetricStorage__
@@ -22,7 +22,7 @@ from src.exttorch.optimizers import Optimizer as __Optimizer__
 from src.exttorch.utils import ProgressBar as __ProgressBar__
 
 
-class Stack(__ModelModule__):
+class Stack(ModelFit):
     def __init__(self, layers=None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
@@ -36,7 +36,7 @@ class Stack(__ModelModule__):
         --------
         >>> # Import libraries
         >>> import torch
-        >>> from exttorch.models import Sequential
+        >>> from exttorch.models import Stack
         >>> from torch import nn
         >>> from sklearn.datasets import load_iris
         >>>
@@ -44,7 +44,7 @@ class Stack(__ModelModule__):
         >>> x, y = load_iris(return_X_y=True)
         >>>
         >>> # Create the model
-        >>> model = Sequential([
+        >>> model = Stack([
         ...    nn.Linear(4, 8),
         ...    nn.ReLU(),
         ...    nn.Linear(8, 3),
@@ -70,338 +70,350 @@ class Stack(__ModelModule__):
         >>> model.evaluate(x, y, verbose=None) # doctest: +ELLIPSIS
         {'val_loss': ..., 'val_accuracy': ...}
         """
-        # Import libraries
-        self.__progress_progress_type = None
-        self.__progress_percentage_colors = None
-        self.__progress_empty_color = None
-        self.__progress_fill_color = None
-        self.__progress_fill_style = None
-        self.__progress_fill_style = None
-        self.__progress_empty_style = None
-        self.__progress_bar_width = None
-        from src.exttorch.callbacks import Callback
+        super().__init__()
+        self.layers = []
 
-        super().__init__(layers=layers, device=device)  # type: ignore
-        self.__callbacks: __tp__.List[Callback] | None = None
+    def add(self, layer: __types__.Layer):
+        self.layers.append(layer)
 
-    def fit(
-        self,
-        x,
-        y: __ArrayLike__ | None = None,
-        *,
-        epochs: int = 1,
-        random_seed: int | None = None,
-        shuffle: bool = False,
-        batch_size: int = 1,
-        val_batch_size: int | None = None,
-        validation_split: float | None = None,
-        validation_data = None,
-        callbacks=None,
-        nprocs: int = 1,
-        progress_bar_width: int = 40,
-        progress_fill_style: __types__.FillStyleType = "━",
-        progress_empty_style: __types__.EmptyStyleType = "━",
-        progress_fill_color: str = "\033[92m",
-        progress_empty_color: str = "\033[90m",
-        progress_percentage_colors: __tp__.List[str] | None = None,
-        progress_progress_type: __types__.ProgressType = "bar",
-        verbose = "full",
-        **dataloader_kwargs: __tp__.Any,
-    ):
+    # def fit(
+    #     self,
+    #     x,
+    #     y: __ArrayLike__ | None = None,
+    #     *,
+    #     epochs: int = 1,
+    #     random_seed: int | None = None,
+    #     shuffle: bool = False,
+    #     batch_size: int = 1,
+    #     val_batch_size: int | None = None,
+    #     validation_split: float | None = None,
+    #     validation_data=None,
+    #     callbacks=None,
+    #     nprocs: int = 1,
+    #     progress_bar_width: int = 40,
+    #     progress_fill_style: __types__.FillStyleType = "━",
+    #     progress_empty_style: __types__.EmptyStyleType = "━",
+    #     progress_fill_color: str = "\033[92m",
+    #     progress_empty_color: str = "\033[90m",
+    #     progress_percentage_colors: __tp__.List[str] | None = None,
+    #     progress_progress_type: __types__.ProgressType = "bar",
+    #     verbose: __tp__.Literal[
+    #         None,
+    #         0,
+    #         1,
+    #         2,
+    #         "full",
+    #         "hide-epoch",
+    #         "hide-batch-size",
+    #         "hide-metrics",
+    #         "hide-train-metrics",
+    #         "hide-val-metrics",
+    #         "hide-progress-bar",
+    #         "hide-time-estimation",
+    #         "percentage",
+    #         "only_percentage",
+    #         "only_epochs",
+    #         "only_batch_size",
+    #         "only_metrics",
+    #         "only_train_metrics",
+    #         "only_val_metrics",
+    #         "only_progress_bar",
+    #         "only_time_estimation",
+    #     ] = "full",
+    #     **dataloader_kwargs: __tp__.Any,
+    # ):
 
-        self.stop_training = False
+    #     self.stop_training = False
 
-        # Instantiate the progress bar
-        self.__progressbar = __ProgressBar__(
-            bar_width=progress_bar_width,
-            fill_style=progress_fill_style,
-            empty_style=progress_empty_style,
-            fill_color=progress_fill_color,
-            empty_color=progress_empty_color,
-            percentage_colors=progress_percentage_colors,
-            progress_type=progress_progress_type,
-            verbose=verbose,
-            epochs=epochs,
-        )
+    #     # Instantiate the progress bar
+    #     self.__progressbar = __ProgressBar__(
+    #         bar_width=progress_bar_width,
+    #         fill_style=progress_fill_style,
+    #         empty_style=progress_empty_style,
+    #         fill_color=progress_fill_color,
+    #         empty_color=progress_empty_color,
+    #         percentage_colors=progress_percentage_colors,
+    #         progress_type=progress_progress_type,
+    #         verbose=verbose,
+    #         epochs=epochs,
+    #     )
 
-        self.__verbose = verbose
-        self.__progress_bar_width = progress_bar_width
-        self.__progress_fill_style: __types__.FillStyleType = progress_fill_style
-        self.__progress_empty_style: __types__.EmptyStyleType = progress_empty_style
-        self.__progress_fill_color = progress_fill_color
-        self.__progress_empty_color = progress_empty_color
-        self.__progress_percentage_colors = progress_percentage_colors
-        self.__progress_progress_type: __types__.ProgressType = progress_progress_type
+    #     self.__verbose = verbose
+    #     self.__progress_bar_width = progress_bar_width
+    #     self.__progress_fill_style: __types__.FillStyleType = progress_fill_style
+    #     self.__progress_empty_style: __types__.EmptyStyleType = progress_empty_style
+    #     self.__progress_fill_color = progress_fill_color
+    #     self.__progress_empty_color = progress_empty_color
+    #     self.__progress_percentage_colors = progress_percentage_colors
+    #     self.__progress_progress_type: __types__.ProgressType = progress_progress_type
 
-        # Set the val_batch_size to batch_size if None
-        val_batch_size = val_batch_size if val_batch_size is not None else batch_size
+    #     # Set the val_batch_size to batch_size if None
+    #     val_batch_size = val_batch_size if val_batch_size is not None else batch_size
 
-        # Initializer the History object
-        history = __History__(self.metrics)
+    #     # Initializer the History object
+    #     history = __History__(self.metrics)
 
-        if type(random_seed) == int:
-            # Set the random seed
-            __torch__.manual_seed(random_seed)
+    #     if type(random_seed) == int:
+    #         # Set the random seed
+    #         __torch__.manual_seed(random_seed)
 
-        if callbacks is not None:
-            self.__callbacks = callbacks
+    #     if callbacks is not None:
+    #         self.__callbacks = callbacks
 
-        def training():
+    #     def training():
 
-            # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
+    #         # self.__model_list = _nn.ModuleList(self.layers).to(self.__device).float()
 
-            # Initialize the model
-            self._model = __nn__.Sequential(*self.layers)
+    #         # Initialize the model
+    #         self._model = __nn__.Sequential(*self.layers)
 
-            # if self.__xm is not None:
-            #     self.__device = self.__xm.xla_device()
+    #         # if self.__xm is not None:
+    #         #     self.__device = self.__xm.xla_device()
 
-            # Instantiate the Loss and optimizer
-            if self.loss_obj is None:
-                raise TypeError(
-                    "Compile the model with `model.compile` before "
-                    + "fitting the model"
-                )
-            if self.optimizer_obj is None:
-                raise TypeError(
-                    "Compile the model with `model.compile` before "
-                    + "fitting the model"
-                )
-            self.loss = self.loss_obj()
-            self.optimizer = self.optimizer_obj(self._model.parameters())
-            self._model = self._model.to(self._device)
+    #         # Instantiate the Loss and optimizer
+    #         if self.loss_obj is None:
+    #             raise TypeError(
+    #                 "Compile the model with `model.compile` before "
+    #                 + "fitting the model"
+    #             )
+    #         if self.optimizer_obj is None:
+    #             raise TypeError(
+    #                 "Compile the model with `model.compile` before "
+    #                 + "fitting the model"
+    #             )
+    #         self.loss = self.loss_obj()
+    #         self.optimizer = self.optimizer_obj(self._model.parameters())
+    #         self._model = self._model.to(self._device)
 
-            if validation_split is not None and validation_data is None:
+    #         if validation_split is not None and validation_data is None:
 
-                # Handle the callbacks on train begin
-                self._handle_callbacks("on_train_begin")
+    #             # Handle the callbacks on train begin
+    #             self._handle_callbacks("on_train_begin")
 
-                # Initializer the data
-                data = __DataHandler__(
-                    x=x,
-                    y=y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    **dataloader_kwargs,
-                )
+    #             # Initializer the data
+    #             data = __DataHandler__(
+    #                 x=x,
+    #                 y=y,
+    #                 batch_size=batch_size,
+    #                 val_batch_size=val_batch_size,
+    #                 shuffle=shuffle,
+    #                 random_seed=random_seed,
+    #                 **dataloader_kwargs,
+    #             )
 
-                # Get the train and validation sample
-                train_sample, val_sample = data.data_preprocessing(
-                    nprocs, val_size=validation_split
-                )
+    #             # Get the train and validation sample
+    #             train_sample, val_sample = data(val_size=validation_split)
 
-                for epoch in range(epochs):
+    #             for epoch in range(epochs):
 
-                    # Handle the callbacks on epoch begin
-                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
+    #                 # Handle the callbacks on epoch begin
+    #                 self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Set the epoch to progress bar.
-                    self.__progressbar.set_epoch(epoch)
+    #                 # Set the epoch to progress bar.
+    #                 self.__progressbar.set_epoch(epoch)
 
-                    # Train the train sample
-                    train_metric = self.__train(
-                        train_sample,
-                        y=None,
-                        batch_size=batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        nprocs=nprocs,
-                        **dataloader_kwargs,
-                    )
+    #                 # Train the train sample
+    #                 train_metric = self.__train(
+    #                     train_sample,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     nprocs=nprocs,
+    #                     **dataloader_kwargs,
+    #                 )
 
-                    # Add the train metric to the history
-                    history.add_history(train_metric)
+    #                 # Add the train metric to the history
+    #                 history.add_history(train_metric)
 
-                    # Evaluate the validation sample
-                    val_metric = self.evaluate(
-                        val_sample,
-                        y=None,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        verbose=None,
-                        nprocs=nprocs,
-                        **dataloader_kwargs,
-                    )
+    #                 # Evaluate the validation sample
+    #                 val_metric = self.evaluate(
+    #                     val_sample,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     val_batch_size=val_batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     verbose=None,
+    #                     nprocs=nprocs,
+    #                     **dataloader_kwargs,
+    #                 )
 
-                    # Add the validation metric to the history
-                    history.add_history(val_metric)
+    #                 # Add the validation metric to the history
+    #                 history.add_history(val_metric)
 
-                    # Make a copy
-                    metric_copy = train_metric.copy()
-                    metric_copy.update(val_metric)
+    #                 # Make a copy
+    #                 metric_copy = train_metric.copy()
+    #                 metric_copy.update(val_metric)
 
-                    # Last progress update
-                    self.__progressbar.last_update(
-                        self.__val_data_size, list(metric_copy.items())
-                    )
+    #                 # Last progress update
+    #                 self.__progressbar.last_update(
+    #                     self.__val_data_size, list(metric_copy.items())
+    #                 )
 
-                    # Handle the callbacks on epoch end
-                    self._handle_callbacks(
-                        "on_epoch_end", logs=metric_copy, epoch=epoch
-                    )
+    #                 # Handle the callbacks on epoch end
+    #                 self._handle_callbacks(
+    #                     "on_epoch_end", logs=metric_copy, epoch=epoch
+    #                 )
 
-                    if self.stop_training:
-                        break
+    #                 if self.stop_training:
+    #                     break
 
-                # Handle the callbacks on train end
-                self._handle_callbacks("on_train_end", logs=history.history)
+    #             # Handle the callbacks on train end
+    #             self._handle_callbacks("on_train_end", logs=history.history)
 
-            elif validation_data is not None:
+    #         elif validation_data is not None:
 
-                # Handle the callbacks on train begin
-                self._handle_callbacks("on_train_begin")
+    #             # Handle the callbacks on train begin
+    #             self._handle_callbacks("on_train_begin")
 
-                # Initializer the data
-                train_data = __DataHandler__(
-                    x,
-                    y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    **dataloader_kwargs,
-                ).data_preprocessing(nprocs)
+    #             # Initializer the data
+    #             train_data = __DataHandler__(
+    #                 x,
+    #                 y,
+    #                 batch_size=batch_size,
+    #                 val_batch_size=val_batch_size,
+    #                 shuffle=shuffle,
+    #                 random_seed=random_seed,
+    #                 **dataloader_kwargs,
+    #             )()
 
-                if (
-                    isinstance(validation_data, list)
-                    or isinstance(validation_data, tuple)
-                ) and len(validation_data) == 2:
-                    # Initializer the data
-                    val_sample = __DataHandler__(
-                        validation_data[0],
-                        validation_data[1],
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        **dataloader_kwargs,
-                    ).data_preprocessing(nprocs)
-                else:
-                    # Initializer the data
-                    val_sample = __DataHandler__(
-                        x=validation_data,
-                        y=None,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        **dataloader_kwargs,
-                    ).data_preprocessing(nprocs)
+    #             if (
+    #                 isinstance(validation_data, list)
+    #                 or isinstance(validation_data, tuple)
+    #             ) and len(validation_data) == 2:
+    #                 # Initializer the data
+    #                 val_sample = __DataHandler__(
+    #                     validation_data[0],
+    #                     validation_data[1],
+    #                     batch_size=batch_size,
+    #                     val_batch_size=val_batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     **dataloader_kwargs,
+    #                 )
+    #             else:
+    #                 # Initializer the data
+    #                 val_sample = __DataHandler__(
+    #                     x=validation_data,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     val_batch_size=val_batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     **dataloader_kwargs,
+    #                 )()
 
-                for epoch in range(epochs):
-                    # Handle the callbacks on epoch begin
-                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
+    #             for epoch in range(epochs):
+    #                 # Handle the callbacks on epoch begin
+    #                 self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Set the epoch to progress bar.
-                    self.__progressbar.set_epoch(epoch)
+    #                 # Set the epoch to progress bar.
+    #                 self.__progressbar.set_epoch(epoch)
 
-                    # Train the train sample
-                    train_metric = self.__train(
-                        train_data,
-                        y=None,
-                        batch_size=batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        nprocs=nprocs,
-                        **dataloader_kwargs,
-                    )
+    #                 # Train the train sample
+    #                 train_metric = self.__train(
+    #                     train_data,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     nprocs=nprocs,
+    #                     **dataloader_kwargs,
+    #                 )
 
-                    # Add the train metric to the history
-                    history.add_history(train_metric)
+    #                 # Add the train metric to the history
+    #                 history.add_history(train_metric)
 
-                    # Evaluate the validation sample
-                    val_metric = self.evaluate(
-                        val_sample,
-                        y=None,
-                        batch_size=batch_size,
-                        val_batch_size=val_batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        verbose=None,
-                        nprocs=nprocs,
-                        **dataloader_kwargs,
-                    )
+    #                 # Evaluate the validation sample
+    #                 val_metric = self.evaluate(
+    #                     val_sample,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     val_batch_size=val_batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     verbose=None,
+    #                     nprocs=nprocs,
+    #                     **dataloader_kwargs,
+    #                 )
 
-                    # Add the validation metric to the history
-                    history.add_history(val_metric)
+    #                 # Add the validation metric to the history
+    #                 history.add_history(val_metric)
 
-                    # # Make a copy
-                    metric_copy = train_metric.copy()
-                    metric_copy.update(val_metric)
+    #                 # # Make a copy
+    #                 metric_copy = train_metric.copy()
+    #                 metric_copy.update(val_metric)
 
-                    # # Last progress update
-                    self.__progressbar.last_update(
-                        self.__val_data_size, list(metric_copy.items())
-                    )
+    #                 # # Last progress update
+    #                 self.__progressbar.last_update(
+    #                     self.__val_data_size, list(metric_copy.items())
+    #                 )
 
-                    # Handle the callbacks on epoch end
-                    self._handle_callbacks(
-                        "on_epoch_end", logs=metric_copy, epoch=epoch
-                    )
+    #                 # Handle the callbacks on epoch end
+    #                 self._handle_callbacks(
+    #                     "on_epoch_end", logs=metric_copy, epoch=epoch
+    #                 )
 
-                    if self.stop_training:
-                        break
+    #                 if self.stop_training:
+    #                     break
 
-                # Handle the callbacks on train end
-                self._handle_callbacks("on_train_end", logs=history.history)
+    #             # Handle the callbacks on train end
+    #             self._handle_callbacks("on_train_end", logs=history.history)
 
-            else:
-                # Handle the callbacks on train begin
-                self._handle_callbacks("on_train_begin")
+    #         else:
+    #             # Handle the callbacks on train begin
+    #             self._handle_callbacks("on_train_begin")
 
-                # Initializer the data
-                data = __DataHandler__(
-                    x,
-                    y,
-                    batch_size=batch_size,
-                    val_batch_size=val_batch_size,
-                    shuffle=shuffle,
-                    random_seed=random_seed,
-                    **dataloader_kwargs,
-                ).data_preprocessing(nprocs)
+    #             # Initializer the data
+    #             data = __DataHandler__(
+    #                 x,
+    #                 y,
+    #                 batch_size=batch_size,
+    #                 val_batch_size=val_batch_size,
+    #                 shuffle=shuffle,
+    #                 random_seed=random_seed,
+    #                 **dataloader_kwargs,
+    #             )()
 
-                for epoch in range(epochs):
-                    # Handle the callbacks on epoch begin
-                    self._handle_callbacks("on_epoch_begin", epoch=epoch)
+    #             for epoch in range(epochs):
+    #                 # Handle the callbacks on epoch begin
+    #                 self._handle_callbacks("on_epoch_begin", epoch=epoch)
 
-                    # Set the epoch to progress bar.
-                    self.__progressbar.set_epoch(epoch)
+    #                 # Set the epoch to progress bar.
+    #                 self.__progressbar.set_epoch(epoch)
 
-                    # Train the full dataset
-                    train_metric = self.__train(
-                        data,
-                        y=None,
-                        batch_size=batch_size,
-                        shuffle=shuffle,
-                        random_seed=random_seed,
-                        nprocs=nprocs,
-                        **dataloader_kwargs,
-                    )
+    #                 # Train the full dataset
+    #                 train_metric = self.__train(
+    #                     data,
+    #                     y=None,
+    #                     batch_size=batch_size,
+    #                     shuffle=shuffle,
+    #                     random_seed=random_seed,
+    #                     nprocs=nprocs,
+    #                     **dataloader_kwargs,
+    #                 )
 
-                    # Add the train metric to the history
-                    history.add_history(train_metric)
+    #                 # Add the train metric to the history
+    #                 history.add_history(train_metric)
 
-                    # Handle the callbacks on epoch end
-                    self._handle_callbacks(
-                        "on_epoch_end", epoch=epoch, logs=train_metric
-                    )
+    #                 # Handle the callbacks on epoch end
+    #                 self._handle_callbacks(
+    #                     "on_epoch_end", epoch=epoch, logs=train_metric
+    #                 )
 
-                    if self.stop_training:
-                        break
+    #                 if self.stop_training:
+    #                     break
 
-                # Handle the callbacks on train end
-                self._handle_callbacks("on_train_end", logs=history.history)
+    #             # Handle the callbacks on train end
+    #             self._handle_callbacks("on_train_end", logs=history.history)
 
-        training()
-        print("\n")
+    #     training()
+    #     print("\n")
 
-        return history
+    #     return history
 
-    def predict_proba(self, x, verbose = None):
+    def predict_proba(self, x, verbose=None):
         import torch
         import numpy as np
         from .utils import ProgressBar
@@ -450,7 +462,7 @@ class Stack(__ModelModule__):
 
         return probability
 
-    def predict(self, x, verbose = None):
+    def predict(self, x, verbose=None):
 
         # Get the probabilities of x
         probability = self.predict_proba(x, verbose=verbose)
@@ -465,293 +477,290 @@ class Stack(__ModelModule__):
             predict = probability.reshape(-1, 1)
         return predict
 
-    def __handle_label(self, target):
-        if self.loss.__class__.__name__ == "CrossEntropyLoss":
-            return target.long()
-        elif self.loss.__class__.__name__ == "NLLLoss":
-            return target.long().flatten()
-        return target.view(-1, 1)
+    # def __handle_label(self, target):
+    #     if self.loss.__class__.__name__ == "CrossEntropyLoss":
+    #         return target.long()
+    #     elif self.loss.__class__.__name__ == "NLLLoss":
+    #         return target.long().flatten()
+    #     return target.view(-1, 1)
 
-    @staticmethod
-    def __metrics_handler(
-        metric_storage,
-        predict,
-        label,
-        loss,
-    ):
-        """
-        Handle the metrics for the model.
-        Parameters
-        ----------
-            metric_storage : (MetricStorage)
-                The metric storage object.
-            predict : (torch.Tensor)
-                The prediction of the model.
-            label : (torch.Tensor)
-                The label of the model.
-            loss : (torch.Tensor)
-                The loss of the model.
-        """
-        # Add the prediction, labels(target) and loss to metric storage
-        metric_storage.add_model_results(
-            predict.detach(),
-            label=label.detach(),
-            loss=loss.detach(),
-        )
+    # @staticmethod
+    # def __metrics_handler(
+    #     metric_storage,
+    #     predict,
+    #     label,
+    #     loss,
+    # ):
+    #     """
+    #     Handle the metrics for the model.
+    #     Parameters
+    #     ----------
+    #         metric_storage : (MetricStorage)
+    #             The metric storage object.
+    #         predict : (torch.Tensor)
+    #             The prediction of the model.
+    #         label : (torch.Tensor)
+    #             The label of the model.
+    #         loss : (torch.Tensor)
+    #             The loss of the model.
+    #     """
+    #     # Add the prediction, labels(target) and loss to metric storage
+    #     metric_storage.add_model_results(
+    #         predict.detach(),
+    #         label=label.detach(),
+    #         loss=loss.detach(),
+    #     )
 
-        # Measurement live update
-        metric_storage.measurement_computation()
+    #     # Measurement live update
+    #     metric_storage.measurement_computation()
 
-    def __train(
-        self,
-        x,
-        y=None,
-        batch_size: int = 1,
-        shuffle: bool = False,
-        random_seed=None,
-            nprocs: int = 1,
-            **kwargs,
-    ) -> dict:
-        """
-        Trains the model.
+    # def train_stage(
+    #     self,
+    #     train_data,
+    #     y=None,
+    #     batch_size: int = 1,
+    #     shuffle: bool = False,
+    #     random_seed=None,
+    #     **kwargs,
+    # ) -> dict:
+    #     """
+    #     Trains the model.
 
-        Parameters
-        ----------
-            x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
-                Training feature for training the model.
-            y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
-                Training label for training the model.
-            epochs : (int)
-                Number of epochs to train the model.
-            generator : (Optional[torch.Generator])
-                For generator reproducibility of data.
-            shuffle : (bool)
-                Shuffle the data.
-            batch_size : (Optional[int])
-                Batch size for training the model.
-            validation_split : (Optional[float])
-                Split the dataset into train and validation data using
-                validation_split as a test size and leaving the rest for
-                train size.
-            validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset])
-                Data for validating model performance
-        """
+    #     Parameters
+    #     ----------
+    #         x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+    #             Training feature for training the model.
+    #         y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
+    #             Training label for training the model.
+    #         epochs : (int)
+    #             Number of epochs to train the model.
+    #         generator : (Optional[torch.Generator])
+    #             For generator reproducibility of data.
+    #         shuffle : (bool)
+    #             Shuffle the data.
+    #         batch_size : (Optional[int])
+    #             Batch size for training the model.
+    #         validation_split : (Optional[float])
+    #             Split the dataset into train and validation data using
+    #             validation_split as a test size and leaving the rest for
+    #             train size.
+    #         validation_data : (Optional[List | Tuple | DataLoader | Dataset | TensorDataset])
+    #             Data for validating model performance
+    #     """
 
-        if self.optimizer is None or self.loss is None:
-            raise TypeError(
-                "Compile the model with `model.compile` before " + "fitting the model"
-            )
+    #     if self.optimizer is None or self.loss is None:
+    #         raise TypeError(
+    #             "Compile the model with `model.compile` before " + "fitting the model"
+    #         )
 
+    #     # Create the list for metric
+    #     metric_storage = __MetricStorage__(
+    #         self._device,
+    #         self.metrics,
+    #         batch_size=batch_size,
+    #         loss_name=type(self.loss).__name__,
+    #     )
 
-        # Create the list for metric
-        metric_storage = __MetricStorage__(
-            self._device,
-            self.metrics,
-            batch_size=batch_size,
-            loss_name=type(self.loss).__name__,
-        )
+    #     # Indicate the model to train
+    #     self._model.train()
 
-        # Indicate the model to train
-        self._model.train()
+    #     # Initializer the data
+    #     data = __DataHandler__(
+    #         x,
+    #         y,
+    #         batch_size=batch_size,
+    #         shuffle=shuffle,
+    #         random_seed=random_seed,
+    #         **kwargs,
+    #     )()
 
-        # Initializer the data
-        data = __DataHandler__(
-            x,
-            y,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            random_seed=random_seed,
-            **kwargs,
-        ).data_preprocessing(nprocs)
+    #     # # Set the progress bar total
+    #     self.__progressbar.total = len(data)
 
-        # # Set the progress bar total
-        self.__progressbar.total = len(data)
+    #     # # Handle on batch begin callback
+    #     self._handle_callbacks("on_batch_begin")
 
-        # # Handle on batch begin callback
-        self._handle_callbacks("on_batch_begin")
+    #     # Loop over the data
+    #     for idx, (feature, label) in enumerate(data):
 
-        # Loop over the data
-        for idx, (feature, label) in enumerate(data):
+    #         feature, label = (
+    #             feature.to(self._device).float(),
+    #             label.to(self._device).float(),
+    #         )
 
-            feature, label = (
-                feature.to(self._device).float(),
-                label.to(self._device).float(),
-            )
+    #         # Zero the gradient.
+    #         self.optimizer.zero_grad()
 
-            # Zero the gradient.
-            self.optimizer.zero_grad()
+    #         # Make prediction
+    #         predict = self._model(feature).float()
 
-            # Make prediction
-            predict = self._model(feature).float()
+    #         # Changes data type or data shape
+    #         label = self.__handle_label(label)
 
-            # Changes data type or data shape
-            label = self.__handle_label(label)
+    #         # Compute the loss
+    #         loss = self.loss(predict, label)
 
-            # Compute the loss
-            loss = self.loss(predict, label)
+    #         # Handle the metrics
+    #         self.__metrics_handler(
+    #             metric_storage,
+    #             predict,
+    #             label,
+    #             loss,
+    #         )
 
-            # Handle the metrics
-            self.__metrics_handler(
-                metric_storage,
-                predict,
-                label,
-                loss,
-            )
+    #         # Update the progress bar
+    #         self.__progressbar.update(
+    #             idx + 1, list(metric_storage.measurements.items())
+    #         )
 
-            # Update the progress bar
-            self.__progressbar.update(
-                idx + 1, list(metric_storage.measurements.items())
-            )
+    #         # Compute the gradient
+    #         loss.backward()
 
-            # Compute the gradient
-            loss.backward()
+    #         # update the parameters
+    #         if self._xm is not None:
+    #             self._xm.optimizer_step(self.optimizer)
+    #             self._xm.mark_step()
+    #         else:
+    #             self.optimizer.step()
 
-            # update the parameters
-            if self._xm is not None:
-                self._xm.optimizer_step(self.optimizer)
-                self._xm.mark_step()
-            else:
-                self.optimizer.step()
+    #     # Measurements
+    #     measurements = metric_storage.measurements
 
-        # Measurements
-        measurements = metric_storage.measurements
+    #     # Handle on batch begin callback
+    #     self._handle_callbacks("on_batch_end", logs=measurements)
 
-        # Handle on batch begin callback
-        self._handle_callbacks("on_batch_end", logs=measurements)
+    #     return measurements
 
-        return measurements
+    # def validation_stage(
+    #     self,
+    #     x,
+    #     y=None,
+    #     batch_size: int = 1,
+    #     val_batch_size: int | None = None,
+    #     shuffle: bool = False,
+    #     random_seed: int | None = None,
+    #     verbose=None,
+    #     **dataloader_kwargs,
+    # ):
+    #     """
+    #     Evaluate the model.
 
-    def evaluate(
-        self,
-        x,
-        y=None,
-        batch_size: int = 1,
-        val_batch_size: int | None = None,
-        shuffle: bool = False,
-        random_seed: int | None = None,
-        verbose = None,
-        nprocs: int = 1,
-        **dataloader_kwargs,
-    ):
-        """
-        Evaluate the model.
+    #     Parameters
+    #     ----------
+    #         x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
+    #             Training feature for training the model.
+    #         y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
+    #             Training label for training the model.
+    #         shuffle : (bool)
+    #             Shuffle the data.
+    #         batch_size : (Optional[int])
+    #             Batch size for training data.
+    #         val_batch_size : (Optional[int])
+    #             Batch size for validation data.
+    #         verbose : (str | None) verbose by default,
+    #             Handles the model progress bar.
+    #             If verbose is None, no progress bar is shown.
+    #             Option :
+    #                 - verbose: Displays the progress bar.
+    #                 - silent: No progress bar is shown.
+    #                 - silent_verbose: Displays the current batch, bar and elapsed time.
+    #                 - silent_verbose_suffix: Displays the current batch and metrics.
+    #                 - silent_epoch: Displays the current batch, bar, elapsed time and metrics but not epochs.
+    #                 - silent_epoch_suffix: Displays the current batch and metrics but not epochs.
 
-        Parameters
-        ----------
-            x : (np.ndarray | DataLoader | Dataset | TensorDataset | pd.DataFrame)
-                Training feature for training the model.
-            y : (Optional[np.ndarray | pd.Series |pd.DataFrame])
-                Training label for training the model.
-            shuffle : (bool)
-                Shuffle the data.
-            batch_size : (Optional[int])
-                Batch size for training data.
-            val_batch_size : (Optional[int])
-                Batch size for validation data.
-            verbose : (str | None) verbose by default,
-                Handles the model progress bar.
-                If verbose is None, no progress bar is shown.
-                Option :
-                    - verbose: Displays the progress bar.
-                    - silent: No progress bar is shown.
-                    - silent_verbose: Displays the current batch, bar and elapsed time.
-                    - silent_verbose_suffix: Displays the current batch and metrics.
-                    - silent_epoch: Displays the current batch, bar, elapsed time and metrics but not epochs.
-                    - silent_epoch_suffix: Displays the current batch and metrics but not epochs.
+    #         nprocs: (int)
+    #             The number of processes/devices for the replication.
+    #             At the moment, if specified, can be either 1 or the maximum number of devices.
+    #         dataloader_kwargs: (Optional[Dict])
+    #             Additional arguments for DataLoader.
+    #     """
 
-            nprocs: (int)
-                The number of processes/devices for the replication.
-                At the moment, if specified, can be either 1 or the maximum number of devices.
-            dataloader_kwargs: (Optional[Dict])
-                Additional arguments for DataLoader.
-        """
+    #     # Instantiate the progress bar
+    #     eval_progressbar = __ProgressBar__(
+    #         bar_width=self.__progress_bar_width,
+    #         fill_style=self.__progress_fill_style,
+    #         empty_style=self.__progress_empty_style,
+    #         fill_color=self.__progress_fill_color,
+    #         empty_color=self.__progress_empty_color,
+    #         percentage_colors=self.__progress_percentage_colors,
+    #         progress_type=self.__progress_progress_type,
+    #         verbose=self.__verbose if verbose is None else verbose,
+    #     )
 
-        # Instantiate the progress bar
-        eval_progressbar = __ProgressBar__(
-            bar_width=self.__progress_bar_width,
-            fill_style=self.__progress_fill_style,
-            empty_style=self.__progress_empty_style,
-            fill_color=self.__progress_fill_color,
-            empty_color=self.__progress_empty_color,
-            percentage_colors=self.__progress_percentage_colors,
-            progress_type=self.__progress_progress_type,
-            verbose=self.__verbose if verbose is None else verbose,
-        )
+    #     # Create the list for metric
+    #     metric_storage = __MetricStorage__(
+    #         self._device,
+    #         metrics_measures=self.metrics,
+    #         batch_size=batch_size,
+    #         train=False,
+    #         loss_name=type(self.loss).__name__,
+    #     )
 
-        # Create the list for metric
-        metric_storage = __MetricStorage__(
-            self._device,
-            metrics_measures=self.metrics,
-            batch_size=batch_size,
-            train=False,
-            loss_name=type(self.loss).__name__,
-        )
+    #     # Indicate the model to evaluate
+    #     self._model.eval()
 
-        # Indicate the model to evaluate
-        self._model.eval()
+    #     # Initializer the data
+    #     data = __DataHandler__(
+    #         x,
+    #         y,
+    #         batch_size=batch_size,
+    #         val_batch_size=val_batch_size,
+    #         shuffle=shuffle,
+    #         random_seed=random_seed,
+    #         **dataloader_kwargs,
+    #     )()
 
-        # Initializer the data
-        data = __DataHandler__(
-            x,
-            y,
-            batch_size=batch_size,
-            val_batch_size=val_batch_size,
-            shuffle=shuffle,
-            random_seed=random_seed,
-            **dataloader_kwargs,
-        ).data_preprocessing(nprocs=nprocs)
+    #     # Set the progress bar total
+    #     eval_progressbar.total = len(data)
+    #     self.__val_data_size = len(data)
 
-        # Set the progress bar total
-        eval_progressbar.total = len(data)
-        self.__val_data_size = len(data)
+    #     # Handle on validation begin
+    #     self._handle_callbacks("on_validation_begin")
 
-        # Handle on validation begin
-        self._handle_callbacks("on_validation_begin")
+    #     with __torch__.no_grad():
+    #         # Loop over the data
+    #         for idx, (feature, label) in enumerate(data):
 
-        with __torch__.no_grad():
-            # Loop over the data
-            for idx, (feature, label) in enumerate(data):
+    #             # Set the device for X and y
+    #             feature, label = (
+    #                 feature.to(self._device).float(),
+    #                 label.to(self._device).float(),
+    #             )
 
-                # Set the device for X and y
-                feature, label = (
-                    feature.to(self._device).float(),
-                    label.to(self._device).float(),
-                )
+    #             # Make prediction
+    #             predict = self._model(feature).float()
 
-                # Make prediction
-                predict = self._model(feature).float()
+    #             # Check if using BCELoss optimizer
+    #             label = self.__handle_label(label)
 
-                # Check if using BCELoss optimizer
-                label = self.__handle_label(label)
+    #             if self.loss is not None:
+    #                 # Compute the loss
+    #                 loss = self.loss(predict, label)
 
-                if self.loss is not None:
-                    # Compute the loss
-                    loss = self.loss(predict, label)
+    #             # Handle the metrics
+    #             self.__metrics_handler(
+    #                 metric_storage,
+    #                 predict,
+    #                 label,
+    #                 loss,
+    #             )
 
-                # Handle the metrics
-                self.__metrics_handler(
-                    metric_storage,
-                    predict,
-                    label,
-                    loss,
-                )
+    #             if self._xm is not None:
+    #                 self._xm.mark_step()
 
-                if self._xm is not None:
-                    self._xm.mark_step()
+    #             if verbose is not None:
+    #                 # Update the progress bar
+    #                 eval_progressbar.update(
+    #                     idx + 1, list(metric_storage.measurements.items())
+    #                 )
 
-                if verbose is not None:
-                    # Update the progress bar
-                    eval_progressbar.update(
-                        idx + 1, list(metric_storage.measurements.items())
-                    )
+    #     # Final measurements
+    #     measurements = metric_storage.measurements
 
-        # Final measurements
-        measurements = metric_storage.measurements
+    #     # Handle on validation end
+    #     self._handle_callbacks("on_validation_end", logs=measurements)
 
-        # Handle on validation end
-        self._handle_callbacks("on_validation_end", logs=measurements)
-
-        return measurements
+    #     return measurements
 
     def compile(
         self,
@@ -796,19 +805,17 @@ class Stack(__ModelModule__):
             if type(optimizer) != str
             else self.__change_str_to_optimizer__(optimizer)
         )
-        self.loss_obj = (
-            loss if type(loss) != str else self.__change_str_to_loss__(loss)
-        )
+        self.loss_obj = loss if type(loss) != str else self.__change_str_to_loss__(loss)
         self.metrics = (
             self.__str_val_to_metric__(metrics) if metrics is not None else []
         )
 
-    def _handle_callbacks(
+    def __handle_callbacks(
         self, callback_method: str, logs=None, epoch: int | None = None
     ):
 
-        if self.__callbacks is not None:
-            for callback in self.__callbacks:
+        if self.callbacks is not None:
+            for callback in self.callbacks:
                 # Set the model and stop_training to the callback
                 callback.model = self
 
