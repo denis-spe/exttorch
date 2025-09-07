@@ -26,10 +26,19 @@ from src.exttorch.metrics import (
 @dataclass
 class MetricComputation:
     metric: Metric
-    predictions: torch.Tensor
-    labels: torch.Tensor
+    predictions: np.ndarray
+    labels: np.ndarray
+    
+    def reshape(self):
+        if self.predictions.ndim == 3:
+            self.predictions = self.predictions.reshape(-1, 1)
+        if self.labels.ndim == 3:
+            self.labels = self.labels.reshape(-1, 1)
 
     def compute_metric(self):
+        # Reshape if necessary
+        self.reshape()
+        
         return self.metric(
             self.predictions,
             self.labels,

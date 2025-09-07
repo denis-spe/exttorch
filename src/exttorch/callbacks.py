@@ -6,7 +6,7 @@
 
 # Import libraries
 from exttorch import __types as __types__
-from exttorch.__model import ModelModule as __ModelModule__
+from src.exttorch.__model import Model as __Model__
 from typing import Dict as __Dict__, Any as __Any__
 from typing import TYPE_CHECKING as __TYPE_CHECKING__
 import numpy as __np__
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 class Callback:
     def __init__(self):
-        self.model: __ModelModule__ | None = None
+        self.model: __Model__ | None = None
         self.monitor: str = "loss"
 
     def on_train_begin(self) -> None: ...

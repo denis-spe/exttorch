@@ -5,14 +5,14 @@ import unittest
 import torch.nn as nn
 import os, numpy as np
 from sklearn.datasets import make_classification
-from src.exttorch.models import Stack, load_model_or_weight
+from src.exttorch.models import StackedModel, load_model_or_weight
 
 
 class TestModelSaveAndLoad(unittest.TestCase):
     def setUp(self):
         self.x, self.y = make_classification()
 
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(20, 64))
         model.add(nn.Linear(64, 64))
         model.add(nn.Linear(64, 1))
@@ -31,7 +31,7 @@ class TestModelSaveAndLoad(unittest.TestCase):
 
     def test_load_model(self):
         loaded_model = load_model_or_weight("tests/models/model.ext")
-        self.assertIsInstance(loaded_model, Stack)
+        self.assertIsInstance(loaded_model, StackedModel)
         self.assertTrue(hasattr(loaded_model, "predict"))
         pred = loaded_model.predict(self.x)
         self.assertIsInstance(pred, np.ndarray)
@@ -47,6 +47,6 @@ class TestModelSaveAndLoad(unittest.TestCase):
 
         # self.model = Sequential()
         self.model.load_model_state_dict(loaded_weight)
-        self.assertIsInstance(self.model, Stack)
+        self.assertIsInstance(self.model, StackedModel)
         pred = self.model.predict(self.x)
         self.assertIsInstance(pred, np.ndarray)

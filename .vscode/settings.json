@@ -26,7 +26,9 @@
         "pycache",
         "rmsprop",
         "trapz",
-        "Wilcoxon"
+        "Wilcoxon",
+        "Xdata",
+        "Ydata"
     ],
     "python.testing.unittestArgs": [
         "-v",
@@ -43,6 +45,6 @@
     "code-runner.executorMap": {
         "python": "conda activate ds && python"
     },
-    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoImportCompletions": false,
     "git.ignoreLimitWarning": true
 }

@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from sklearn.datasets import make_classification, make_regression, load_iris
 from unittest import TestCase
-from src.exttorch.models import Stack
+from src.exttorch.models import StackedModel
 from src.exttorch.metrics import Precision, Recall, F1Score, Auc
 
 def torch_data_generator(batch_size=100):
@@ -26,7 +26,7 @@ class TestAcceptedData(TestCase):
         return super().setUp()
     
     def test_numpy_data(self):
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(20, 10))
         model.add(nn.ReLU())
         model.add(nn.Linear(10, 1))
@@ -36,7 +36,7 @@ class TestAcceptedData(TestCase):
         model.fit(self.numpy_data_generator, epochs=4)
         
     def test_torch_data(self):
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(20, 10))
         model.add(nn.ReLU())
         model.add(nn.Linear(10, 1))
@@ -49,11 +49,11 @@ class TestAcceptedData(TestCase):
         
         X, y = make_regression(n_samples=250, n_features=20, noise=0.1)
         
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(20, 10))
         model.add(nn.ReLU())
         model.add(nn.Linear(10, 1))
-        
+                
         model.compile(optimizer='adam', loss='mse')
         model.fit(X, y, epochs=4, batch_size=32, validation_split=0.2)
         
@@ -61,7 +61,7 @@ class TestAcceptedData(TestCase):
         
         X, y = make_classification(n_samples=200, n_features=20, n_informative=2, n_classes=2)
         
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(20, 256))
         model.add(nn.ReLU())
         model.add(nn.Linear(256, 512))
@@ -76,7 +76,7 @@ class TestAcceptedData(TestCase):
         model.compile(
             optimizer='adam', 
             loss='binary_crossentropy', 
-            metrics=['acc', 'precision']#, 'recall', 'f1_score']
+            metrics=['acc', 'precision', 'recall', 'f1_score']
             )
         model.fit(X, y, epochs=2, batch_size=5, validation_split=0.2, verbose="hide-progress-bar")
         
@@ -88,7 +88,7 @@ class TestAcceptedData(TestCase):
         # X, y = make_classification(n_samples=n_sample, n_features=20, n_informative=9, n_classes=n_label)
         X, y = load_iris(return_X_y=True)
         
-        model = Stack()
+        model = StackedModel()
         model.add(nn.Linear(4, 256))
         model.add(nn.ReLU())
         model.add(nn.Linear(256, 512))
@@ -110,7 +110,7 @@ class TestAcceptedData(TestCase):
                 Precision(average='macro', num_classes=n_label)
                 ]
             )
-        model.fit(X, y, epochs=1, batch_size=1, verbose=2)
+        model.fit(X, y, epochs=1, batch_size=1, verbose="only_metrics")
 
 
 

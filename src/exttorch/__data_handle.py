@@ -1,6 +1,5 @@
 # Praise Ye The Lord
 
-from ast import Sub
 import types
 from collections.abc import Sized
 from typing import Tuple, Optional, Any, Iterator, List, Dict
@@ -10,7 +9,7 @@ import pandas as pd
 # Import the libraries
 import torch
 from numpy.typing import ArrayLike
-from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset, random_split
+from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset, random_split, IterableDataset
 from sklearn.utils import Bunch
 
 Xdata = DataLoader | Dataset | TensorDataset | np.ndarray | Bunch | pd.DataFrame | torch.Tensor | Sized
@@ -102,10 +101,23 @@ class DataHandler:
                 
                 return DataLoader(tensor_data, **self.__dataloader_kwargs)
             
+            # ... Generator
+            elif isinstance(self.__x, types.GeneratorType) and self.__y is None:
+                x, y = next(self.__x)
+                if not isinstance(x, torch.Tensor):
+                    x = torch.from_numpy(x)
+                if not isinstance(y, torch.Tensor):
+                    y = torch.from_numpy(y)
+
+                gen_dataset = TensorDataset(x, y)
+                return DataLoader(gen_dataset, **self.__dataloader_kwargs)
+            
             else:
                 raise ValueError("Expected x to be DataLoader, Dataset, TensorDataset, np.ndarray, "
-                                 "Bunch, pd.DataFrame or torch.Tensor and y to be np.ndarray, Bunch, pd.Series or torch.Tensor or None")
-    
+                                 f"Bunch, pd.DataFrame or torch.Tensor but got `{self.__x}`"
+                                 " and y to be np.ndarray, Bunch, pd.Series or torch.Tensor or None"
+                                 )
+
     def __handle_validation_data(self) -> Optional[DataLoader]:
         if isinstance(self.__validation_data, (Tuple, List)):
             x, y = self.__validation_data

@@ -8,14 +8,14 @@ from exttorch.optimizers import Adam
 from sklearn.datasets import load_wine
 from exttorch.tuner import RandomSearchTune
 from exttorch.hyperparameter import HyperParameters
-from exttorch.models import Stack
+from exttorch.models import StackedModel
 
 
 def tuned_func(hp: HyperParameters):
     features = hp.Int("features", 1, 512)
     lr = hp.Choice("lr", [0.001, 0.005, 0.01, 0.05, 0.1])
 
-    model = Stack(
+    model = StackedModel(
         [
             nn.Linear(13, features),
             nn.ReLU(),

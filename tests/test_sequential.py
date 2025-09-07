@@ -6,7 +6,7 @@ from contexts import exttorch
 import unittest as ut
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
-from exttorch.models import Stack
+from exttorch.models import StackedModel
 from exttorch import models
 from sklearn.datasets import load_iris, load_digits
 from exttorch.metrics import Accuracy
@@ -31,7 +31,7 @@ class TestSequential(ut.TestCase):
         """
         Test the sequential model using iris dataset
         """
-        self.iris_model = Stack(
+        self.iris_model = StackedModel(
             [
                 nn.Linear(4, 128),
                 nn.ReLU(),
@@ -72,7 +72,7 @@ class TestSequential(ut.TestCase):
 
         train_dataloader = DataLoader(train_data, batch_size=64)
 
-        model = Stack(
+        model = StackedModel(
             [
                 nn.Linear(4, 32),
                 nn.ReLU(),
@@ -91,7 +91,7 @@ class TestSequential(ut.TestCase):
         model.fit(train_dataloader, validation_data=train_dataloader, epochs=5)
 
     def test_sequential_using_digits_dataset(self):
-        digit_model = Stack(
+        digit_model = StackedModel(
             [
                 nn.Flatten(),
                 nn.Linear(64, 1029),
@@ -119,7 +119,7 @@ class TestSequential(ut.TestCase):
         Test the number of layers in
         the model
         """
-        digit_model = Stack([])
+        digit_model = StackedModel([])
 
         digit_model.add(nn.Flatten())
         digit_model.add(nn.Linear(64, 64))
@@ -152,7 +152,7 @@ class TestSequential(ut.TestCase):
         y = train_df.label.values
         train_dataset = DataHandler(x=x, batch_size=64, y=y)()
 
-        model = Stack(
+        model = StackedModel(
             [
                 # Transpose Input data
                 nn.Flatten(),
@@ -182,7 +182,7 @@ class TestSequential(ut.TestCase):
         """
         Test the model evaluation
         """
-        model = Stack(
+        model = StackedModel(
             [
                 nn.Linear(4, 32),
                 nn.ReLU(),
