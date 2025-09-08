@@ -7,8 +7,9 @@ from abc import ABC, abstractmethod
 
 class Loss(ABC):
     @abstractmethod
-    def __call__(self):
+    def __call__(self) -> object:
         ...
+        
         
 def change_str_to_loss(loss: str):
     match loss:

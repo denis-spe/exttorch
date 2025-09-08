@@ -73,6 +73,7 @@ class TestPipeline(ut.TestCase):
             loss=CrossEntropyLoss(),
             optimizer=Adam(),
             metrics=[Accuracy(), Recall(average='macro'), F1Score(average='macro')],
+            progress_bar_width=10,
         )
         
         self.pipeline_model = Pipeline([
@@ -80,5 +81,8 @@ class TestPipeline(ut.TestCase):
             ('model', wrapper)
         ])
         
-        scores = cross_validate(wrapper, self.ir_x, self.ir_y, cv=5, params={'epochs': 2})
+        scores = cross_validate(wrapper, self.ir_x, self.ir_y, cv=5, params=dict(
+            model__progress_bar_width=10,
+            model__epochs=1
+        ))
         print(scores)

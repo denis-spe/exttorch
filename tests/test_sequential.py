@@ -199,7 +199,7 @@ class TestSequential(ut.TestCase):
         )
 
         model.fit(self.ir_x, self.ir_y, random_seed=42, verbose=None)
-        eval = model.evaluate(self.ir_x, self.ir_y, random_seed=42, )
+        eval = model.evaluate(self.ir_x, self.ir_y, progress_bar_width=20)
         # self.assertEqual(eval['val_Accuracy'], 0.3333)
 
 

@@ -5,20 +5,43 @@ import torch
 import numpy as np
 from torch.nn.functional import softmax
 import torch.nn as nn
-from typing import List, Optional
 from src.exttorch.history import History
 import torch
 import torch.nn as nn
 from src.exttorch.metrics import Metric
 from src.exttorch.__metrics_handles import MetricStorage
-from src.exttorch.__data_handle import DataHandler
+from src.exttorch.__data_handle import DataHandler, ValidationData
 from src.exttorch.__types import (
-    VerboseType, FillStyleType, EmptyStyleType, ProgressType, Weight
+    VerboseType,
+    FillStyleType,
+    EmptyStyleType,
+    ProgressType,
+    Weight,
 )
 from src.exttorch.utils import ProgressBar
 from src.exttorch.losses import Loss
 from src.exttorch.optimizers import Optimizer
-from typing import List, Any
+from typing import List, Any, Dict, TypedDict
+
+
+class FitParameters(TypedDict, total=False):
+    epochs: int
+    random_seed: int | None
+    shuffle: bool
+    batch_size: int | None
+    val_batch_size: int | None
+    validation_split: float | None
+    validation_data: ValidationData
+    callbacks: List | None
+    progress_bar_width: int
+    progress_fill_style: FillStyleType
+    progress_empty_style: EmptyStyleType
+    progress_fill_color: str
+    progress_empty_color: str
+    progress_percentage_colors: List[str] | None
+    progress_progress_type: ProgressType
+    verbose: VerboseType
+
 
 class ModelFit:
     # Constructor
@@ -41,7 +64,7 @@ class ModelFit:
         self.model: nn.Module | None = None
         self._device: torch.device | str = torch.device("cpu")
         self.__callbacks: List | None = None
-    
+
     # Private methods
     def __handle_callbacks(
         self, callback_method: str, logs=None, epoch: int | None = None
@@ -82,13 +105,21 @@ class ModelFit:
                         raise ValueError(
                             "Unknown callback_method name: {}".format(callback_method)
                         )
-                    
-    def __handle_label(self, target):
+
+    def loss_computation(
+        self, 
+        prediction: torch.Tensor, 
+        label: torch.Tensor
+        ) -> torch.Tensor:
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
-            return target.long()
+            label = label.long()
         elif self.loss.__class__.__name__ == "NLLLoss":
-            return target.long().flatten()
-        return target.view(-1, 1)
+            label = label.long().flatten()        
+
+        if self.loss.__class__.__name__ == 'BCELoss':
+            prediction = prediction.view(*label.shape)
+        
+        return self.loss(prediction, label)
 
     # Public methods
     def fit(
@@ -112,19 +143,19 @@ class ModelFit:
         progress_percentage_colors=None,
         progress_progress_type: ProgressType = "bar",
         verbose: VerboseType = "full",
+        val_dataloader_kwargs: Dict = {},
         **dataloader_kwargs,
     ):
 
         # Stop training flag
         self.stop_training = False
-        
+
         # Declare the train
         train_stage = None
-        
+
         # Declare the combined_metric
         combined_metric = None
-        
-        
+
         # Instantiate the progress bar
         self._progressbar = ProgressBar(
             bar_width=progress_bar_width,
@@ -172,10 +203,12 @@ class ModelFit:
             raise TypeError(
                 "Compile the model with `model.compile` before " + "fitting the model"
             )
-        
+
         if validation_data is not None and validation_split is not None:
-            raise ValueError("Provide either validation_data or validation_split, not both.")
-        
+            raise ValueError(
+                "Provide either validation_data or validation_split, not both."
+            )
+
         self.loss = self.loss_obj()
         self.optimizer = self.optimizer_obj(self.model.parameters())
         self.model = self.model.to(self._device)
@@ -185,11 +218,10 @@ class ModelFit:
             x=x,
             y=y,
             dataloader_kwargs=dict(
-                batch_size=batch_size,
-                shuffle=shuffle,
+                batch_size=batch_size, shuffle=shuffle, **dataloader_kwargs
             ),
             val_dataloader_kwargs=dict(
-                batch_size=val_batch_size,
+                batch_size=val_batch_size, **val_dataloader_kwargs
             ),
             validation_split=validation_split,
             validation_data=validation_data,
@@ -197,24 +229,23 @@ class ModelFit:
 
         # Get the train and validation data
         train_data, val_data = data_handler.get_data()
-        
+
         # Add the size of train
         self._progressbar.total = len(train_data)
-        
-        
+
         # Handle on train begin callback
         self.__handle_callbacks("on_train_begin")
 
         for epoch in range(epochs):
             # Handle on epoch begin callback
             self.__handle_callbacks("on_epoch_begin", epoch=epoch)
-            
+
             # Set the epoch for progress bar
             self._progressbar.set_epoch(epoch)
-            
+
             if self.stop_training:
                 break
-            
+
             # Train metrics storage
             self.train_metric_storage = MetricStorage(
                 self._device,
@@ -229,22 +260,22 @@ class ModelFit:
                 self.metrics,
                 batch_size=val_batch_size,
                 loss_name=type(self.loss).__name__,
-                train=False
+                train=False,
             )
 
             # Train stage
-            train_stage = self.train_stage(train_data) 
+            train_stage = self.train_stage(train_data)
 
             # Update the history
-            history.add_history(train_stage)            
+            history.add_history(train_stage)
 
             if validation_data is not None or validation_split is not None:
                 val_stage = self.val_stage(val_data)
                 combined_metric = {**train_stage, **val_stage}
-                
+
                 # validation data size
                 val_data_size = len(val_data.dataset)
-                
+
                 # Update the history
                 history.add_history(combined_metric)
 
@@ -252,20 +283,28 @@ class ModelFit:
                 self._progressbar.last_update(
                     val_data_size, list(combined_metric.items())
                 )
-        
+
             # Handle on epoch end callback
             self.__handle_callbacks(
                 "on_epoch_end",
-                logs=combined_metric if validation_data is not None or validation_split is not None else train_stage,
-                epoch=epoch
+                logs=(
+                    combined_metric
+                    if validation_data is not None or validation_split is not None
+                    else train_stage
+                ),
+                epoch=epoch,
             )
-        
+
         # Handle on train end callback
         self.__handle_callbacks(
             "on_train_end",
-            logs=combined_metric if validation_data is not None or validation_split is not None else train_stage
+            logs=(
+                combined_metric
+                if validation_data is not None or validation_split is not None
+                else train_stage
+            ),
         )
-            
+
         print("\n")
 
         return history
@@ -306,11 +345,8 @@ class ModelFit:
             # Make prediction
             predict = self.model(feature).float()
 
-            # Changes data type or data shape
-            label = self.__handle_label(label)
-            
             # Compute the loss
-            loss = self.loss(predict, label)
+            loss = self.loss_computation(predict, label)
 
             # Update metric state
             self.train_metric_storage.update_state(
@@ -318,11 +354,11 @@ class ModelFit:
                 label=label,
                 loss=loss,
             )
-            
+
             # Update the progress bar
             self._progressbar.update(
                 current_value=idx + 1,
-                metrics=list(self.train_metric_storage.measurements.items())
+                metrics=list(self.train_metric_storage.measurements.items()),
             )
 
             # Compute the gradient
@@ -338,18 +374,13 @@ class ModelFit:
 
         return self.train_metric_storage.measurements
 
-    def val_stage(
-        self, 
-        val_data
-        ) -> dict:
-        
+    def val_stage(self, val_data) -> dict:
+
         # Validate the parameters
-        if self.optimizer is None or self.loss is None:
+        if self.loss is None:
             raise TypeError(
                 "Compile the model with `model.compile` before " + "fitting the model"
             )
-        if self._progressbar is None:
-            raise ValueError("Progress bar is not initialized.")
 
         if self.model is None:
             raise ValueError("Model is not initialized.")
@@ -359,8 +390,8 @@ class ModelFit:
 
         with torch.no_grad():
             # Loop over the data
-            for idx, (feature, label) in enumerate(val_data):
-                
+            for feature, label in val_data:
+
                 # Handle on validation begin
                 self.__handle_callbacks("on_validation_begin")
 
@@ -373,11 +404,8 @@ class ModelFit:
                 # Make prediction
                 predict = self.model(feature).float()
 
-                # Check if using BCELoss optimizer
-                label = self.__handle_label(label)
-
                 # Compute the loss
-                loss = self.loss(predict, label)
+                loss = self.loss_computation(predict, label)
 
                 # Update metric state
                 self.val_metric_storage.update_state(
@@ -392,6 +420,94 @@ class ModelFit:
                 )
 
         return self.val_metric_storage.measurements
+
+    def evaluate(
+        self,
+        x,
+        y=None,
+        batch_size: int | None = 1,
+        progress_bar_width: int = 40,
+        progress_fill_style: FillStyleType = "━",
+        progress_empty_style: EmptyStyleType = "━",
+        progress_fill_color: str = "\033[92m",
+        progress_empty_color: str = "\033[90m",
+        progress_percentage_colors=None,
+        progress_progress_type: ProgressType = "bar",
+        verbose: VerboseType = "full",
+        **dataloader_kwargs,
+    ) -> Dict:
+
+        # Instantiate the progress bar
+        progressbar = ProgressBar(
+            bar_width=progress_bar_width,
+            fill_style=progress_fill_style,
+            empty_style=progress_empty_style,
+            fill_color=progress_fill_color,
+            empty_color=progress_empty_color,
+            percentage_colors=progress_percentage_colors,
+            progress_type=progress_progress_type,
+            verbose=verbose,
+            epochs=2,
+        )
+
+        # Declare and initializer DataHandler
+        data = DataHandler(
+            x=x,
+            y=y,
+            validation_data=None,
+            validation_split=None,
+            dataloader_kwargs=dict(batch_size=batch_size, **dataloader_kwargs),
+            val_dataloader_kwargs={},
+        ).get_data()[0]
+
+        # Add the size of train
+        progressbar.total = len(data)
+
+        # Initializer the MetricStorage
+        val_metric_storage = MetricStorage(
+            self._device,
+            self.metrics,
+            batch_size=batch_size,
+            loss_name=type(self.loss).__name__,
+            train=False,
+        )
+
+        if self.model is None:
+            raise ValueError("Model is not initialized.")
+
+        # Indicate the model to evaluate
+        self.model.eval()
+
+        with torch.no_grad():
+            # Loop over the data
+            for idx, (feature, label) in enumerate(data):
+
+                # Set the device for X and y
+                feature, label = (
+                    feature.to(self._device).float(),
+                    label.to(self._device).float(),
+                )
+
+                # Make prediction
+                predict = self.model(feature).float()
+
+                # Compute the loss
+                loss = self.loss_computation(predict, label)
+
+                # Update metric state
+                val_metric_storage.update_state(
+                    predict,
+                    label=label,
+                    loss=loss,
+                )
+
+                # Update the progress bar
+                progressbar.update(
+                    idx + 1, metrics=list(val_metric_storage.measurements.items())
+                )
+
+        return val_metric_storage.measurements
+
 
 class ModelCompilation:
     def compile(
@@ -572,6 +688,7 @@ class ModelCompilation:
                     "Adam, SGD, RMSprop, Adadelta, Adagrad, Adamax, ASGD."
                 )
 
+
 class ModelPrediction:
     def __init__(self):
         self._device: torch.device | str = torch.device("cpu")
@@ -586,15 +703,17 @@ class ModelPrediction:
         self._progress_empty_color: str = "\033[90m"
         self._progress_percentage_colors: List[str] | None = None
         self._progress_progress_type: ProgressType = "bar"
-        
+
     # Public methods
     def predict_proba(self, x, verbose=None):
         x = (x.float() if type(x) == torch.Tensor else torch.tensor(x).float()).to(
             self._device
         )
-        
+
         if self.model is None:
-            raise ValueError("The model is not trained yet. Please train the model first.")
+            raise ValueError(
+                "The model is not trained yet. Please train the model first."
+            )
 
         # Instantiate the progress bar
         progressbar = ProgressBar(
@@ -650,6 +769,7 @@ class ModelPrediction:
             predict = probability.reshape(-1, 1)
         return predict
 
+
 class Model(ModelFit, ModelCompilation, ModelPrediction):
     def __init__(
         self,
@@ -693,7 +813,3 @@ class Model(ModelFit, ModelCompilation, ModelPrediction):
             torch.save(weights, filepath)
         else:
             raise ValueError("Filepath must end with .ext or .we")
-    
-    def evaluate(self, x, y=None, verbose: str | None = None): pass
-        # TODO: implement evaluate method
-        

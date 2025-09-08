@@ -16,7 +16,7 @@ from src.exttorch.__metrics_handles import MetricStorage as __MetricStorage__
 from src.exttorch.history import History as __History__
 from src.exttorch.losses import Loss as __Loss__
 from src.exttorch.metrics import Metric as __Metric__
-from src.exttorch.__model import Model
+from src.exttorch.__model import Model, FitParameters
 from src.exttorch.optimizers import Optimizer as __Optimizer__
 from src.exttorch.utils import ProgressBar as __ProgressBar__
 
@@ -86,7 +86,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         loss: __Loss__,
         optimizer: __Optimizer__,
         metrics: __tp__.List[str | __Metric__] | None = None,
-        **fit_kwargs,
+        **fit_kwargs: __tp__.Unpack[FitParameters]
     ):
         super().__init__()
         self.is_fitted_ = None
@@ -97,7 +97,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         self.metrics = metrics
         self.history = None
 
-    def fit(self, x, y=None, **kwargs):
+    def fit(self, x, y=None, **kwargs: __tp__.Unpack[FitParameters]):
         self.model.compile(
             loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
         )
@@ -113,7 +113,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         check_is_fitted(self, "is_fitted_")
         return self.model.predict(x, verbose=verbose)
 
-    def score(self, x, y=None, verbose: str | None = None):
+    def score(self, x, y=None, verbose: __types__.VerboseType = None):
         from sklearn.utils.validation import check_is_fitted
 
         check_is_fitted(self, "is_fitted_")

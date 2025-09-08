@@ -20,7 +20,7 @@ class TestModelSaveAndLoad(unittest.TestCase):
 
         model.compile(optimizer="Adam", loss="BCELoss")
 
-        model.fit(self.x, self.y)
+        model.fit(self.x, self.y, progress_bar_width=10)
 
         self.model = model
 
