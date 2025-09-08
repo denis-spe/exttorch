@@ -5,18 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/__data_handle.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__data_handle.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/__model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__tuner_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__tuner_base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/__types.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__types.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/models/model.ext" beforeDir="false" afterPath="$PROJECT_DIR$/tests/models/model.ext" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/test_accepted_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_accepted_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/models/model.ext" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/models/model.ext" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/weights/model.we" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/weights/model.we" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_save_load_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_save_load_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_sequential.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sequential.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_sklearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sklearn.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/weights/model.we" beforeDir="false" afterPath="$PROJECT_DIR$/tests/weights/model.we" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -67,6 +65,7 @@
     "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor": "Run",
     "Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor": "Run",
     "Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset.executor": "Run",
+    "Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate.executor": "Run",
     "Python tests.Python tests in tests.executor": "Run",
     "Python.optimizers.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -84,7 +83,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset">
+  <component name="RunManager" selected="Python tests.Python tests in tests">
     <configuration name="optimizers" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="exttorch" />
       <option name="ENV_FILES" value="" />
@@ -126,22 +125,6 @@
       <option name="TEST_TYPE" value="TEST_FOLDER" />
       <option name="PATTERN" value="py" />
       <option name="USE_PATTERN" value="false" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="exttorch" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_callbacks.TestCallbacks.test_sequential_using_iris_dataset&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <configuration name="Python tests for test_sequential.TestSequential.test_model_with_dataloader" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
@@ -191,6 +174,21 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for tests.test_sklearn.TestPipeline.test_cross_validate" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="exttorch" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;tests.test_sklearn.TestPipeline.test_cross_validate&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="Python tests in tests" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="exttorch" />
       <option name="ENV_FILES" value="" />
@@ -210,19 +208,19 @@
     <list>
       <item itemvalue="Python.optimizers" />
       <item itemvalue="Python tests.Doctests in exttorch" />
+      <item itemvalue="Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate" />
       <item itemvalue="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset" />
-      <item itemvalue="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset" />
       <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
       <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
       <item itemvalue="Python tests.Python tests in tests" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset" />
         <item itemvalue="Python tests.Python tests in tests" />
+        <item itemvalue="Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate" />
+        <item itemvalue="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset" />
         <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
         <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
-        <item itemvalue="Python tests.Python tests for test_callbacks.TestCallbacks.test_sequential_using_iris_dataset" />
       </list>
     </recent_temporary>
   </component>

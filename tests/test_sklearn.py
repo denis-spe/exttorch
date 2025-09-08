@@ -1,18 +1,19 @@
 # May LORD GOD of heaven and earth be glorified forever.
 
 # Import libraries
-import torch
-from contexts import *
 import unittest as ut
-from torch import nn
+
 from sklearn.datasets import load_iris
 from sklearn.model_selection import cross_validate
-from exttorch.models import StackedModel, Wrapper
 from sklearn.pipeline import Pipeline
-from exttorch.losses import CrossEntropyLoss
-from exttorch.metrics import Accuracy, Recall, F1Score
-from exttorch.optimizers import Adam
 from sklearn.preprocessing import MinMaxScaler
+from torch import nn
+
+from src.exttorch.losses import CrossEntropyLoss
+from src.exttorch.metrics import Accuracy, Recall, F1Score
+from src.exttorch.models import StackedModel, Wrapper
+from src.exttorch.optimizers import Adam
+
 
 class TestPipeline(ut.TestCase):
     def setUp(self):
@@ -49,8 +50,8 @@ class TestPipeline(ut.TestCase):
         ])
         
         self.pipeline_model.fit(
-            self.ir_x, 
-            self.ir_y, 
+            self.ir_x,
+            self.ir_y,
         )
         # print(self.pipeline_model.named_steps['model'].history)
         print(self.pipeline_model.predict(self.ir_x))
@@ -72,17 +73,13 @@ class TestPipeline(ut.TestCase):
             ),
             loss=CrossEntropyLoss(),
             optimizer=Adam(),
-            metrics=[Accuracy(), Recall(average='macro'), F1Score(average='macro')],
-            progress_bar_width=10,
+            metrics=[Accuracy(), Recall(average='macro'), F1Score(average='macro')]
         )
         
         self.pipeline_model = Pipeline([
             ('scaler', MinMaxScaler()),
             ('model', wrapper)
         ])
-        
-        scores = cross_validate(wrapper, self.ir_x, self.ir_y, cv=5, params=dict(
-            model__progress_bar_width=10,
-            model__epochs=1
-        ))
+
+        scores = cross_validate(wrapper, self.ir_x, self.ir_y, cv=5, params=dict(progress_bar_width=10))
         print(scores)

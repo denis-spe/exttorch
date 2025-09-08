@@ -1,20 +1,22 @@
 # Praise Ye The Lord
 
+import unittest as ut
+
+import pandas as pd
 # Import libraries
 import torch
-from contexts import exttorch
-import unittest as ut
+from exttorch import models
+from exttorch.__data_handle import DataHandler
+from exttorch.losses import CrossEntropyLoss, NLLLoss
+from exttorch.metrics import Accuracy
+from exttorch.models import StackedModel
+from exttorch.optimizers import Adam
+from sklearn.datasets import load_iris, load_digits
+from sklearn.preprocessing import MinMaxScaler
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
-from exttorch.models import StackedModel
-from exttorch import models
-from sklearn.datasets import load_iris, load_digits
-from exttorch.metrics import Accuracy
-from exttorch.optimizers import Adam
-from exttorch.losses import CrossEntropyLoss, NLLLoss
-import pandas as pd
-from exttorch.__data_handle import DataHandler
-from sklearn.preprocessing import MinMaxScaler
+
+from contexts import exttorch
 
 
 class TestSequential(ut.TestCase):
@@ -150,7 +152,7 @@ class TestSequential(ut.TestCase):
         )
         x = train_df.drop("label", axis=1).values
         y = train_df.label.values
-        train_dataset = DataHandler(x=x, batch_size=64, y=y)()
+        # train_dataset = DataHandler(x=x, batch_size=64, y=y)()
 
         model = StackedModel(
             [

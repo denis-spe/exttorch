@@ -1,12 +1,15 @@
 # Bless Be Name of LORD GOD Of Hosts
 
+from unittest import TestCase
+
 # Importing necessary modules
 import torch
-from torch import nn
 from sklearn.datasets import make_classification, make_regression, load_iris
-from unittest import TestCase
-from src.exttorch.models import StackedModel
+from torch import nn
+
 from src.exttorch.metrics import Precision, Recall, F1Score, Auc
+from src.exttorch.models import StackedModel
+
 
 def torch_data_generator(batch_size=100):
     while True:
@@ -78,8 +81,8 @@ class TestAcceptedData(TestCase):
             loss='binary_crossentropy', 
             metrics=['acc', 'precision', 'recall', 'f1_score']
             )
-        model.fit(X, y, epochs=2, batch_size=5, validation_split=0.2, verbose="hide-progress-bar")
-        
+        model.fit(X, y, epochs=2, random_seed=42, batch_size=5, validation_split=0.2, verbose="hide-progress-bar")
+
     def test_multiclass_classification_dataset(self):
         
         n_label = 3

@@ -1,20 +1,19 @@
 # Praise Ye The Lord
 
+# Import libraries
 import types
 from collections.abc import Sized
-from typing import Tuple, Optional, Any, Iterator, List, Dict
+from typing import Tuple, Optional, Any, Iterator, List, Dict, Union
 
 import numpy as np
 import pandas as pd
-# Import the libraries
 import torch
-from numpy.typing import ArrayLike
-from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset, random_split, IterableDataset
 from sklearn.utils import Bunch
+from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset, random_split
 
 Xdata = DataLoader | Dataset | TensorDataset | np.ndarray | Bunch | pd.DataFrame | torch.Tensor | Sized
-Ydata = Optional[np.ndarray | Bunch | pd.Series | torch.Tensor]
-ValidationData = Optional[Iterator[np.ndarray] | Iterator[torch.Tensor] | Iterator[Bunch] |  DataLoader]
+Ydata = Union[np.ndarray, Bunch, pd.Series, torch.Tensor, None]
+ValidationData = Union[Iterator[np.ndarray], Iterator[torch.Tensor], Iterator[Bunch], DataLoader, None]
 
 class DataHandler:
     def __init__(

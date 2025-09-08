@@ -1,16 +1,15 @@
 # Bless be the LORD GOD of Host.
 
+from typing import List, Any, Dict, TypedDict
+
 # Import libraries.
-import torch
 import numpy as np
-from torch.nn.functional import softmax
-import torch.nn as nn
-from src.exttorch.history import History
 import torch
 import torch.nn as nn
-from src.exttorch.metrics import Metric
+from torch.nn.functional import softmax
+
+from src.exttorch.__data_handle import DataHandler, ValidationData, Xdata, Ydata
 from src.exttorch.__metrics_handles import MetricStorage
-from src.exttorch.__data_handle import DataHandler, ValidationData
 from src.exttorch.__types import (
     VerboseType,
     FillStyleType,
@@ -18,10 +17,11 @@ from src.exttorch.__types import (
     ProgressType,
     Weight,
 )
-from src.exttorch.utils import ProgressBar
+from src.exttorch.history import History
 from src.exttorch.losses import Loss
+from src.exttorch.metrics import Metric
 from src.exttorch.optimizers import Optimizer
-from typing import List, Any, Dict, TypedDict
+from src.exttorch.utils import ProgressBar
 
 
 class FitParameters(TypedDict, total=False):
@@ -43,9 +43,26 @@ class FitParameters(TypedDict, total=False):
     verbose: VerboseType
 
 
+def random_state(seed: int | None):
+    if isinstance(seed, int):
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+
+        # If you use CUDA
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        # If you want deterministic algorithms
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
 class ModelFit:
     # Constructor
     def __init__(self):
+        self.optimizer = None
+        self.loss = None
+        self.val_metric_storage = None
         self._progressbar: ProgressBar | None = None
         self.stop_training = False
         self._verbose: VerboseType = "full"
@@ -114,9 +131,9 @@ class ModelFit:
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
             label = label.long()
         elif self.loss.__class__.__name__ == "NLLLoss":
-            label = label.long().flatten()        
+            label = label.long().flatten()
 
-        if self.loss.__class__.__name__ == 'BCELoss':
+        if self.loss.__class__.__name__ in ['BCELoss', "MSELoss"]:
             prediction = prediction.view(*label.shape)
         
         return self.loss(prediction, label)
@@ -124,8 +141,8 @@ class ModelFit:
     # Public methods
     def fit(
         self,
-        x,
-        y=None,
+            x: Xdata,
+            y: Ydata = None,
         *,
         epochs: int = 1,
         random_seed: int | None = None,
@@ -143,9 +160,14 @@ class ModelFit:
         progress_percentage_colors=None,
         progress_progress_type: ProgressType = "bar",
         verbose: VerboseType = "full",
-        val_dataloader_kwargs: Dict = {},
+            val_dataloader_kwargs=None,
         **dataloader_kwargs,
     ):
+        # Set the random seed
+        random_state(random_seed)
+
+        if val_dataloader_kwargs is None:
+            val_dataloader_kwargs = {}
 
         # Stop training flag
         self.stop_training = False

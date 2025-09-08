@@ -4,21 +4,16 @@ import typing as __tp__
 
 # Import libraries
 import torch as __torch__
-from numpy.typing import ArrayLike as __ArrayLike__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
     TransformerMixin as __TransformerMixin,
 )
-from torch import nn as __nn__
+
 from src.exttorch import __types as __types__
-from src.exttorch.__data_handle import DataHandler as __DataHandler__
-from src.exttorch.__metrics_handles import MetricStorage as __MetricStorage__
-from src.exttorch.history import History as __History__
+from src.exttorch.__model import Model, FitParameters
 from src.exttorch.losses import Loss as __Loss__
 from src.exttorch.metrics import Metric as __Metric__
-from src.exttorch.__model import Model, FitParameters
 from src.exttorch.optimizers import Optimizer as __Optimizer__
-from src.exttorch.utils import ProgressBar as __ProgressBar__
 
 
 class StackedModel(Model):
@@ -35,7 +30,7 @@ class StackedModel(Model):
         --------
         >>> # Import libraries
         >>> import torch
-        >>> from exttorch.models import Stack
+        >>> from src.exttorch.models import StackedModel
         >>> from torch import nn
         >>> from sklearn.datasets import load_iris
         >>>
@@ -43,7 +38,7 @@ class StackedModel(Model):
         >>> x, y = load_iris(return_X_y=True)
         >>>
         >>> # Create the model
-        >>> model = Stack([
+        >>> model = StackedModel([
         ...    nn.Linear(4, 8),
         ...    nn.ReLU(),
         ...    nn.Linear(8, 3),
@@ -119,7 +114,6 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         check_is_fitted(self, "is_fitted_")
         return self.model.evaluate(x, y, verbose=verbose)
 
-
 def load_model_or_weight(model_path: str):
     """
     Load the model from the given path.
@@ -142,6 +136,6 @@ def load_model_or_weight(model_path: str):
 
     elif model_path.endswith(".we"):
         # Load the state_dict
-        return __torch__.load(model_path)
+        return __torch__.load(model_path, weights_only=True)
     else:
         raise ValueError("Filepath must end with .ext or .we")

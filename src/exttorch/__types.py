@@ -2,6 +2,7 @@
 
 # Import libraries.
 from typing import Dict, Any, List, Iterator, Tuple, Literal
+
 from numpy.typing import ArrayLike
 from sklearn.utils import Bunch
 from torch import TensorType
@@ -37,10 +38,6 @@ ProgressType = Literal[
     "bar", "pie", "squares", "cross", "arrows", "clock", "bounce", "moon", "triangles"
 ]
 VerboseType = Literal[
-    None,
-    0,
-    1,
-    2,
     "full",
     "hide-epoch",
     "hide-batch-size",
@@ -58,4 +55,4 @@ VerboseType = Literal[
     "only_val_metrics",
     "only_progress_bar",
     "only_time_estimation",
-]
+              ] | None | int

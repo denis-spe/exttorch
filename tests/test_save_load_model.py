@@ -1,10 +1,13 @@
 # Blessed is the LORD GOD of hosts.
 
+import numpy as np
+import os
 # ============ Test model save and loading of model ============
 import unittest
+
 import torch.nn as nn
-import os, numpy as np
 from sklearn.datasets import make_classification
+
 from src.exttorch.models import StackedModel, load_model_or_weight
 
 
@@ -48,5 +51,5 @@ class TestModelSaveAndLoad(unittest.TestCase):
         # self.model = Sequential()
         self.model.load_model_state_dict(loaded_weight)
         self.assertIsInstance(self.model, StackedModel)
-        pred = self.model.predict(self.x)
-        self.assertIsInstance(pred, np.ndarray)
+        prediction = self.model.predict(self.x)
+        self.assertIsInstance(prediction, np.ndarray)
