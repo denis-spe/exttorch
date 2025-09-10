@@ -4,14 +4,13 @@
 ======== ExtTorch Callbacks implementation ========
 """
 
-# Import libraries
-from exttorch import __types as __types__
-from src.exttorch.__model import Model as __Model__
-from typing import Dict as __Dict__, Any as __Any__
-from typing import TYPE_CHECKING as __TYPE_CHECKING__
-import numpy as __np__
-from typing import Literal as __Literal__
 from dataclasses import dataclass
+from typing import Literal as __Literal__
+import numpy as __np__
+
+# Import libraries
+from src.exttorch import __types as __types__
+from src.exttorch.__model import Model as __Model__
 
 
 class Callback:
@@ -42,16 +41,16 @@ class Callback:
         match monitor:
             # Increase in metric
             case monitor if monitor in ["acc", "Accuracy"]:
-                return __MetricInitial__.INCREASING
+                return MetricInitial.INCREASING
             # Decrease in metric
             case monitor if monitor in ["loss"]:
-                return __MetricInitial__.DECREASING
+                return MetricInitial.DECREASING
             case _:
                 raise ValueError(f"Invalid monitor name `{monitor}`")
 
 
 @dataclass
-class __MetricInitial__:
+class MetricInitial:
     DECREASING: float = __np__.inf
     INCREASING: float = 0.0
 
@@ -64,6 +63,9 @@ class EarlyStopping(Callback):
         mode: __Literal__["auto", "min", "max"] = "auto",
     ):
         super().__init__()
+        self.best = None
+        self.stopped_epoch = None
+        self.wait = None
         self.__patience = patience
         self.__monitor = monitor
         self.__mode_str = mode
@@ -92,9 +94,9 @@ class EarlyStopping(Callback):
 
     def __check_state(self, current: float) -> bool:
         if self.__mode_str == "auto":
-            if self.metric_state == __MetricInitial__.INCREASING:
+            if self.metric_state == MetricInitial.INCREASING:
                 return self.__mode("max", current=current)
-            if self.metric_state == __MetricInitial__.DECREASING:
+            if self.metric_state == MetricInitial.DECREASING:
                 return self.__mode("min", current=current)
             else:
                 raise ValueError("Invalid value")
@@ -102,7 +104,7 @@ class EarlyStopping(Callback):
             return self.__mode(self.__mode_str, current=current)
 
     def on_epoch_end(self, epoch: int, logs: __types__.Logs | None = None):
-        assert logs != None, "Logs were not provided."
+        assert logs is not None, "Logs were not provided."
         assert self.model is not None, "Model must be set before calling on_epoch_end."
 
         current = logs.get(self.__monitor)

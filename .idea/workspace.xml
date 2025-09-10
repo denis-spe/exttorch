@@ -4,17 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Introduced the requirements.txt file">
-      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__data_handle.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__data_handle.py" afterDir="false" />
+    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Added random_state function">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/exttorch/__model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__types.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/callbacks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/exttorch/tuner.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/tuner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/models/model.ext" beforeDir="false" afterPath="$PROJECT_DIR$/tests/models/model.ext" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_accepted_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_accepted_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_save_load_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_save_load_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_sequential.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sequential.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_sklearn.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_sklearn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_callbacks.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/weights/model.we" beforeDir="false" afterPath="$PROJECT_DIR$/tests/weights/model.we" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -26,6 +23,11 @@
     <option name="BRANCH" value="main" />
   </component>
   <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="denis-spe &lt;denisbrian07@gmail.com&gt;" />
+      </list>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -65,6 +67,7 @@
     "Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset.executor": "Run",
     "Python tests.Python tests for test_sequential.TestSequential.test_train_model_on_dataFrame.executor": "Run",
     "Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset.executor": "Run",
+    "Python tests.Python tests for tests.test_callbacks.TestCallbacks.executor": "Run",
     "Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate.executor": "Run",
     "Python tests.Python tests in tests.executor": "Run",
     "Python.optimizers.executor": "Run",
@@ -83,7 +86,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="Python tests.Python tests in tests">
+  <component name="RunManager" selected="Python tests.Python tests for tests.test_callbacks.TestCallbacks">
     <configuration name="optimizers" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="exttorch" />
       <option name="ENV_FILES" value="" />
@@ -127,22 +130,6 @@
       <option name="USE_PATTERN" value="false" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for test_sequential.TestSequential.test_model_with_dataloader" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
-      <module name="exttorch" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;test_sequential.TestSequential.test_model_with_dataloader&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-      <method v="2" />
-    </configuration>
     <configuration name="Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="exttorch" />
       <option name="ENV_FILES" value="" />
@@ -171,6 +158,21 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for tests.test_callbacks.TestCallbacks" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="exttorch" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;tests.test_callbacks.TestCallbacks&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
@@ -208,19 +210,19 @@
     <list>
       <item itemvalue="Python.optimizers" />
       <item itemvalue="Python tests.Doctests in exttorch" />
+      <item itemvalue="Python tests.Python tests for tests.test_callbacks.TestCallbacks" />
       <item itemvalue="Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate" />
       <item itemvalue="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset" />
-      <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
       <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
       <item itemvalue="Python tests.Python tests in tests" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Python tests in tests" />
+        <item itemvalue="Python tests.Python tests for tests.test_callbacks.TestCallbacks" />
         <item itemvalue="Python tests.Python tests for tests.test_sklearn.TestPipeline.test_cross_validate" />
+        <item itemvalue="Python tests.Python tests in tests" />
         <item itemvalue="Python tests.Python tests for tests.test_accepted_data.TestAcceptedData.test_binary_classification_dataset" />
         <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_sequential_using_iris_dataset" />
-        <item itemvalue="Python tests.Python tests for test_sequential.TestSequential.test_model_with_dataloader" />
       </list>
     </recent_temporary>
   </component>
@@ -291,7 +293,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736982907670</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added random_state function">
+      <option name="closed" value="true" />
+      <created>1757372924559</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1757372924559</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -304,7 +314,11 @@
     <MESSAGE value="deleted the src.exttorch in tuner.py" />
     <MESSAGE value="update the doc in GridSearchTune method search" />
     <MESSAGE value="Introduced the requirements.txt file" />
-    <option name="LAST_COMMIT_MESSAGE" value="Introduced the requirements.txt file" />
+    <MESSAGE value="Added random_state function" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added random_state function" />
+    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
+    <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
+    <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/exttorch$.coverage" NAME=" Coverage Results" MODIFIED="1749715148142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />

@@ -2,14 +2,13 @@
 
 # Import libraries
 import unittest as ut
-from contexts import exttorch
-from exttorch import callbacks
-from exttorch.callbacks import EarlyStopping
-from exttorch.metrics import Accuracy
-from exttorch.models import StackedModel
+
 from sklearn.datasets import load_iris, load_digits
 from torch import nn
-from torch.optim import Adam
+
+from src.exttorch import callbacks
+from src.exttorch.callbacks import EarlyStopping
+from src.exttorch.models import StackedModel
 
 
 class TestCallbacks(ut.TestCase):
@@ -52,7 +51,7 @@ class TestCallbacks(ut.TestCase):
 
     def test_check_point_instance(self):
         try:
-            checkpoint = callbacks.SaveOnCheckpoint(
+            callbacks.SaveOnCheckpoint(
                 ".",
                 monitor="val_loss",
                 verbose=0,
@@ -94,7 +93,7 @@ class TestCallbacks(ut.TestCase):
             save_freq="epoch",
         )
 
-        history = self.iris_model.fit(
+        self.iris_model.fit(
             self.ir_x,
             self.ir_y,
             validation_data=[self.ir_x, self.ir_y],

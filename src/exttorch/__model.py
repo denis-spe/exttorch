@@ -406,6 +406,9 @@ class ModelFit:
 
         if self.model is None:
             raise ValueError("Model is not initialized.")
+        
+        if self.val_metric_storage is None:
+            raise ValueError("Validation metric storage is not initialized.")
 
         # Indicate the model to evaluate
         self.model.eval()

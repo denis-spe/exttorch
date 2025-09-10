@@ -125,7 +125,7 @@ class BaseSearch:
         table = columnar(data, headers, no_borders=False, row_sep=" ")
         print(table)
 
-    def __call__(self, params, iteration, n_iterations, X, y, **kwargs: __typing__.Any) -> None:
+    def __call__(self, params, iteration, n_iterations, x, y, **kwargs: __typing__.Any) -> None:
 
         # Import libraries
         import time
@@ -157,7 +157,7 @@ class BaseSearch:
         print(f"{self.__Color.UNDERLINE} {'-' * 40} {self.__Color.END}")
 
         # Fit the model
-        history = model.fit(X, y=y, **kwargs)
+        history = model.fit(x, y=y, **kwargs)
 
         time.sleep(1)
         clear_output(wait=True)

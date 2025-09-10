@@ -1,25 +1,17 @@
 # # Praise Ye The Lord
 
-# Import libraries
-import torch, math
-from torch.nn import functional as f
 from dataclasses import dataclass
-from typing import Callable, Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
+
 import numpy as np
+# Import libraries
+import torch
+from numpy import ndarray, dtype, floating
+from torch import Tensor
+from torch.nn import functional as f
+
 from src.exttorch.metrics import (
     Metric,
-    Accuracy,
-    MeanSquaredError,
-    R2,
-    MeanAbsoluteError,
-    Recall,
-    Precision,
-    Jaccard,
-    MatthewsCorrcoef,
-    Auc,
-    ZeroOneLoss,
-    TopKAccuracy,
-    F1Score,
 )
 
 
@@ -45,6 +37,45 @@ class MetricComputation:
         )
 
 
+def validate_dtype(
+        probability: torch.Tensor,
+    label: torch.Tensor,
+    loss: torch.Tensor,
+) -> None:
+    """
+    Validates the model results.
+    Args:
+        probability (torch.Tensor): The model predictions.
+        label (torch.Tensor): The true labels.
+        loss (torch.Tensor): The loss value.
+    Raises:
+        TypeError: If the inputs are not of type torch.Tensor.
+    """
+    if not isinstance(probability, torch.Tensor):
+        raise TypeError("The probability must be a torch.Tensor.")
+    if not isinstance(label, torch.Tensor):
+        raise TypeError("The label must be a torch.Tensor.")
+    if not isinstance(loss, torch.Tensor):
+        raise TypeError("The loss must be a torch.Tensor.")
+
+
+def validator_shape(
+        loss: torch.Tensor,
+) -> None:
+    """
+    Validates the shape of the model results.
+    Args:
+        loss (torch.Tensor): The loss value.
+    Raises:
+        ValueError: If the shapes of the inputs are not compatible.
+    """
+    if loss.shape[0] != 1 and loss.shape[1] != 1:
+        raise ValueError("The loss must be a scalar.")
+
+
+def change_list_to_numpy(value: List[torch.Tensor] | float) -> ndarray[Any, dtype[Any]]:
+    return np.array(value).astype(np.float32)
+
 class MetricStorage:
     def __init__(
         self,
@@ -56,7 +87,7 @@ class MetricStorage:
     ):
         self.__device = device
         self.__metrics_measures = metrics_measures
-        self.__measurements_dict: Dict[str, torch.Tensor[float]] = {}
+        self.__measurements_dict: Dict[str, Any] = {}
         self.__train = train
         self.__loss_name = "loss" if train else "val_loss"
         self.__measurements_dict[self.__loss_name] = []
@@ -66,8 +97,8 @@ class MetricStorage:
                 for metric in metrics_measures
             }
         )
-        self.__batch_probabilities: torch.Tensor = None
-        self.__batch_labels: torch.Tensor = None
+        self.__batch_probabilities: Optional[torch.Tensor] = None
+        self.__batch_labels: Optional[torch.Tensor] = None
         self.__loss: List[torch.Tensor] = []
         self.__label: List[torch.Tensor] = []
         self.__probabilities: List[torch.Tensor] = []
@@ -93,8 +124,8 @@ class MetricStorage:
         probability, label, loss = self.__change_shape(probability, label, loss)
 
         # Validate the inputs
-        self.__validate_dtype(probability, label, loss)
-        self.__validator_shape(probability, label, loss)
+        validate_dtype(probability, label, loss)
+        validator_shape(loss)
 
         clone = lambda x: x.clone().detach().cpu().numpy()
         # Convert the inputs to numpy arrays
@@ -103,7 +134,7 @@ class MetricStorage:
         loss = clone(loss).item()
 
         # Store the results
-        if self.__batch_size > 1 or label.shape[0] > 1:
+        if (self.__batch_size is not None and self.__batch_size > 1) or label.shape[0] > 1:
             self.__batch_probabilities = np.atleast_2d(probability)
             self.__batch_labels = np.atleast_2d(label)
             self.__is_batched = True
@@ -117,7 +148,7 @@ class MetricStorage:
         probability: torch.Tensor,
         label: torch.Tensor,
         loss: torch.Tensor,
-    ) -> None:
+    ) -> tuple[Tensor, Tensor, Tensor]:
         """
         Changes the shape of the model results.
         Args:
@@ -132,76 +163,21 @@ class MetricStorage:
                 probability = probability.view(-1, 1)
         return probability, label.view(-1, 1), loss.view(1, -1)
 
-    def __validate_dtype(
-        self,
-        probability: torch.Tensor,
-        label: torch.Tensor,
-        loss: torch.Tensor,
-    ) -> None:
-        """
-        Validates the model results.
-        Args:
-            probability (torch.Tensor): The model predictions.
-            label (torch.Tensor): The true labels.
-            loss (torch.Tensor): The loss value.
-        Raises:
-            TypeError: If the inputs are not of type torch.Tensor.
-        """
-        if not isinstance(probability, torch.Tensor):
-            raise TypeError("The probability must be a torch.Tensor.")
-        if not isinstance(label, torch.Tensor):
-            raise TypeError("The label must be a torch.Tensor.")
-        if not isinstance(loss, torch.Tensor):
-            raise TypeError("The loss must be a torch.Tensor.")
-
-    def __validator_shape(
-        self,
-        probability: torch.Tensor,
-        label: torch.Tensor,
-        loss: torch.Tensor,
-    ) -> None:
-        """
-        Validates the shape of the model results.
-        Args:
-            probability (torch.Tensor): The model predictions.
-            label (torch.Tensor): The true labels.
-            loss (torch.Tensor): The loss value.
-        Raises:
-            ValueError: If the shapes of the inputs are not compatible.
-        """
-        # if probability.shape[0] != label.shape[0]:
-        #     raise ValueError("The probability and label must have the same rows.")
-        if loss.shape[0] != 1 and loss.shape[1] != 1:
-            raise ValueError("The loss must be a scalar.")
-
-    def __change_list_to_numpy(self, value: List[torch.Tensor] | float) -> torch.Tensor:
-        """
-        Changes the list of tensors to a tensor.
-        Args:
-            tensor_list (List[torch.Tensor]): The list of tensors.
-        Returns:
-            torch.Tensor: The tensor.
-        """
-        return np.array(value).astype(np.float32)
-        # if isinstance(value[0], float):
-        #     return torch.tensor(value, device=self.__device)
-        # return torch.cat(value, dim=0).to(self.__device).view(-1, 1)
-
-    def __change_results_to_tensor(self) -> Tuple[torch.Tensor]:
+    def __change_results_to_tensor(self):
         """
         Changes the model results to a tensor.
         Returns:
-            Tuple[torch.Tensor]: The model results as a tensor.
+            Tuple[np.ndarray]: The model results as a tensor.
         """
 
-        loss = self.__change_list_to_numpy(self.__loss)
+        loss = change_list_to_numpy(self.__loss)
 
         if self.__batch_size > 1 or self.__is_batched:
             labels = self.__batch_labels
             probabilities = self.__batch_probabilities
         else:
-            labels = self.__change_list_to_numpy(self.__label)
-            probabilities = self.__change_list_to_numpy(self.__probabilities)
+            labels = change_list_to_numpy(self.__label)
+            probabilities = change_list_to_numpy(self.__probabilities)
 
         return probabilities, labels, loss
 
@@ -223,7 +199,7 @@ class MetricStorage:
         return probabilities
 
     @staticmethod
-    def __average(value: np.ndarray, rounded_by=4) -> float:
+    def __average(value: np.ndarray, rounded_by=4) -> floating[Any]:
         """
         Averages the model results.
         Args:
@@ -235,10 +211,10 @@ class MetricStorage:
         return np.mean(value).round(decimals=rounded_by)
 
     @staticmethod
-    def __between_zero_and_one(name: str, value: float) -> float:
+    def __between_zero_and_one(name: str, value: float | ndarray) -> float | ndarray[Any, dtype[Any]]:
         match name:
             case "Auc" | "auc" | "val_Auc" | "val_auc":
-                if value == None:
+                if value is None:
                     return np.array([0.0], dtype=np.float32)
                 return np.array([max(0.0, min(value, 1.0))])
             case _:
@@ -355,8 +331,6 @@ class MetricStorage:
         Handle the metrics for the model.
         Parameters
         ----------
-            metric_storage : (MetricStorage)
-                The metric storage object.
             predict : (torch.Tensor)
                 The prediction of the model.
             label : (torch.Tensor)
