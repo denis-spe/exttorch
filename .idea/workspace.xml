@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Added random_state function">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__metrics_handles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/__model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/__model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/callbacks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/exttorch/tuner.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/exttorch/tuner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/models/model.ext" beforeDir="false" afterPath="$PROJECT_DIR$/tests/models/model.ext" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_callbacks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_callbacks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/weights/model.we" beforeDir="false" afterPath="$PROJECT_DIR$/tests/weights/model.we" afterDir="false" />
-    </list>
+    <list default="true" id="d1866144-a37d-4ac4-867a-b97cd2462363" name="Changes" comment="Added random_state function" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

@@ -1,6 +1,6 @@
 # Bless be the LORD GOD of Host.
 
-from typing import List, Any, Dict, TypedDict
+from typing import List, Any, Dict, TypedDict, Optional
 
 # Import libraries.
 import numpy as np
@@ -22,6 +22,7 @@ from src.exttorch.losses import Loss
 from src.exttorch.metrics import Metric
 from src.exttorch.optimizers import Optimizer
 from src.exttorch.utils import ProgressBar
+from src.exttorch.callbacks import Callback
 
 
 class FitParameters(TypedDict, total=False):
@@ -32,7 +33,7 @@ class FitParameters(TypedDict, total=False):
     val_batch_size: int | None
     validation_split: float | None
     validation_data: ValidationData
-    callbacks: List | None
+    callbacks: List[Callback] | None
     progress_bar_width: int
     progress_fill_style: FillStyleType
     progress_empty_style: EmptyStyleType
@@ -43,7 +44,7 @@ class FitParameters(TypedDict, total=False):
     verbose: VerboseType
 
 
-def random_state(seed: int | None):
+def random_state(seed: Optional[int] = None):
     if isinstance(seed, int):
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -80,11 +81,11 @@ class ModelFit:
         self.loss_obj = None
         self.model: nn.Module | None = None
         self._device: torch.device | str = torch.device("cpu")
-        self.__callbacks: List | None = None
+        self.__callbacks: List[Callback] | None = None
 
     # Private methods
     def __handle_callbacks(
-        self, callback_method: str, logs=None, epoch: int | None = None
+        self, callback_method: str, logs: Optional[Dict[str, Any]] = None, epoch: int | None = None
     ):
 
         if self.__callbacks is not None:
@@ -730,7 +731,7 @@ class ModelPrediction:
         self._progress_progress_type: ProgressType = "bar"
 
     # Public methods
-    def predict_proba(self, x, verbose=None):
+    def predict_proba(self, x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]], verbose: VerboseType = None):
         x = (x.float() if type(x) == torch.Tensor else torch.tensor(x).float()).to(
             self._device
         )
@@ -755,7 +756,10 @@ class ModelPrediction:
         progressbar.total = len(x)
 
         # Empty list for probability
-        probability = []
+        probability: list[list[float]] = []
+
+        # Initialize numpy array for probabilities
+        numpy_prob: np.ndarray[Any, np.dtype[np.float32]] = np.array([])
 
         with torch.no_grad():
             for i, data in enumerate(x):
@@ -770,19 +774,20 @@ class ModelPrediction:
                 progressbar.update(i + 1)
 
         if type(self.loss_obj).__name__ == "CrossEntropyLoss":
-            probability = softmax(torch.tensor(probability), dim=1).numpy()
+            numpy_prob = softmax(torch.tensor(probability), dim=1).numpy()
         else:
             # Convert the probability to numpy array
-            probability = np.array(probability).reshape(-1, 1)
+            numpy_prob = np.array(probability).reshape(-1, 1)
 
         print("\n")
 
-        return probability
+        return numpy_prob
 
-    def predict(self, x, verbose=None):
+    def predict(self, x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]], verbose: VerboseType = None):
 
         # Get the probabilities of x
         probability = self.predict_proba(x, verbose=verbose)
+        
 
         # Get the class label if using CrossEntropyLoss
         # or BCELoss or BCEWithLogitsLoss

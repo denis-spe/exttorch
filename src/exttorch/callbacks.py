@@ -10,12 +10,12 @@ import numpy as __np__
 
 # Import libraries
 from src.exttorch import __types as __types__
-from src.exttorch.__model import Model as __Model__
+# from src.exttorch.__model import Model as __Model
 
 
 class Callback:
     def __init__(self):
-        self.model: __Model__ | None = None
+        self.model = None
         self.monitor: str = "loss"
 
     def on_train_begin(self) -> None: ...
