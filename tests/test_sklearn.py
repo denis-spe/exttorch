@@ -42,6 +42,7 @@ class TestPipeline(ut.TestCase):
             epochs=2,
             validation_split=0.2,
             verbose="full",
+            progress_bar_width=10
         )
         
         self.pipeline_model = Pipeline([
@@ -81,5 +82,9 @@ class TestPipeline(ut.TestCase):
             ('model', wrapper)
         ])
 
-        scores = cross_validate(wrapper, self.ir_x, self.ir_y, cv=5, params=dict(progress_bar_width=10))
+        scores = cross_validate(
+            wrapper, self.ir_x, 
+            self.ir_y, cv=5, 
+            params=dict(progress_bar_width=10)
+            )
         print(scores)

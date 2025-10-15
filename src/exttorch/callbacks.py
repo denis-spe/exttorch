@@ -10,13 +10,23 @@ import numpy as __np__
 
 # Import libraries
 from src.exttorch import __types as __types__
+from typing import Self
+from src.exttorch.__modelInf import ModelInf
 # from src.exttorch.__model import Model as __Model
 
 
 class Callback:
     def __init__(self):
-        self.model = None
+        self.__model = None
         self.monitor: str = "loss"
+        
+    @property
+    def model(self) -> ModelInf | None:
+        return self.__model
+    
+    @model.setter
+    def model(self, model: ModelInf) -> None:
+        self.__model = model
 
     def on_train_begin(self) -> None: ...
 
@@ -63,9 +73,9 @@ class EarlyStopping(Callback):
         mode: __Literal__["auto", "min", "max"] = "auto",
     ):
         super().__init__()
-        self.best = None
+        self.best: float = 0.0
         self.stopped_epoch = None
-        self.wait = None
+        self.wait = 0
         self.__patience = patience
         self.__monitor = monitor
         self.__mode_str = mode
@@ -123,7 +133,7 @@ class EarlyStopping(Callback):
                 self.model.load_model_state_dict(self.best_weights)
 
     def on_train_end(self, logs: __types__.Logs = None):
-        if self.stopped_epoch > 0:
+        if self.stopped_epoch is not None and self.stopped_epoch > 0:
             print(f"Epoch {self.stopped_epoch + 1}: early stopping\n")
 
 

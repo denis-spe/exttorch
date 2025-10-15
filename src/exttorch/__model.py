@@ -23,7 +23,7 @@ from src.exttorch.metrics import Metric
 from src.exttorch.optimizers import Optimizer
 from src.exttorch.utils import ProgressBar
 from src.exttorch.callbacks import Callback
-
+from src.exttorch.__modelInf import ModelInf as __ModelInf__
 
 class FitParameters(TypedDict, total=False):
     epochs: int
@@ -58,14 +58,14 @@ def random_state(seed: Optional[int] = None):
         torch.backends.cudnn.benchmark = False
 
 
-class ModelFit:
+class ModelFit(__ModelInf__):
     # Constructor
     def __init__(self):
         self.optimizer = None
         self.loss = None
         self.val_metric_storage = None
         self._progressbar: ProgressBar | None = None
-        self.stop_training = False
+        self.stop_training: bool = False
         self._verbose: VerboseType = "full"
         self._progress_bar_width: int = 40
         self._progress_fill_style: FillStyleType = "━"
@@ -85,7 +85,10 @@ class ModelFit:
 
     # Private methods
     def __handle_callbacks(
-        self, callback_method: str, logs: Optional[Dict[str, Any]] = None, epoch: int | None = None
+        self,
+        callback_method: str,
+        logs: Optional[Dict[str, Any]] = None,
+        epoch: int | None = None,
     ):
 
         if self.__callbacks is not None:
@@ -125,25 +128,23 @@ class ModelFit:
                         )
 
     def loss_computation(
-        self, 
-        prediction: torch.Tensor, 
-        label: torch.Tensor
-        ) -> torch.Tensor:
+        self, prediction: torch.Tensor, label: torch.Tensor
+    ) -> torch.Tensor:
         if self.loss.__class__.__name__ == "CrossEntropyLoss":
             label = label.long()
         elif self.loss.__class__.__name__ == "NLLLoss":
             label = label.long().flatten()
 
-        if self.loss.__class__.__name__ in ['BCELoss', "MSELoss"]:
+        if self.loss.__class__.__name__ in ["BCELoss", "MSELoss"]:
             prediction = prediction.view(*label.shape)
-        
+
         return self.loss(prediction, label)
 
     # Public methods
     def fit(
         self,
-            x: Xdata,
-            y: Ydata = None,
+        x: Xdata,
+        y: Ydata = None,
         *,
         epochs: int = 1,
         random_seed: int | None = None,
@@ -161,7 +162,7 @@ class ModelFit:
         progress_percentage_colors=None,
         progress_progress_type: ProgressType = "bar",
         verbose: VerboseType = "full",
-            val_dataloader_kwargs=None,
+        val_dataloader_kwargs=None,
         **dataloader_kwargs,
     ):
         # Set the random seed
@@ -407,7 +408,7 @@ class ModelFit:
 
         if self.model is None:
             raise ValueError("Model is not initialized.")
-        
+
         if self.val_metric_storage is None:
             raise ValueError("Validation metric storage is not initialized.")
 
@@ -461,7 +462,7 @@ class ModelFit:
         progress_progress_type: ProgressType = "bar",
         verbose: VerboseType = "full",
         **dataloader_kwargs,
-    ) -> Dict:
+    ) -> Dict | List:
 
         # Instantiate the progress bar
         progressbar = ProgressBar(
@@ -731,7 +732,11 @@ class ModelPrediction:
         self._progress_progress_type: ProgressType = "bar"
 
     # Public methods
-    def predict_proba(self, x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]], verbose: VerboseType = None):
+    def predict_proba(
+        self,
+        x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]],
+        verbose: VerboseType = None,
+    ):
         x = (x.float() if type(x) == torch.Tensor else torch.tensor(x).float()).to(
             self._device
         )
@@ -783,11 +788,14 @@ class ModelPrediction:
 
         return numpy_prob
 
-    def predict(self, x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]], verbose: VerboseType = None):
+    def predict(
+        self,
+        x: torch.Tensor | np.ndarray[Any, np.dtype[np.float32]],
+        verbose: VerboseType = None,
+    ):
 
         # Get the probabilities of x
         probability = self.predict_proba(x, verbose=verbose)
-        
 
         # Get the class label if using CrossEntropyLoss
         # or BCELoss or BCEWithLogitsLoss

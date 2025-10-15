@@ -1,14 +1,12 @@
 """Praise Ye The Lord Your God"""
 
 import typing as __tp__
-
 # Import libraries
 import torch as __torch__
 from sklearn.base import (
     BaseEstimator as __BaseEstimator,
     TransformerMixin as __TransformerMixin,
 )
-
 from src.exttorch import __types as __types__
 from src.exttorch.__model import Model, FitParameters
 from src.exttorch.losses import Loss as __Loss__
@@ -70,6 +68,7 @@ class StackedModel(Model):
     def add(self, layer: __types__.Layer):
         self.layers.append(layer)
 
+
 class Wrapper(__BaseEstimator, __TransformerMixin):
     """
     Wrapper class for exttorch models to make them compatible with sklearn
@@ -81,7 +80,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         loss: __Loss__,
         optimizer: __Optimizer__,
         metrics: __tp__.List[str | __Metric__] | None = None,
-        **fit_kwargs: __tp__.Unpack[FitParameters]
+        **fit_kwargs: __tp__.Unpack[FitParameters],
     ):
         super().__init__()
         self.is_fitted_ = None
@@ -102,7 +101,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
         self.is_fitted_ = True
         return self
 
-    def predict(self, x, verbose: str | None = None):
+    def predict(self, x, verbose: __types__.VerboseType = None):
         from sklearn.utils.validation import check_is_fitted
 
         check_is_fitted(self, "is_fitted_")
@@ -113,6 +112,7 @@ class Wrapper(__BaseEstimator, __TransformerMixin):
 
         check_is_fitted(self, "is_fitted_")
         return self.model.evaluate(x, y, verbose=verbose)
+
 
 def load_model_or_weight(model_path: str):
     """
