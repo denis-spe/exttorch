@@ -3,7 +3,7 @@
 # Import libraries
 import types
 from collections.abc import Sized
-from typing import Tuple, Optional, Any, Iterator, List, Dict, Union
+from typing import Tuple, Optional, Any, Iterator, List, Dict, Union, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -11,9 +11,9 @@ import torch
 from sklearn.utils import Bunch
 from torch.utils.data import DataLoader, TensorDataset, Dataset, Subset, random_split
 
-Xdata = DataLoader | Dataset | TensorDataset | np.ndarray | Bunch | pd.DataFrame | torch.Tensor | Sized
+Xdata: TypeAlias = Union[DataLoader[Any], Dataset[Any], TensorDataset, np.ndarray, Bunch, pd.DataFrame, torch.Tensor, Sized]
 Ydata = Union[np.ndarray, Bunch, pd.Series, torch.Tensor, None]
-ValidationData = Union[Iterator[np.ndarray], Iterator[torch.Tensor], Iterator[Bunch], DataLoader, None]
+ValidationData = Union[Iterator[np.ndarray], Iterator[torch.Tensor], Iterator[Bunch], DataLoader[Any], None]
 
 class DataHandler:
     def __init__(

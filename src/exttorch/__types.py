@@ -1,7 +1,7 @@
 # Bless be the LORD of host.
 
 # Import libraries.
-from typing import Dict, Any, List, Iterator, Tuple, Literal
+from typing import Dict, Any, List, Iterator, Tuple, Literal, Optional
 
 from numpy.typing import ArrayLike
 from sklearn.utils import Bunch
@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset, Subset
 Logs = Dict[str, float] | None
 Weight = Dict[str, Any]
 Layer = __nn__.Module
-Layers = List[Layer] | None
+Layers =Optional[List[Layer]]
 Loss = __nn__.CrossEntropyLoss | __nn__.MSELoss | __nn__.BCELoss | __nn__.NLLLoss
 Dataset_DataLoader_TensorDataset_ArrayLike_Subset_Iterator_TensorType_Bunch = (
     Dataset[Any]

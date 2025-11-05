@@ -1,6 +1,6 @@
 # Bless be the LORD GOD of Host.
 
-from typing import List, Any, Dict, TypedDict, Optional
+from typing import List, Any, Dict, TypedDict, Optional, Unpack
 
 # Import libraries.
 import numpy as np
@@ -23,7 +23,9 @@ from src.exttorch.metrics import Metric
 from src.exttorch.optimizers import Optimizer
 from src.exttorch.utils import ProgressBar
 from src.exttorch.callbacks import Callback
-from src.exttorch.__modelInf import ModelInf as __ModelInf__
+from src.exttorch.__modelInf import ModelInf
+from sklearn.base import BaseEstimator, TransformerMixin
+
 
 class FitParameters(TypedDict, total=False):
     epochs: int
@@ -58,7 +60,7 @@ def random_state(seed: Optional[int] = None):
         torch.backends.cudnn.benchmark = False
 
 
-class ModelFit(__ModelInf__):
+class ModelFit(ModelInf):
     # Constructor
     def __init__(self):
         self.optimizer = None
@@ -152,7 +154,7 @@ class ModelFit(__ModelInf__):
         batch_size: int | None = 1,
         val_batch_size: int | None = 1,
         validation_split: float | None = None,
-        validation_data=None,
+        validation_data: ValidationData = None,
         callbacks=None,
         progress_bar_width: int = 40,
         progress_fill_style: FillStyleType = "━",
@@ -450,19 +452,19 @@ class ModelFit(__ModelInf__):
 
     def evaluate(
         self,
-        x,
-        y=None,
+        x: Xdata,
+        y: Ydata = None,
         batch_size: int | None = 1,
         progress_bar_width: int = 40,
         progress_fill_style: FillStyleType = "━",
         progress_empty_style: EmptyStyleType = "━",
         progress_fill_color: str = "\033[92m",
         progress_empty_color: str = "\033[90m",
-        progress_percentage_colors=None,
+        progress_percentage_colors: Optional[List[str]] = None,
         progress_progress_type: ProgressType = "bar",
         verbose: VerboseType = "full",
         **dataloader_kwargs,
-    ) -> Dict | List:
+    ) -> Dict[str, float] | List[float]:
 
         # Instantiate the progress bar
         progressbar = ProgressBar(
@@ -851,3 +853,49 @@ class Model(ModelFit, ModelCompilation, ModelPrediction):
             torch.save(weights, filepath)
         else:
             raise ValueError("Filepath must end with .ext or .we")
+
+
+class Wrapper(BaseEstimator, TransformerMixin):
+    """
+    Wrapper class for exttorch models to make them compatible with sklearn
+    """
+
+    def __init__(
+        self,
+        model: Model,
+        loss: Loss,
+        optimizer: Optimizer,
+        metrics: List[str | Metric] | None = None,
+        **fit_kwargs: Unpack[FitParameters],
+    ):
+        super().__init__()
+        self.is_fitted_ = None
+        self.model = model
+        self.fit_kwargs = fit_kwargs
+        self.loss = loss
+        self.optimizer = optimizer
+        self.metrics = metrics
+        self.history = None
+
+    def fit(self, x: Xdata, y: Ydata = None, **kwargs: Unpack[FitParameters]):
+        self.model.compile(
+            loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
+        )
+        self.history = self.model.fit(
+            x,
+            y,  # **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs
+        )
+        self.is_fitted_ = True
+        return self
+
+    def predict(self, x, verbose: VerboseType = None):
+        from sklearn.utils.validation import check_is_fitted
+
+        check_is_fitted(self, "is_fitted_")
+        return self.model.predict(x, verbose=verbose)
+
+    def score(self, x, y=None, verbose: VerboseType = None):
+        from sklearn.utils.validation import check_is_fitted
+
+        check_is_fitted(self, "is_fitted_")
+        return self.model.evaluate(x, y, verbose=verbose)

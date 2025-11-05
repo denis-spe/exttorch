@@ -1,21 +1,12 @@
 """Praise Ye The Lord Your God"""
 
-import typing as __tp__
-# Import libraries
 import torch as __torch__
-from sklearn.base import (
-    BaseEstimator as __BaseEstimator,
-    TransformerMixin as __TransformerMixin,
-)
 from src.exttorch import __types as __types__
-from src.exttorch.__model import Model, FitParameters
-from src.exttorch.losses import Loss as __Loss__
-from src.exttorch.metrics import Metric as __Metric__
-from src.exttorch.optimizers import Optimizer as __Optimizer__
+from src.exttorch.__model import Model, Wrapper # type: ignore
 
 
 class StackedModel(Model):
-    def __init__(self, layers=None, device: str = "cpu"):
+    def __init__(self, layers: __types__.Layers=None, device: str = "cpu"):
         """
         This represents model algorithm for training and predicting data
 
@@ -69,49 +60,6 @@ class StackedModel(Model):
         self.layers.append(layer)
 
 
-class Wrapper(__BaseEstimator, __TransformerMixin):
-    """
-    Wrapper class for exttorch models to make them compatible with sklearn
-    """
-
-    def __init__(
-        self,
-        model: StackedModel,
-        loss: __Loss__,
-        optimizer: __Optimizer__,
-        metrics: __tp__.List[str | __Metric__] | None = None,
-        **fit_kwargs: __tp__.Unpack[FitParameters],
-    ):
-        super().__init__()
-        self.is_fitted_ = None
-        self.model = model
-        self.fit_kwargs = fit_kwargs
-        self.loss = loss
-        self.optimizer = optimizer
-        self.metrics = metrics
-        self.history = None
-
-    def fit(self, x, y=None, **kwargs: __tp__.Unpack[FitParameters]):
-        self.model.compile(
-            loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
-        )
-        self.history = self.model.fit(
-            x, y, **self.fit_kwargs if len(self.fit_kwargs) > 0 else kwargs
-        )
-        self.is_fitted_ = True
-        return self
-
-    def predict(self, x, verbose: __types__.VerboseType = None):
-        from sklearn.utils.validation import check_is_fitted
-
-        check_is_fitted(self, "is_fitted_")
-        return self.model.predict(x, verbose=verbose)
-
-    def score(self, x, y=None, verbose: __types__.VerboseType = None):
-        from sklearn.utils.validation import check_is_fitted
-
-        check_is_fitted(self, "is_fitted_")
-        return self.model.evaluate(x, y, verbose=verbose)
 
 
 def load_model_or_weight(model_path: str):
