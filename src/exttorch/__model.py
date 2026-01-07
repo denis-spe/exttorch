@@ -591,7 +591,7 @@ class ModelCompilation:
     def __str_val_to_metric__(
         metric_list: List[Any],
     ) -> List[Metric]:
-        from src.exttorch.metrics import (
+        from exttorch.metrics import (
             Accuracy,
             MeanSquaredError,
             R2,
@@ -644,7 +644,7 @@ class ModelCompilation:
 
     @staticmethod
     def __change_str_to_loss__(loss: str):
-        from src.exttorch.losses import (
+        from exttorch.losses import (
             MSELoss,
             L1Loss,
             NLLLoss,
@@ -686,7 +686,7 @@ class ModelCompilation:
 
     @staticmethod
     def __change_str_to_optimizer__(optimizer: str):
-        from src.exttorch.optimizers import (
+        from exttorch.optimizers import (
             Adam,
             SGD,
             RMSprop,
