@@ -5,9 +5,9 @@
 """
 
 # Import libraries
-from src.exttorch.__sampler import GridSearchSampler as __Grid__
-from src.exttorch.__sampler import RandomSearchSampler as __Random__
-from src.exttorch.__tuner_base import BaseSearch
+from exttorch.__sampler import GridSearchSampler as __Grid__
+from exttorch.__sampler import RandomSearchSampler as __Random__
+from exttorch.__tuner_base import BaseSearch
 
 
 class GridSearchTune(BaseSearch, __Grid__):

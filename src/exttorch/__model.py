@@ -8,22 +8,22 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import softmax
 
-from src.exttorch.__data_handle import DataHandler, ValidationData, Xdata, Ydata
-from src.exttorch.__metrics_handles import MetricStorage
-from src.exttorch.__types import (
+from exttorch.__data_handle import DataHandler, ValidationData, Xdata, Ydata
+from exttorch.__metrics_handles import MetricStorage
+from exttorch.__types import (
     VerboseType,
     FillStyleType,
     EmptyStyleType,
     ProgressType,
     Weight,
 )
-from src.exttorch.history import History
-from src.exttorch.losses import Loss
-from src.exttorch.metrics import Metric
-from src.exttorch.optimizers import Optimizer
-from src.exttorch.utils import ProgressBar
-from src.exttorch.callbacks import Callback
-from src.exttorch.__modelInf import ModelInf
+from exttorch.history import History
+from exttorch.losses import Loss
+from exttorch.metrics import Metric
+from exttorch.optimizers import Optimizer
+from exttorch.utils import ProgressBar
+from exttorch.callbacks import Callback
+from exttorch.__modelInf import ModelInf
 from sklearn.base import BaseEstimator, TransformerMixin
 
 

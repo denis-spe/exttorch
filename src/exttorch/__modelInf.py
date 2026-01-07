@@ -1,9 +1,9 @@
 # Love the LORD your GOD with all your mind and with all your  heart and with all your soul
 # And Love your neighbor as your self
 
-from src.exttorch.__data_handle import DataHandler, ValidationData, Xdata, Ydata
-from src.exttorch.__metrics_handles import MetricStorage
-from src.exttorch.__types import (
+from exttorch.__data_handle import DataHandler, ValidationData, Xdata, Ydata
+from exttorch.__metrics_handles import MetricStorage
+from exttorch.__types import (
     VerboseType,
     FillStyleType,
     EmptyStyleType,
@@ -11,7 +11,7 @@ from src.exttorch.__types import (
     Weight,
 )
 from typing import Dict, List
-from src.exttorch.history import History
+from exttorch.history import History
 
 class ModelInf:
     def __init__(self) -> None:

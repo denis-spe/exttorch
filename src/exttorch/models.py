@@ -1,8 +1,8 @@
 """Praise Ye The Lord Your God"""
 
 import torch as __torch__
-from src.exttorch import __types as __types__
-from src.exttorch.__model import Model, Wrapper # type: ignore
+from exttorch import __types as __types__
+from exttorch.__model import Model, Wrapper # type: ignore
 
 
 class StackedModel(Model):

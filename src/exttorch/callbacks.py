@@ -9,9 +9,9 @@ from typing import Literal as __Literal__
 import numpy as __np__
 
 # Import libraries
-from src.exttorch import __types as __types__
+from exttorch import __types as __types__
 from typing import Self
-from src.exttorch.__modelInf import ModelInf
+from exttorch.__modelInf import ModelInf
 # from src.exttorch.__model import Model as __Model
 
 

@@ -2,7 +2,7 @@
 
 # import libraries
 import torch
-import src.exttorch.__types as __types__
+import exttorch.__types as __types__
 from abc import ABC, abstractmethod
 
 class Loss(ABC):

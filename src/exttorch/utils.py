@@ -7,7 +7,7 @@ import time
 from typing import List, Tuple
 from dataclasses import dataclass
 import itertools
-from src.exttorch.__types import FillStyleType, EmptyStyleType, ProgressType, VerboseType
+from exttorch.__types import FillStyleType, EmptyStyleType, ProgressType, VerboseType
 
 
 @dataclass
@@ -87,7 +87,7 @@ class ProgressBar:
         )
 
         # Initialize parameters
-        self.__total = None
+        self.__total = 0        
         self.__bar_width = bar_width
         self.__current_value = 0
         self.__epochs = epochs
@@ -436,6 +436,7 @@ class ProgressBar:
             empty_length=empty_length,
             bar_style=bar_style,
         )
+
         percent = int((self.__current_value / self.__total) * 100)
         self.__percent = percent
 

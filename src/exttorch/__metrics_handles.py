@@ -10,7 +10,7 @@ from numpy import ndarray, dtype, floating
 from torch import Tensor
 from torch.nn import functional as f
 
-from src.exttorch.metrics import (
+from exttorch.metrics import (
     Metric,
 )
 
